@@ -1,6 +1,6 @@
 {
     "name": "@metatune/desktop",
-    "version": "1.0.0-beta.2",
+    "version": "1.0.0-beta.3",
     "description": "元音本地音乐播放器-桌面版",
     "main": "./dist-electron/main.js",
     "type": "commonjs",
