@@ -1,0 +1,160 @@
+{
+    "name": "@metatune/desktop",
+    "version": "1.0.0",
+    "description": "元音本地音乐播放器-桌面版",
+    "main": "./dist-electron/main.js",
+    "type": "commonjs",
+    "author": "gzj666-scy",
+    "license": "MIT",
+    "scripts": {
+        "dev": "concurrently -k \"vite\" \"npm run electron:dev\"",
+        "dev:vite": "vite",
+        "dev:electron": "cross-env NODE_ENV=development electron .",
+        "build:web": "vite build",
+        "build:electron": "electron-builder",
+        "build:win": "vite build && electron-builder --win",
+        "build:mac": "vite build && electron-builder --mac",
+        "build:linux": "vite build && electron-builder --linux",
+        "fix:electron": "electron-fix start",
+        "type-check": "vue-tsc --noEmit",
+        "postinstall": "electron-builder install-app-deps",
+        "electron:start": "cross-env NODE_ENV=production electron .",
+        "compile:electron": "tsc -p electron/tsconfig.node.json",
+        "compile:electron:watch": "tsc -p electron/tsconfig.json --watch --preserveWatchOutput",
+        "rebuild:native": "electron-rebuild -f -w speaker"
+    },
+    "dependencies": {
+        "@metatune/common": "workspace:*",
+        "cors": "^2.8.6",
+        "electron-updater": "^6.8.3",
+        "howler": "^2.2.4",
+        "vue-router": "^4.2.0"
+    },
+    "devDependencies": {
+        "@electron/rebuild": "^4.0.3",
+        "@types/cors": "^2.8.19",
+        "@types/express": "^5.0.6",
+        "@types/howler": "^2.2.12",
+        "concurrently": "^9.2.1",
+        "cross-env": "^10.1.0",
+        "electron": "41.1.1",
+        "electron-builder": "^26.8.1",
+        "electron-fix": "^1.1.7",
+        "vite": "^8.0.1",
+        "vite-plugin-electron": "^0.29.1",
+        "wait-on": "^9.0.4"
+    },
+    "build": {
+        "appId": "com.gzj666-scy.metatune",
+        "productName": "Metatune Player",
+        "copyright": "Copyright © 2024 gzj666-scy",
+        "asar": true,
+        "directories": {
+            "output": "release",
+            "buildResources": "resources"
+        },
+        "files": [
+            "dist-web/**/*",
+            "dist-electron/**/*",
+            "package.json",
+            "!**/node_modules/*/{CHANGELOG.md,README.md,readme.md,*.md}",
+            "!**/node_modules/*/{test,__tests__,tests,spec,powered-test,example,examples}",
+            "!**/node_modules/*.d.ts",
+            "!**/node_modules/.bin",
+            "!**/node_modules/*/{.tsbuildinfo,*.map}",
+            "!**/*.d.ts",
+            "!**/*.{iml,o,hprof,orig,pyc,pyo,rbc,swp,csproj,sln,xproj}",
+            "!.editorconfig",
+            "!**/._*",
+            "!**/{.DS_Store,.git,.hg,.svn,CVS,RCS,SCCS,.gitignore,.gitattributes}",
+            "!**/{__pycache__,thumbs.db,.flowconfig,.idea,.vs,.nyc_output}",
+            "!**/{appveyor.yml,.travis.yml,circle.yml}",
+            "!**/{npm-debug.log,yarn.lock,.yarn-integrity,.yarn-metadata.json}",
+            "!**/node_modules/debug/**",
+            "!**/node_modules/typescript/**",
+            "!**/node_modules/@types/**"
+        ],
+        "extraResources": [
+            {
+                "from": "resources/extra",
+                "to": "extra",
+                "filter": [
+                    "**/*"
+                ]
+            }
+        ],
+        "win": {
+            "target": [
+                {
+                    "target": "nsis",
+                    "arch": [
+                        "x64",
+                        "ia32"
+                    ]
+                },
+                {
+                    "target": "portable",
+                    "arch": [
+                        "x64"
+                    ]
+                }
+            ],
+            "icon": "resources/icons/icon.ico",
+            "artifactName": "${productName}-${version}-${arch}.${ext}",
+            "requestedExecutionLevel": "asInvoker"
+        },
+        "nsis": {
+            "oneClick": false,
+            "allowToChangeInstallationDirectory": true,
+            "createDesktopShortcut": true,
+            "createStartMenuShortcut": true,
+            "shortcutName": "Metatune Player",
+            "runAfterFinish": true,
+            "deleteAppDataOnUninstall": false,
+            "perMachine": false,
+            "installerIcon": "resources/icons/installer.ico",
+            "uninstallerIcon": "resources/icons/uninstaller.ico",
+            "installerHeaderIcon": "resources/icons/header.ico",
+            "license": "LICENSE",
+            "differentialPackage": true
+        },
+        "mac": {
+            "target": [
+                {
+                    "target": "dmg",
+                    "arch": [
+                        "x64",
+                        "arm64"
+                    ]
+                },
+                {
+                    "target": "zip",
+                    "arch": [
+                        "x64",
+                        "arm64"
+                    ]
+                }
+            ],
+            "icon": "resources/icons/icon.icns",
+            "category": "public.app-category.music",
+            "artifactName": "${productName}-${version}-${arch}.${ext}",
+            "hardenedRuntime": true,
+            "gatekeeperAssess": false,
+            "entitlements": "build/entitlements.mac.plist",
+            "entitlementsInherit": "build/entitlements.mac.plist",
+            "extendInfo": {
+                "NSMicrophoneUsageDescription": "需要麦克风权限以支持语音搜索",
+                "NSCameraUsageDescription": "需要摄像头权限以支持视频播放"
+            }
+        },
+        "publish": [
+            {
+                "provider": "github",
+                "owner": "gzj666-scy",
+                "repo": "metatune-player",
+                "private": false,
+                "releaseType": "release"
+            }
+        ]
+    }
+}

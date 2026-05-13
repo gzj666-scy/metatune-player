@@ -1,0 +1,36 @@
+# "none" | "es5" | "all" 是否添加尾随逗号，es5 表示在 ES5 兼容的范围内添加，默认 all
+trailingComma: 'es5'
+# 是否使用 tab 缩进而非空格，默认 false
+useTabs: false
+# 一个缩进的空格数，默认 2
+tabWidth: 2
+# 是否在语句末尾添加分号，默认 true
+semi: false
+# 是否使用单引号代替双引号，默认 false
+singleQuote: true
+# JSX 属性值是否使用单引号，默认为 false
+jsxSingleQuote: true
+# 每行最大字符数，超过则换行，默认 80
+printWidth: 150
+# 对象大括号内是否加空格，如 { foo: bar }，默认 true
+bracketSpacing: true
+# HTML/Vue/JSX 的 > 是否跟最后一行属性同行，默认为 false 更清晰
+bracketSameLine: false
+# "avoid" | "always" 箭头函数参数只有一个时是否省略括号，avoid 表示避免，默认为 always
+arrowParens: 'avoid'
+# "lf" | "crlf" | "cr" | "auto" 换行符类型，默认 "lf"（Unix 风格）
+endOfLine: 'lf'
+# 指定使用的解析器，默认为 "babylon"
+# parser: 'typescript'
+# 控制 prose 文本的换行，默认为 "preserve"
+# proseWrap: 'preserve'
+# 对象键名引号策略：as-needed(仅必要时加)、consistent(同对象内统一)、preserve(保留原样)。默认为 as-needed
+quoteProps: 'as-needed'
+# Vue 单文件 <script>/<style> 块是否额外缩进，默认为 false。推荐 true 保持层级清晰。
+vueIndentScriptAndStyle: true
+# Vue/HTML 空白符处理。strict、css(按 CSS 规则)、ignore(忽略空白影响)。默认为 css
+htmlWhitespaceSensitivity: 'css'
+# 是否格式化内嵌代码（如 <style> 中的 CSS、<script> 中的 JS）。"auto" | "off"。默认为 auto
+embeddedLanguageFormatting: 'auto'
+# HTML/Vue/JSX 是否强制每行一个属性。适合长组件标签。默认为 false
+singleAttributePerLine: false

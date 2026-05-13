@@ -1,0 +1,17 @@
+package.json
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+pnpm-workspace.yaml
+
+build
+public
+node_modules
+
+dist
+dist-web
+dist-electron
+release
+*.lock
+.husky
+.vscode

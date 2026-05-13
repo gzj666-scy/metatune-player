@@ -1,0 +1,14 @@
+{
+  "name": "@metatune/common",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "dependencies": {
+    "jsmediatags": "^3.9.7"
+  },
+  "devDependencies": {
+    "@types/jsmediatags": "^3.9.6"
+  }
+}

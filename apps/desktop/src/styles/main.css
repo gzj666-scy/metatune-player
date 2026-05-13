@@ -1,0 +1,184 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+}
+
+html {
+  font-family: 'HarmonyOS_Sans';
+  /* font-family: "Switzer"; */
+  font-size: 16px;
+  line-height: 120%;
+  font-weight: 400;
+}
+
+body {
+  /* 背景渐变色：只选两种，对比明显 */
+  --bg-top: #eae4f2; /* 静谧紫灰 */
+  --bg-bottom: #c5dffb; /* 浅雾蓝 */
+
+  /* ===== 1. 基础文字颜色 ===== */
+  --text-color-primary: #2c3e50; /* 主体文字：深石板灰，保证清晰度 */
+  --text-color-secondary: #8d9cb0; /* 二级文字：中性中灰，用于歌手/专辑/时长/标签 */
+
+  /* ===== 2. 列表高亮项（当前播放歌曲） ===== */
+  /* 背景：使用比主背景更饱和、更清透的紫蓝渐变，打造“发光”感 */
+  --active-item-bg: linear-gradient(135deg, rgba(200, 215, 240, 0.7), rgba(225, 205, 240, 0.7));
+  /* 文字颜色：保持深色，不刺眼，确保对比度 */
+  --active-text-color-primary: #1a2533; /* 当前歌曲名：更深的灰蓝 */
+  --active-text-color-secondary: #4e5e70; /* 当前歌曲二级信息：中深灰 */
+
+  /* ===== 3. 列表交互状态 ===== */
+  /* Hover效果：轻微加深半透色 */
+  --item-hover-bg: rgba(255, 255, 255, 0.3);
+  /* Selected状态（侧边栏或列表选中）：非常浅的蓝紫底色 */
+  --item-selected-bg: rgba(115, 140, 180, 0.12);
+
+  /* ===== 4. 按钮 ===== */
+  /* 主按钮（如播放、搜索、功能键）：亮蓝，呼应背景中的蓝色调 */
+  --btn-primary-bg: #4f90f8;
+  --btn-primary-text: #fff;
+  --btn-primary-hover-bg: #1056ec; /* 悬停加深 */
+
+  /* 次要按钮/图标：使用中灰色，保持低调 */
+  --btn-secondary-bg: #cdcdcd70;
+  --btn-secondary-text: #333;
+  --btn-secondary-hover-bg: rgba(0, 0, 0, 0.15);
+
+  /* ===== 5. 底部播放状态栏 ===== */
+  /* 背景：使用深色半透，有效托起底部内容 */
+  --footer-bg: rgba(255, 255, 255, 0.3);
+  --footer-shadow: 0 -4px 20px rgba(100, 130, 180, 0.08); /* 极淡悬垂阴影 */
+  --footer-blur: blur(20px);
+  --footer-text-primary: #2c3e50;
+  --footer-text-secondary: #8d9cb0;
+  /* 进度条 & 音量滑块颜色 */
+  --progress-track-bg: rgba(95, 120, 160, 0.2);
+  --progress-track-fill: #7c6bb5; /* 静谧紫加深版 */
+  --progress-thumb-color: #3b82f6; /* 拖动点用蓝色 */
+
+  --modal-bg: rgba(243, 240, 240, 1);
+  --modal-shadow: 0px 0px 15px rgba(0, 0, 0, 0.26);
+
+  --album-art-bg: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+
+  /* 核心：两种颜色的明显对渐变，150度让色彩自然流动 */
+  background: linear-gradient(150deg, var(--bg-top), var(--bg-bottom));
+  background-attachment: fixed;
+  color: var(--text-color-primary);
+}
+
+button {
+  background: none;
+  border: none;
+  outline: none;
+  cursor: pointer;
+  font-family: inherit;
+  font-weight: inherit;
+  font-style: inherit;
+}
+
+input {
+  background: none;
+  border: none;
+  outline: none;
+  font-family: inherit;
+  font-weight: inherit;
+  font-style: inherit;
+}
+
+input[type='checkbox'] {
+  -webkit-appearance: none;
+  appearance: none;
+  border: 1.5px solid var(--text-color-secondary);
+  border-radius: 3px;
+  cursor: pointer;
+  position: relative;
+}
+input[type='checkbox']:checked {
+  background: var(--btn-primary-bg);
+  border-color: var(--btn-primary-bg);
+  color: #000;
+}
+input[type='checkbox']:checked::after {
+  content: '✓';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: #fff;
+  font-size: 14px;
+  font-weight: bold;
+}
+
+/* 滚动条样式 */
+::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--text-color-secondary);
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-color-secondary);
+}
+
+/* 解决iOS滚动回弹问题 */
+scroll-view {
+  -webkit-overflow-scrolling: touch;
+}
+
+@font-face {
+  font-family: 'HarmonyOS_Sans';
+  src: url('@/assets/HarmonyOS_Sans_Regular.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'HarmonyOS_Sans';
+  src: url('@/assets/HarmonyOS_Sans_Medium.ttf') format('truetype');
+  font-weight: 500;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'HarmonyOS_Sans';
+  src: url('@/assets/HarmonyOS_Sans_Bold.ttf') format('truetype');
+  font-weight: bold;
+  font-style: normal;
+}
+
+/* @font-face {
+    font-family: "Switzer";
+    src: url("@/assets/Switzer-Regular.woff2");
+    font-weight: normal;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: "Switzer";
+    src: url("@/assets/Switzer-Medium.woff2");
+    font-weight: 500;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: "Switzer";
+    src: url("@/assets/Switzer-Semibold.woff2");
+    font-weight: 600;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: "Switzer";
+    src: url("@/assets/Switzer-Bold.woff2");
+    font-weight: bold;
+    font-style: normal;
+} */

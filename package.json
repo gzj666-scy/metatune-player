@@ -1,0 +1,35 @@
+{
+  "name": "metatune-player",
+  "version": "1.0.0",
+  "author": "gzj666-scy",
+  "license": "MIT",
+  "scripts": {
+    "dev:desktop": "pnpm --filter @metatune/desktop dev",
+    "build:desktop": "pnpm --filter @metatune/desktop build",
+    "dev:mobile": "pnpm --filter @metatune/mobile dev:h5",
+    "build:mobile:h5": "pnpm --filter @metatune/mobile build:h5",
+    "build:mobile:app": "pnpm --filter @metatune/mobile build:app"
+  },
+  "dependencies": {
+    "@vitejs/plugin-vue-jsx": "^5.1.5",
+    "js-md5": "^0.8.3",
+    "lodash": "^4.18.1",
+    "music-metadata": "^11.12.3",
+    "pinia": "^3.0.4",
+    "vue": "^3.5.32"
+  },
+  "devDependencies": {
+    "@types/js-md5": "^0.8.0",
+    "@types/node": "^24.12.0",
+    "@vitejs/plugin-vue": "^5.0.0",
+    "eslint": "^10.2.0",
+    "prettier": "^3.8.2",
+    "sass": "^1.99.0",
+    "typescript": "^6.0.2"
+  },
+  "packageManager": "pnpm@10.33.0",
+  "engines": {
+    "node": ">=18.0.0",
+    "pnpm": ">=9.0.0"
+  }
+}

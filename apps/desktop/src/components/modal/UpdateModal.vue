@@ -1,0 +1,94 @@
+<template>
+  <Teleport to="body">
+    <ModalBase
+      :visible="show"
+      :classNames="{ content: 'udm-content' }"
+      title="更新检查"
+      :onClose="onClose"
+      :onConfirm="onUpdate"
+      :showCancel="false"
+      :confirmText="confirmText"
+    >
+      <div v-if="updateStatusRef === 'available' || updateStatusRef === 'downloading'" class="update-dialog">
+        <div>发现新版本 v{{ newVersionRef }}</div>
+        <div v-if="releaseNotesRef" v-html="releaseNotesRef"></div>
+      </div>
+
+      <div v-if="updateStatusRef === 'downloaded'" class="update-dialog">
+        <div>下载完成</div>
+      </div>
+      <div v-if="updateStatusRef === 'error'" class="update-dialog">
+        <div>更新错误，请稍后重试</div>
+      </div>
+    </ModalBase>
+  </Teleport>
+</template>
+<script setup lang="ts">
+  import { ref, onMounted, computed } from 'vue'
+  import ModalBase from '../base/ModalBase.vue'
+
+  const updateStatusRef = ref<'idle' | 'checking' | 'available' | 'downloading' | 'downloaded' | 'error'>('idle')
+  const progressRef = ref(0)
+  const newVersionRef = ref('')
+  const releaseNotesRef = ref('')
+  const isAutoRef = ref(true)
+
+  const show = computed(() => {
+    if (isAutoRef.value && updateStatusRef.value === 'error') return false
+    return ['available', 'downloading', 'downloaded', 'error'].includes(updateStatusRef.value)
+  })
+  const confirmText = computed(() => {
+    if (updateStatusRef.value === 'downloading') return `下载中 ${progressRef.value}%`
+    if (updateStatusRef.value === 'downloaded') return '立即安装并重启'
+    if (updateStatusRef.value === 'error') return '立即重试'
+    return '立即下载'
+  })
+
+  const onClose = () => {
+    updateStatusRef.value = 'idle'
+  }
+
+  const onUpdate = () => {
+    if (updateStatusRef.value === 'downloading') return
+    if (updateStatusRef.value === 'downloaded') {
+      window.electronAPI.send('update:install')
+      return
+    }
+    isAutoRef.value = false
+    if (updateStatusRef.value === 'error') {
+      window.electronAPI.send('update:check')
+      return
+    }
+    window.electronAPI.send('update:download')
+  }
+
+  onMounted(() => {
+    // 监听主进程事件
+    window.electronAPI.on('update-status', (data: any) => {
+      updateStatusRef.value = data.status
+      if (data.version) newVersionRef.value = data.version
+      if (data.releaseNotesRef) releaseNotesRef.value = data.releaseNotesRef
+    })
+
+    window.electronAPI.on('update-progressRef', (data: any) => {
+      progressRef.value = Math.round(data.percent)
+      updateStatusRef.value = 'downloading'
+    })
+
+    // 启动时自动检查
+    window.electronAPI.send('update:check')
+  })
+</script>
+<style lang="scss">
+  .udm-content {
+    min-width: 300px;
+    max-width: 400px;
+
+    .update-dialog {
+      font-size: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+  }
+</style>
