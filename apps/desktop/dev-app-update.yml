@@ -1,2 +1,3 @@
-provider: generic
-url: http://localhost:8080/releases
+provider: github
+owner: gzj666-scy
+repo: metatune-player

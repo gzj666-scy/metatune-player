@@ -1,16 +1,6 @@
 <script setup lang="ts">
   import { ref, computed, watch, StyleValue, onUnmounted, onMounted } from 'vue'
-  import {
-    PlayMode,
-    LyricParser,
-    DynamicColorAdjuster,
-    DefaultVolume,
-    IconEnum,
-    DefaultKey,
-    PanelType,
-    roundRectTopOnly,
-    addRoundedTopSubpath,
-  } from '@metatune/common'
+  import { PlayMode, LyricParser, DynamicColorAdjuster, DefaultVolume, IconEnum, DefaultKey, PanelType, addRoundedTopSubpath } from '@metatune/common'
   import type { ILyricLine } from '@metatune/common'
   import IconBase from '@/components/base/IconBase.vue'
   import { getStoreManager } from '@/utils/storeManager'
@@ -470,6 +460,7 @@
 
         themeVarsRef.value = cssObject
         bgDominantColorRef.value = result.color
+        window.electronAPI?.setWindowTitle(`${newSong.artist} - ${newSong.title}`)
       }
     }
   )

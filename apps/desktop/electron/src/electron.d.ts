@@ -21,9 +21,10 @@ declare global {
       setLocalListCache: (data: ISong[]) => Promise<boolean>
       getPlayerCache: () => Promise<{ playlists: IPlaylist; settings: IAppSettings; state: IPlaybackState } | null>
       setPlayerCache: (data: { playlists: IPlaylist; settings: IAppSettings; state: IPlaybackState }) => Promise<boolean>
+      setWindowTitle: (title: string) => void
 
       send: (channel: string, data?: any) => void
-      on: (channel: string, func: (...args: any[]) => void) => void
+      on: (channel: string, func: (...args: any[]) => void) => () => void
     }
   }
 }

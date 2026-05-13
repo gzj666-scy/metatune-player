@@ -46,7 +46,7 @@
     },
     "build": {
         "appId": "com.gzj666-scy.metatune",
-        "productName": "元音播放器",
+        "productName": "Metatune Player",
         "copyright": "Copyright © 2026 gzj666-scy",
         "asar": true,
         "directories": {

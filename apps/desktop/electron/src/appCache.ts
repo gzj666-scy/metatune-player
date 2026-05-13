@@ -126,8 +126,15 @@ import { fileURLToPath } from 'url'
 // }
 
 const __dirname = fileURLToPath(new URL('.', import.meta.url))
+const isDev = process.env.NODE_ENV === 'development'
 
 const resolveCacheDir = (): string => {
+  if (isDev) {
+    const exeDir = app.isPackaged ? dirname(app.getPath('exe')) : join(__dirname, '../../')
+    return join(exeDir, '.metatune-cache')
+  } else {
+    return join(app.getPath('appData'), 'Metatune Player', '.cache')
+  }
   // 1. 尝试放在可执行文件同级目录（避开 C 盘，适合便携版/自定义安装）
   const exeDir = app.isPackaged ? dirname(app.getPath('exe')) : join(__dirname, '../../')
   const targetDir = join(exeDir, '.metatune-cache')
@@ -138,7 +145,7 @@ const resolveCacheDir = (): string => {
     return targetDir
   } catch {
     // 降级到系统用户目录（保证功能可用）
-    return join(app.getPath('appData'), 'MetatunePlayer', '.cache')
+    return join(app.getPath('appData'), 'Metatune Player', '.cache')
   }
 }
 export const CACHE_DIR = resolveCacheDir()

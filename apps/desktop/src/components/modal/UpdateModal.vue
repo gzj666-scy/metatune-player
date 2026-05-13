@@ -1,5 +1,5 @@
 <script setup lang="ts">
-  import { ref, onMounted, computed } from 'vue'
+  import { ref, onMounted, computed, onUnmounted } from 'vue'
   import ModalBase from '../base/ModalBase.vue'
 
   const updateStatusRef = ref<'idle' | 'checking' | 'available' | 'downloading' | 'downloaded' | 'error'>('idle')
@@ -7,6 +7,8 @@
   const newVersionRef = ref('')
   const releaseNotesRef = ref('')
   const isAutoRef = ref(true)
+  let cancelCall1: () => void
+  let cancelCall2: () => void
 
   const show = computed(() => {
     if (isAutoRef.value && updateStatusRef.value === 'error') return false
@@ -38,20 +40,25 @@
 
   onMounted(() => {
     // 监听主进程事件
-    window.electronAPI.on('update-status', (data: any) => {
+    cancelCall1 = window.electronAPI.on('update-status', (data: any) => {
       updateStatusRef.value = data.status
       isAutoRef.value = data.auto
       if (data.version) newVersionRef.value = data.version
       if (data.releaseNotesRef) releaseNotesRef.value = data.releaseNotesRef
     })
 
-    window.electronAPI.on('update-progressRef', (data: any) => {
+    cancelCall2 = window.electronAPI.on('update-progress', (data: any) => {
       progressRef.value = Math.round(data.percent)
       updateStatusRef.value = 'downloading'
     })
 
     // 启动时自动检查
     window.electronAPI.send('update:check', { auto: true })
+  })
+
+  onUnmounted(() => {
+    cancelCall1 && cancelCall1()
+    cancelCall2 && cancelCall2()
   })
 </script>
 

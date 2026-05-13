@@ -36,7 +36,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
   getPlayerCache: () => ipcRenderer.invoke('cache:get:player'),
   /** 设置播放器数据 */
   setPlayerCache: (data: { playlists: IPlaylist; settings: IAppSettings; state: IPlaybackState }) => ipcRenderer.invoke('cache:set:player', data),
-
+  /** 修改标题 */
+  setWindowTitle: (title: string) => ipcRenderer.invoke('set-window-title', title),
   // 歌词处理
   // readLyricFile: (lyricPath) => ipcRenderer.invoke('lyric:readFile', lyricPath),
 

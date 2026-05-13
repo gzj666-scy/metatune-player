@@ -18,7 +18,10 @@ const isDev = process.env.NODE_ENV === 'development'
 
 let mainWindow: BrowserWindow | null = null
 let audioServer: AudioStreamServer | null = null
+let currentTitle = '元音播放器'
+let isAutoCheckUpdate = false
 
+app.setAppUserModelId('com.gzj666-scy.metatune')
 // 🔑 关键：生产环境才启用自动更新
 if (!app.isPackaged) {
   // 开发环境：指向本地测试服务器（可选）
@@ -29,7 +32,6 @@ if (!app.isPackaged) {
 // 必须在 app.whenReady() 之前注册
 protocol.registerSchemesAsPrivileged([{ scheme: 'cache', privileges: { standard: true, secure: true, supportFetchAPI: true, corsEnabled: false } }])
 
-let isAutoCheckUpdate = false
 const setupAutoUpdater = () => {
   // 禁止自动下载，由用户确认后触发
   autoUpdater.autoDownload = false
@@ -93,6 +95,7 @@ const createWindow = async () => {
   mainWindow = new BrowserWindow({
     width: 1600,
     height: 800,
+    title: currentTitle,
     minWidth: 800,
     minHeight: 600,
     webPreferences: {
@@ -143,6 +146,16 @@ const createWindow = async () => {
     mainWindow = null
     audioServer?.stop()
     audioServer = null
+  })
+
+  // 阻止网页修改标题
+  mainWindow.webContents.on('page-title-updated', event => {
+    event.preventDefault()
+  })
+
+  // 或显式设置标题（确保在 loadURL 之后）
+  mainWindow.webContents.on('did-finish-load', () => {
+    mainWindow?.setTitle(currentTitle)
   })
 
   // 开发环境加载本地服务器，生产环境加载打包文件
@@ -288,6 +301,12 @@ ipcMain.handle('cache:get:player', () => {
 
 ipcMain.handle('cache:set:player', async (_, data: { playlists: IPlaylist; settings: IAppSettings; state: IPlaybackState }) => {
   return cache.player.set(data)
+})
+
+// 监听渲染进程的语言切换请求
+ipcMain.handle('set-window-title', (_, title: string) => {
+  currentTitle = title
+  mainWindow?.setTitle(currentTitle)
 })
 
 // IPC：渲染进程触发更新操作
