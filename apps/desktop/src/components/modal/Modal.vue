@@ -1,7 +1,3 @@
-<template>
-  <component :is="currentModalComponent" :key="modal.type" v-bind="modal" />
-</template>
-
 <script setup lang="ts">
   import { getStoreManager } from '@/utils/storeManager'
   import { ModalType } from '@metatune/common'
@@ -21,3 +17,7 @@
     return components[modal.value.type as ModalType] || null
   })
 </script>
+
+<template>
+  <component :is="currentModalComponent" :key="modal.type" v-bind="modal" />
+</template>

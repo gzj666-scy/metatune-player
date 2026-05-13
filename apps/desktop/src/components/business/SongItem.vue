@@ -1,49 +1,3 @@
-<template>
-  <div :key="song.uid" class="song-item" :class="{ selected: selected, isCurPlaying: isCurPlaying }" :data-song-id="song.uid" ref="rootRef">
-    <div class="cell-checkbox">
-      <input v-if="isBatch" type="checkbox" :checked="selected" @click.stop @change="onSelect(song.uid)" />
-      <span v-else>{{ index + 1 }}</span>
-    </div>
-    <div class="cell-title">
-      <div class="album-art">
-        <img v-if="song.albumArt" :src="song.albumArt" :alt="song.album" class="album-art-img" />
-        <div v-else class="album-art-placeholder">
-          <IconBase>
-            <component :is="IconEnum.Music" />
-          </IconBase>
-        </div>
-      </div>
-      <div class="song-info">
-        <div class="song-name">{{ song.title }}</div>
-        <div class="song-sub-info">
-          <div class="artist-name">{{ song.artist }}</div>
-          <span v-if="song.qualityFlag" :class="`quality-badge ${song.qualityFlag?.toLowerCase()}`">
-            {{ song.qualityFlag }}
-          </span>
-        </div>
-      </div>
-    </div>
-    <div class="cell-album">{{ song.album }}</div>
-    <div class="cell-duration">{{ formatDuration(song.duration) }}</div>
-    <div class="cell-actions">
-      <button class="action-btn" :title="playing ? '正在播放' : '播放'" @click="onPlay(song.uid)">
-        <IconBase v-if="playing">
-          <component :is="IconEnum.Pause" />
-        </IconBase>
-        <IconBase v-else>
-          <component :is="IconEnum.Play" />
-        </IconBase>
-      </button>
-
-      <button class="action-btn" title="更多操作" @click.stop="onOpenActionMenu">
-        <IconBase>
-          <component :is="IconEnum.EllipsisVertical" />
-        </IconBase>
-      </button>
-    </div>
-  </div>
-</template>
-
 <script setup lang="ts">
   import { computed, inject, ref } from 'vue'
   import { IconEnum, PanelType } from '@metatune/common'
@@ -115,6 +69,52 @@
     return `${mins}:${secs.toString().padStart(2, '0')}`
   }
 </script>
+
+<template>
+  <div :key="song.uid" class="song-item" :class="{ selected: selected, isCurPlaying: isCurPlaying }" :data-song-id="song.uid" ref="rootRef">
+    <div class="cell-checkbox">
+      <input v-if="isBatch" type="checkbox" :checked="selected" @click.stop @change="onSelect(song.uid)" />
+      <span v-else>{{ index + 1 }}</span>
+    </div>
+    <div class="cell-title">
+      <div class="album-art">
+        <img v-if="song.albumArt" :src="song.albumArt" :alt="song.album" class="album-art-img" />
+        <div v-else class="album-art-placeholder">
+          <IconBase>
+            <component :is="IconEnum.Music" />
+          </IconBase>
+        </div>
+      </div>
+      <div class="song-info">
+        <div class="song-name">{{ song.title }}</div>
+        <div class="song-sub-info">
+          <div class="artist-name">{{ song.artist }}</div>
+          <span v-if="song.qualityFlag" :class="`quality-badge ${song.qualityFlag?.toLowerCase()}`">
+            {{ song.qualityFlag }}
+          </span>
+        </div>
+      </div>
+    </div>
+    <div class="cell-album">{{ song.album }}</div>
+    <div class="cell-duration">{{ formatDuration(song.duration) }}</div>
+    <div class="cell-actions">
+      <button class="action-btn" :title="playing ? '正在播放' : '播放'" @click="onPlay(song.uid)">
+        <IconBase v-if="playing">
+          <component :is="IconEnum.Pause" />
+        </IconBase>
+        <IconBase v-else>
+          <component :is="IconEnum.Play" />
+        </IconBase>
+      </button>
+
+      <button class="action-btn" title="更多操作" @click.stop="onOpenActionMenu">
+        <IconBase>
+          <component :is="IconEnum.EllipsisVertical" />
+        </IconBase>
+      </button>
+    </div>
+  </div>
+</template>
 
 <style scoped lang="scss">
   .song-item {

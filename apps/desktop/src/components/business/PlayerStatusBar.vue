@@ -1,111 +1,3 @@
-<template>
-  <div class="player-status-bar">
-    <!-- 进度条 -->
-    <div class="progress-bar" ref="progressContainerRef" @click="onProgressClick">
-      <div class="progress-track" :style="{ width: progressPercent + '%' }">
-        <div class="progress-thumb" @mousedown="onProgressDrag" @touchstart="onProgressDrag"></div>
-      </div>
-    </div>
-    <div class="controls-row">
-      <!-- 左侧：歌曲信息 -->
-      <div class="controls-left">
-        <div class="album-art-mini" @click="$emit('open-player')">
-          <img v-if="song?.albumArt" :src="song.albumArt" :alt="song.album" class="album-art-img" />
-          <div v-else class="album-art-placeholder">
-            <IconBase>
-              <component :is="IconEnum.Music" />
-            </IconBase>
-          </div>
-          <div v-if="isPlaying" class="playing-indicator">
-            <div class="playing-wave">
-              <span class="wave-bar"></span>
-              <span class="wave-bar"></span>
-              <span class="wave-bar"></span>
-              <span class="wave-bar"></span>
-            </div>
-          </div>
-        </div>
-        <div class="song-info">
-          <div class="song-title">{{ song?.title }}</div>
-          <div class="song-artist">{{ song?.artist }}</div>
-        </div>
-      </div>
-
-      <!-- 中间：播放控制 -->
-      <div class="controls-center">
-        <div class="playback-controls">
-          <button class="control-btn" @click="onPlayMode" :title="playModeTitle">
-            <IconBase>
-              <component :is="playModeIcon" />
-            </IconBase>
-          </button>
-
-          <button class="control-btn" @click="playManager.playPrev()" :disabled="!canGoPrev" title="上一首">
-            <IconBase>
-              <component :is="IconEnum.SkipBack" />
-            </IconBase>
-          </button>
-
-          <button class="play-pause-btn" @click="playManager.togglePlayPause()" :title="isPlaying ? '暂停' : '播放'">
-            <IconBase>
-              <component :is="isPlaying ? IconEnum.Pause : IconEnum.Play" />
-            </IconBase>
-          </button>
-
-          <button class="control-btn" @click="playManager.playNext()" :disabled="!canGoNext" title="下一首">
-            <IconBase>
-              <component :is="IconEnum.SkipForward" />
-            </IconBase>
-          </button>
-
-          <button
-            class="control-btn"
-            @click="onToggleMute"
-            @mouseenter="onVolumeMouseEnter"
-            @mouseleave="onVolumeMouseLeave"
-            :title="isMuted ? '取消静音' : '静音'"
-          >
-            <IconBase>
-              <component :is="volumeIcon" />
-            </IconBase>
-          </button>
-        </div>
-
-        <!-- 音量控制（桌面端） -->
-        <div
-          v-if="showVolumeControlRef"
-          class="volume-control"
-          :style="volumeControlStyleRef"
-          @mouseenter="onVolumeControlMouseEnter"
-          @mouseleave="onVolumeControlMouseLeave"
-        >
-          <div class="volume-slider" ref="volumeSliderRef" @click="onVolumeClick">
-            <div class="volume-track" :style="{ height: volume + '%' }"></div>
-            <div class="volume-thumb" :style="{ bottom: volume + '%' }" @mousedown="onVolumeDrag" @touchstart="onVolumeDrag"></div>
-          </div>
-          <div class="volume-label">{{ volume }}</div>
-        </div>
-      </div>
-
-      <!-- 右侧：附加控制 -->
-      <div class="controls-right">
-        <div class="time-display">{{ `${formatTime(currentTime)} / ${formatTime(duration)}` }}</div>
-        <button class="control-btn2" :class="{ favorited: isFavorite }" @click="onToggleFavorite" :title="isFavorite ? '取消收藏' : '收藏'">
-          <IconBase>
-            <component :is="isFavorite ? IconEnum.HeartFilled : IconEnum.Heart" />
-          </IconBase>
-        </button>
-        <!-- 播放器视图切换 -->
-        <button class="control-btn2" @click="$emit('open-player')" title="打开播放详情">
-          <IconBase>
-            <component :is="IconEnum.ChevronsUp" />
-          </IconBase>
-        </button>
-      </div>
-    </div>
-  </div>
-</template>
-
 <script setup lang="ts">
   import { ref, computed, onUnmounted, StyleValue } from 'vue'
   import { PlayMode, DefaultVolume, IconEnum, DefaultKey } from '@metatune/common'
@@ -351,6 +243,114 @@
     clearTimeout(delayHideVolumeRef.value)
   })
 </script>
+
+<template>
+  <div class="player-status-bar">
+    <!-- 进度条 -->
+    <div class="progress-bar" ref="progressContainerRef" @click="onProgressClick">
+      <div class="progress-track" :style="{ width: progressPercent + '%' }">
+        <div class="progress-thumb" @mousedown="onProgressDrag" @touchstart="onProgressDrag"></div>
+      </div>
+    </div>
+    <div class="controls-row">
+      <!-- 左侧：歌曲信息 -->
+      <div class="controls-left">
+        <div class="album-art-mini" @click="$emit('open-player')">
+          <img v-if="song?.albumArt" :src="song.albumArt" :alt="song.album" class="album-art-img" />
+          <div v-else class="album-art-placeholder">
+            <IconBase>
+              <component :is="IconEnum.Music" />
+            </IconBase>
+          </div>
+          <div v-if="isPlaying" class="playing-indicator">
+            <div class="playing-wave">
+              <span class="wave-bar"></span>
+              <span class="wave-bar"></span>
+              <span class="wave-bar"></span>
+              <span class="wave-bar"></span>
+            </div>
+          </div>
+        </div>
+        <div class="song-info">
+          <div class="song-title">{{ song?.title }}</div>
+          <div class="song-artist">{{ song?.artist }}</div>
+        </div>
+      </div>
+
+      <!-- 中间：播放控制 -->
+      <div class="controls-center">
+        <div class="playback-controls">
+          <button class="control-btn" @click="onPlayMode" :title="playModeTitle">
+            <IconBase>
+              <component :is="playModeIcon" />
+            </IconBase>
+          </button>
+
+          <button class="control-btn" @click="playManager.playPrev()" :disabled="!canGoPrev" title="上一首">
+            <IconBase>
+              <component :is="IconEnum.SkipBack" />
+            </IconBase>
+          </button>
+
+          <button class="play-pause-btn" @click="playManager.togglePlayPause()" :title="isPlaying ? '暂停' : '播放'">
+            <IconBase>
+              <component :is="isPlaying ? IconEnum.Pause : IconEnum.Play" />
+            </IconBase>
+          </button>
+
+          <button class="control-btn" @click="playManager.playNext()" :disabled="!canGoNext" title="下一首">
+            <IconBase>
+              <component :is="IconEnum.SkipForward" />
+            </IconBase>
+          </button>
+
+          <button
+            class="control-btn"
+            @click="onToggleMute"
+            @mouseenter="onVolumeMouseEnter"
+            @mouseleave="onVolumeMouseLeave"
+            :title="isMuted ? '取消静音' : '静音'"
+          >
+            <IconBase>
+              <component :is="volumeIcon" />
+            </IconBase>
+          </button>
+        </div>
+
+        <!-- 音量控制（桌面端） -->
+        <div
+          v-if="showVolumeControlRef"
+          class="volume-control"
+          :style="volumeControlStyleRef"
+          @mouseenter="onVolumeControlMouseEnter"
+          @mouseleave="onVolumeControlMouseLeave"
+        >
+          <div class="volume-slider" ref="volumeSliderRef" @click="onVolumeClick">
+            <div class="volume-track" :style="{ height: volume + '%' }"></div>
+            <div class="volume-thumb" :style="{ bottom: volume + '%' }" @mousedown="onVolumeDrag" @touchstart="onVolumeDrag"></div>
+          </div>
+          <div class="volume-label">{{ volume }}</div>
+        </div>
+      </div>
+
+      <!-- 右侧：附加控制 -->
+      <div class="controls-right">
+        <div class="time-display">{{ `${formatTime(currentTime)} / ${formatTime(duration)}` }}</div>
+        <button class="control-btn2" :class="{ favorited: isFavorite }" @click="onToggleFavorite" :title="isFavorite ? '取消收藏' : '收藏'">
+          <IconBase>
+            <component :is="isFavorite ? IconEnum.HeartFilled : IconEnum.Heart" />
+          </IconBase>
+        </button>
+        <!-- 播放器视图切换 -->
+        <button class="control-btn2" @click="$emit('open-player')" title="打开播放详情">
+          <IconBase>
+            <component :is="IconEnum.ChevronsUp" />
+          </IconBase>
+        </button>
+      </div>
+    </div>
+  </div>
+</template>
 
 <style lang="scss" scoped>
   .player-status-bar {

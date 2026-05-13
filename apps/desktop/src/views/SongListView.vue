@@ -1,71 +1,3 @@
-<template>
-  <div class="song-list-view">
-    <!-- 工具栏 -->
-    <ListToolBar
-      :listKey="listKey"
-      :sortType="sortType"
-      :isBatch="showBatchActionsRef"
-      @search-change="onSearchChange"
-      @batch-change="onBatchChange"
-      @add-to-playlist="onAddToPlayList"
-      @remove-songs="onRemoveSongs"
-    />
-    <div class="song-list-main">
-      <div class="song-list-main-l">
-        <div v-if="showBatchActionsRef" class="selected-count">
-          <input type="checkbox" :checked="isAllSelected" @click.stop @change="onSelectAll" />
-          <span>已选 {{ selectedSongsRef.length }} 首</span>
-        </div>
-        <!-- 歌曲列表 -->
-        <div class="song-list-container">
-          <div v-if="filteredSongs.length > 0" class="song-list" ref="songListContainerRef" @scroll="onScroll">
-            <SongItem
-              v-for="(item, index) in filteredSongs"
-              :key="item.uid"
-              :index="index"
-              :song="item"
-              :list-key="listKey"
-              :isBatch="showBatchActionsRef"
-              :selected="selectedSongsRef.includes(item.uid)"
-              :onSelect="onToggleSelectSong"
-              :ref="setRefs(index)"
-            />
-          </div>
-          <div v-else class="list-empty">
-            <IconBase>
-              <component :is="IconEnum.Empty" />
-            </IconBase>
-            <span>空空如也</span>
-          </div>
-        </div>
-
-        <!-- 定位到当前播放按钮 -->
-        <button
-          v-if="playerStore.currentState.currentSongId && filteredSongs.length > 20"
-          class="jump-to-current-btn"
-          @click="onScrollToCurrentSong"
-          title="定位到正在播放的歌曲"
-        >
-          <IconBase>
-            <component :is="IconEnum.Locate" />
-          </IconBase>
-        </button>
-      </div>
-      <!-- 字母导航侧边栏 -->
-      <div v-if="showAlphaNav" class="alpha-nav">
-        <button
-          v-for="letter in alphabet"
-          :key="letter"
-          class="alpha-nav-item"
-          :class="{ active: currentAlphaRef === letter }"
-          @click="onScrollToAlpha(letter)"
-        >
-          {{ letter }}
-        </button>
-      </div>
-    </div>
-  </div>
-</template>
 <script setup lang="ts">
   import { ref, computed, toRaw, onUnmounted } from 'vue'
   import { getFirstLetter, IconEnum, ModalType, useRefs } from '@metatune/common'
@@ -283,6 +215,76 @@
     clearTimeout(delayClickAlphaMarkRef.value)
   })
 </script>
+
+<template>
+  <div class="song-list-view">
+    <!-- 工具栏 -->
+    <ListToolBar
+      :listKey="listKey"
+      :sortType="sortType"
+      :isBatch="showBatchActionsRef"
+      @search-change="onSearchChange"
+      @batch-change="onBatchChange"
+      @add-to-playlist="onAddToPlayList"
+      @remove-songs="onRemoveSongs"
+    />
+    <div class="song-list-main">
+      <div class="song-list-main-l">
+        <div v-if="showBatchActionsRef" class="selected-count">
+          <input type="checkbox" :checked="isAllSelected" @click.stop @change="onSelectAll" />
+          <span>已选 {{ selectedSongsRef.length }} 首</span>
+        </div>
+        <!-- 歌曲列表 -->
+        <div class="song-list-container">
+          <div v-if="filteredSongs.length > 0" class="song-list" ref="songListContainerRef" @scroll="onScroll">
+            <SongItem
+              v-for="(item, index) in filteredSongs"
+              :key="item.uid"
+              :index="index"
+              :song="item"
+              :list-key="listKey"
+              :isBatch="showBatchActionsRef"
+              :selected="selectedSongsRef.includes(item.uid)"
+              :onSelect="onToggleSelectSong"
+              :ref="setRefs(index)"
+            />
+          </div>
+          <div v-else class="list-empty">
+            <IconBase>
+              <component :is="IconEnum.Empty" />
+            </IconBase>
+            <span>空空如也</span>
+          </div>
+        </div>
+
+        <!-- 定位到当前播放按钮 -->
+        <button
+          v-if="playerStore.currentState.currentSongId && filteredSongs.length > 20"
+          class="jump-to-current-btn"
+          @click="onScrollToCurrentSong"
+          title="定位到正在播放的歌曲"
+        >
+          <IconBase>
+            <component :is="IconEnum.Locate" />
+          </IconBase>
+        </button>
+      </div>
+      <!-- 字母导航侧边栏 -->
+      <div v-if="showAlphaNav" class="alpha-nav">
+        <button
+          v-for="letter in alphabet"
+          :key="letter"
+          class="alpha-nav-item"
+          :class="{ active: currentAlphaRef === letter }"
+          @click="onScrollToAlpha(letter)"
+        >
+          {{ letter }}
+        </button>
+      </div>
+    </div>
+  </div>
+</template>
+
 <style scoped lang="scss">
   .song-list-view {
     height: 100%;

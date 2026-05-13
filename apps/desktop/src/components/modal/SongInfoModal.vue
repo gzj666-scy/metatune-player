@@ -1,3 +1,25 @@
+<script setup lang="ts">
+  import { formatFileSize } from '@metatune/common'
+  import type { IModalProps, ISong } from '@metatune/common'
+  import { computed, Teleport } from 'vue'
+  import ModalBase from '../base/ModalBase.vue'
+  import { getStoreManager } from '@/utils/storeManager'
+
+  const props = withDefaults(defineProps<IModalProps<{ song: ISong }>>(), {
+    type: '',
+  })
+
+  const storeManager = getStoreManager()
+  const playerStore = storeManager.playerStore
+
+  const song = computed(() => props.data?.song)
+
+  const onClose = () => {
+    props.closeCallBack?.()
+    playerStore.modal = { type: '', data: null }
+  }
+</script>
+
 <template>
   <Teleport to="body">
     <ModalBase :visible="true" :classNames="{ content: 'sim-content' }" title="歌曲信息" :onClose="onClose" :showFooter="false">
@@ -24,28 +46,6 @@
     </ModalBase>
   </Teleport>
 </template>
-
-<script setup lang="ts">
-  import { formatFileSize } from '@metatune/common'
-  import type { IModalProps, ISong } from '@metatune/common'
-  import { computed, Teleport } from 'vue'
-  import ModalBase from '../base/ModalBase.vue'
-  import { getStoreManager } from '@/utils/storeManager'
-
-  const props = withDefaults(defineProps<IModalProps<{ song: ISong }>>(), {
-    type: '',
-  })
-
-  const storeManager = getStoreManager()
-  const playerStore = storeManager.playerStore
-
-  const song = computed(() => props.data?.song)
-
-  const onClose = () => {
-    props.closeCallBack?.()
-    playerStore.modal = { type: '', data: null }
-  }
-</script>
 
 <style lang="scss">
   .sim-content {

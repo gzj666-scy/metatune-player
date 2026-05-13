@@ -1,62 +1,3 @@
-<template>
-  <div class="sidebar">
-    <!-- 导航菜单 -->
-    <nav class="nav-menu">
-      <div class="menu-section">
-        <div class="section-header">
-          <div class="section-label">音乐库</div>
-        </div>
-        <ul class="menu-list">
-          <li v-for="item in mainMenuItems" :key="item.id" :class="clsx('menu-item', { active: activeView === item.id })" @click="onChangeView(item)">
-            <IconBase class="menu-icon">
-              <component :is="activePlayListId === item.id ? IconEnum.Playing : item.iconNode" />
-            </IconBase>
-            <div class="menu-content">
-              <span class="menu-text">{{ item.name }}</span>
-              <span class="menu-count">{{ item.count }}</span>
-            </div>
-          </li>
-        </ul>
-      </div>
-
-      <!-- 歌单列表 -->
-      <div class="menu-section">
-        <div class="section-header playlist-header">
-          <div class="playlist-label-box" @click="onExpandPlaylist">
-            <IconBase :class="clsx('expand-playlist-icon', { active: expandPlaylistRef })">
-              <component :is="IconEnum.ChevronDown" />
-            </IconBase>
-            <span class="section-label">歌单</span>
-            <span class="section-count">{{ playerStore.currentPlaylists.length }}</span>
-          </div>
-          <button class="add-playlist-btn" @click="onAddPlaylist" title="新建歌单">
-            <IconBase>
-              <component :is="IconEnum.Plus" />
-            </IconBase>
-          </button>
-        </div>
-        <ul v-if="expandPlaylistRef" class="menu-list">
-          <li
-            v-for="item in playerStore.currentPlaylists"
-            :key="item.createTime"
-            :class="clsx('menu-item playlist-item', { active: activeView === item.createTime })"
-            @click="onOpenPlaylist(item)"
-            @contextmenu.prevent="onPlaylistRightClick(item.createTime, $event)"
-          >
-            <IconBase class="menu-icon">
-              <component :is="activePlayListId === item.createTime ? IconEnum.Playing : IconEnum.ListMusic" />
-            </IconBase>
-            <div class="menu-content">
-              <span class="menu-text">{{ item?.name }}</span>
-              <span class="menu-count">{{ item.songIds.length }}</span>
-            </div>
-          </li>
-        </ul>
-      </div>
-    </nav>
-  </div>
-</template>
-
 <script setup lang="ts">
   import { ref, computed } from 'vue'
   import { clsx, DefaultKey, IconEnum, MainMenuItems, PanelType, SortTypeItems } from '@metatune/common'
@@ -86,6 +27,7 @@
     })
   })
 
+  const isPlaying = computed(() => playerStore.currentState.isPlaying)
   const activePlayListId = computed(() => {
     const id = playerStore.currentState.currentListId
     // return playerStore.defaultPlaylistKey.includes(id) ? '' : id
@@ -98,9 +40,9 @@
 
   const onChangeView = (item: IMainMenuItem) => {
     router.replace(item.path)
-    if (!([DefaultKey.Artist] as string[]).includes(item.id)) {
-      playerStore.currentViewKey = item.id
-    }
+    playerStore.currentViewKey = item.id
+    // if (!([DefaultKey.Artist] as string[]).includes(item.id)) {
+    // }
   }
 
   const onExpandPlaylist = () => {
@@ -143,6 +85,65 @@
   }
 </script>
 
+<template>
+  <div class="sidebar">
+    <!-- 导航菜单 -->
+    <nav class="nav-menu">
+      <div class="menu-section">
+        <div class="section-header">
+          <div class="section-label">音乐库</div>
+        </div>
+        <ul class="menu-list">
+          <li v-for="item in mainMenuItems" :key="item.id" :class="clsx('menu-item', { active: activeView === item.id })" @click="onChangeView(item)">
+            <IconBase class="menu-icon">
+              <component :is="activePlayListId === item.id && isPlaying ? IconEnum.Playing : item.iconNode" />
+            </IconBase>
+            <div class="menu-content">
+              <span class="menu-text">{{ item.name }}</span>
+              <span class="menu-count">{{ item.count }}</span>
+            </div>
+          </li>
+        </ul>
+      </div>
+
+      <!-- 歌单列表 -->
+      <div class="menu-section">
+        <div class="section-header playlist-header">
+          <div class="playlist-label-box" @click="onExpandPlaylist">
+            <IconBase :class="clsx('expand-playlist-icon', { active: expandPlaylistRef })">
+              <component :is="IconEnum.ChevronDown" />
+            </IconBase>
+            <span class="section-label">歌单</span>
+            <span class="section-count">{{ playerStore.currentPlaylists.length }}</span>
+          </div>
+          <button class="add-playlist-btn" @click="onAddPlaylist" title="新建歌单">
+            <IconBase>
+              <component :is="IconEnum.Plus" />
+            </IconBase>
+          </button>
+        </div>
+        <ul v-if="expandPlaylistRef" class="menu-list">
+          <li
+            v-for="item in playerStore.currentPlaylists"
+            :key="item.createTime"
+            :class="clsx('menu-item playlist-item', { active: activeView === item.createTime })"
+            @click="onOpenPlaylist(item)"
+            @contextmenu.prevent="onPlaylistRightClick(item.createTime, $event)"
+          >
+            <IconBase class="menu-icon">
+              <component :is="activePlayListId === item.createTime && isPlaying ? IconEnum.Playing : IconEnum.ListMusic" />
+            </IconBase>
+            <div class="menu-content">
+              <span class="menu-text">{{ item?.name }}</span>
+              <span class="menu-count">{{ item.songIds.length }}</span>
+            </div>
+          </li>
+        </ul>
+      </div>
+    </nav>
+  </div>
+</template>
+
 <style scoped lang="scss">
   .sidebar {
     flex-shrink: 0;
@@ -154,7 +155,7 @@
     .nav-menu {
       flex: 1;
       overflow-y: auto;
-      padding: 10px 0 16px 0;
+      padding: 0 0 16px 0;
 
       .menu-section {
         margin-bottom: 24px;

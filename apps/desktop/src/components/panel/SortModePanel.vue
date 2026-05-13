@@ -1,21 +1,3 @@
-<template>
-  <Teleport to="body">
-    <div class="sort-panel" :style="actionStyle" v-click-outside="onClose">
-      <div
-        v-for="item in SortTypeItems"
-        :key="item.value"
-        @click="onSelectSortMode(item.value)"
-        :class="`sort-panel-item${value === item.value ? ' active' : ''}`"
-      >
-        {{ item.label }}
-        <IconBase v-if="value === item.value" class="sort-panel-item-icon">
-          <component :is="IconEnum.Check" />
-        </IconBase>
-      </div>
-    </div>
-  </Teleport>
-</template>
-
 <script setup lang="ts">
   import { IconEnum, SortTypeItems } from '@metatune/common'
   import type { IPanelProps, SortTypeItemsIds } from '@metatune/common'
@@ -46,6 +28,24 @@
     }
   }
 </script>
+
+<template>
+  <Teleport to="body">
+    <div class="sort-panel" :style="actionStyle" v-click-outside="onClose">
+      <div
+        v-for="item in SortTypeItems"
+        :key="item.value"
+        @click="onSelectSortMode(item.value)"
+        :class="`sort-panel-item${value === item.value ? ' active' : ''}`"
+      >
+        {{ item.label }}
+        <IconBase v-if="value === item.value" class="sort-panel-item-icon">
+          <component :is="IconEnum.Check" />
+        </IconBase>
+      </div>
+    </div>
+  </Teleport>
+</template>
 
 <style scoped lang="scss">
   .sort-panel {

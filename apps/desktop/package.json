@@ -46,8 +46,8 @@
     },
     "build": {
         "appId": "com.gzj666-scy.metatune",
-        "productName": "Metatune Player",
-        "copyright": "Copyright © 2024 gzj666-scy",
+        "productName": "元音播放器",
+        "copyright": "Copyright © 2026 gzj666-scy",
         "asar": true,
         "directories": {
             "output": "release",
@@ -72,7 +72,8 @@
             "!**/{npm-debug.log,yarn.lock,.yarn-integrity,.yarn-metadata.json}",
             "!**/node_modules/debug/**",
             "!**/node_modules/typescript/**",
-            "!**/node_modules/@types/**"
+            "!**/node_modules/@types/**",
+            "!**/node_modules/**/*" 
         ],
         "extraResources": [
             {
@@ -85,30 +86,20 @@
         ],
         "win": {
             "target": [
-                {
-                    "target": "nsis",
-                    "arch": [
-                        "x64",
-                        "ia32"
-                    ]
-                },
-                {
-                    "target": "portable",
-                    "arch": [
-                        "x64"
-                    ]
-                }
+                { "target": "nsis", "arch": ["x64"] },
+                { "target": "portable", "arch": ["x64"] }
             ],
             "icon": "resources/icons/icon.ico",
-            "artifactName": "${productName}-${version}-${arch}.${ext}",
-            "requestedExecutionLevel": "asInvoker"
+            "compression": "maximum",
+            "requestedExecutionLevel": "asInvoker" 
         },
         "nsis": {
             "oneClick": false,
+            "allowElevation": false,
             "allowToChangeInstallationDirectory": true,
             "createDesktopShortcut": true,
             "createStartMenuShortcut": true,
-            "shortcutName": "Metatune Player",
+            "shortcutName": "元音播放器",
             "runAfterFinish": true,
             "deleteAppDataOnUninstall": false,
             "perMachine": false,
@@ -116,7 +107,11 @@
             "uninstallerIcon": "resources/icons/uninstaller.ico",
             "installerHeaderIcon": "resources/icons/header.ico",
             "license": "LICENSE",
-            "differentialPackage": true
+            "differentialPackage": true,
+            "artifactName": "${productName}-Setup-${version}-${arch}.${ext}"
+        },
+        "portable": {
+            "artifactName": "${productName}-Portable-${version}-${arch}.${ext}"
         },
         "mac": {
             "target": [
@@ -155,6 +150,7 @@
                 "private": false,
                 "releaseType": "release"
             }
-        ]
+        ],
+        "afterPack": "./scripts/afterPack.js"
     }
 }

@@ -1,34 +1,3 @@
-<template>
-  <Transition name="modal-fade">
-    <div v-if="visible" class="modal-overlay" @click.self="onOverlayClick">
-      <div class="modal-container" :class="classNames?.root">
-        <div v-if="title" class="modal-header">
-          <div class="modal-title">{{ title }}</div>
-          <button v-if="showClose" :class="'modal-close'" @click="onClose">
-            <IconBase class="close-icon">
-              <component :is="IconEnum.Close" />
-            </IconBase>
-          </button>
-        </div>
-
-        <div class="modal-content" :class="classNames?.content">
-          <slot />
-        </div>
-
-        <div v-if="showFooter" class="modal-footer" :class="classNames?.footer">
-          <button v-if="showCancel" class="modal-btn modal-btn-cancel" :class="cancelButtonClass" @click="onCancel" :disabled="isWaiting">
-            {{ cancelText }}
-          </button>
-          <button class="modal-btn modal-btn-confirm" :class="confirmButtonClass" @click="onConfirm" :disabled="isWaiting" ref="confirmButton">
-            <span v-if="isWaiting" class="loading-spinner"></span>
-            <span v-else>{{ confirmText }}</span>
-          </button>
-        </div>
-      </div>
-    </div>
-  </Transition>
-</template>
-
 <script setup lang="ts">
   import { IconEnum } from '@metatune/common'
   import { ref, onMounted, nextTick, watch, onUnmounted } from 'vue'
@@ -143,6 +112,37 @@
     document.removeEventListener('keydown', handleKeydown)
   })
 </script>
+
+<template>
+  <Transition name="modal-fade">
+    <div v-if="visible" class="modal-overlay" @click.self="onOverlayClick">
+      <div class="modal-container" :class="classNames?.root">
+        <div v-if="title" class="modal-header">
+          <div class="modal-title">{{ title }}</div>
+          <button v-if="showClose" :class="'modal-close'" @click="onClose">
+            <IconBase class="close-icon">
+              <component :is="IconEnum.Close" />
+            </IconBase>
+          </button>
+        </div>
+
+        <div class="modal-content" :class="classNames?.content">
+          <slot />
+        </div>
+
+        <div v-if="showFooter" class="modal-footer" :class="classNames?.footer">
+          <button v-if="showCancel" class="modal-btn modal-btn-cancel" :class="cancelButtonClass" @click="onCancel" :disabled="isWaiting">
+            {{ cancelText }}
+          </button>
+          <button class="modal-btn modal-btn-confirm" :class="confirmButtonClass" @click="onConfirm" :disabled="isWaiting" ref="confirmButton">
+            <span v-if="isWaiting" class="loading-spinner"></span>
+            <span v-else>{{ confirmText }}</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </Transition>
+</template>
 
 <style lang="scss" scoped>
   .modal-overlay {

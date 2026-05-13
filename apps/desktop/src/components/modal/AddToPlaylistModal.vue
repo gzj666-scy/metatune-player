@@ -1,14 +1,3 @@
-<template>
-  <Teleport to="body">
-    <ModalBase :visible="true" :classNames="{ content: 'apm-content' }" title="添加到歌单" :onClose="onClose" :onConfirm="onAdd">
-      <div v-for="item in playlists" class="apm-item" :key="item.createTime">
-        <input type="checkbox" :checked="selectedListsRef.includes(item.createTime)" @click.stop @change="onSelect(item.createTime)" />
-        <span>{{ item.name }}</span>
-      </div>
-    </ModalBase>
-  </Teleport>
-</template>
-
 <script setup lang="ts">
   import { getStoreManager } from '@/utils/storeManager'
   import { computed, ref, Teleport } from 'vue'
@@ -49,6 +38,17 @@
     onClose()
   }
 </script>
+
+<template>
+  <Teleport to="body">
+    <ModalBase :visible="true" :classNames="{ content: 'apm-content' }" title="添加到歌单" :onClose="onClose" :onConfirm="onAdd">
+      <div v-for="item in playlists" class="apm-item" :key="item.createTime">
+        <input type="checkbox" :checked="selectedListsRef.includes(item.createTime)" @click.stop @change="onSelect(item.createTime)" />
+        <span>{{ item.name }}</span>
+      </div>
+    </ModalBase>
+  </Teleport>
+</template>
 
 <style lang="scss">
   .apm-content {

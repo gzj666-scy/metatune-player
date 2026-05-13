@@ -16,6 +16,8 @@ export const DefaultKey = {
   Folder: 'folder',
   /** 收藏列表 */
   Favorite: 'favorite',
+  /** 设置 */
+  Settings: 'settings',
 }
 
 export enum PlayMode {
@@ -51,7 +53,7 @@ export const MainMenuItems: IMainMenuItem[] = [
   },
   {
     id: DefaultKey.Artist,
-    name: '歌手',
+    name: '艺人',
     count: 0,
     iconNode: IconEnum.User,
     path: '/artist',
@@ -70,13 +72,6 @@ export const MainMenuItems: IMainMenuItem[] = [
     iconNode: IconEnum.Folder,
     path: '/folder',
   },
-  // {
-  //   id: "recent" as const,
-  //   name: "最近播放",
-  //   icon: "icon-recent",
-  //   iconChar: "⏱️",
-  //   count: 0,
-  // },
   {
     id: DefaultKey.Favorite,
     name: '我的收藏',
@@ -84,6 +79,21 @@ export const MainMenuItems: IMainMenuItem[] = [
     iconNode: IconEnum.Heart,
     path: '/favorite',
   },
+  // {
+  //   id: DefaultKey.Settings,
+  //   name: '设置',
+  //   count: 0,
+  //   iconNode: IconEnum.Settings,
+  //   path: '/settings',
+  // },
+  // {
+  //   id: "recent" as const,
+  //   name: "最近播放",
+  //   icon: "icon-recent",
+  //   iconChar: "⏱️",
+  //   count: 0,
+  // },
+
   // {
   //   id: "downloaded" as const,
   //   name: "已下载",

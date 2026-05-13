@@ -1,7 +1,3 @@
-<template>
-  <component :is="currentPanelComponent" :key="panel.type" v-bind="panel" />
-</template>
-
 <script setup lang="ts">
   import { getStoreManager } from '@/utils/storeManager'
   import { PanelType } from '@metatune/common'
@@ -23,3 +19,7 @@
     return components[panel.value.type as PanelType] || null
   })
 </script>
+
+<template>
+  <component :is="currentPanelComponent" :key="panel.type" v-bind="panel" />
+</template>

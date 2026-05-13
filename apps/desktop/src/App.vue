@@ -1,39 +1,3 @@
-<template>
-  <div id="desktop">
-    <!-- 自定义标题栏 -->
-    <TitleBar />
-    <!-- 主界面 -->
-    <div class="main-container">
-      <!-- 侧边栏 -->
-      <Sidebar />
-      <!-- 主内容区 -->
-      <main class="main-content">
-        <!-- 路由视图 -->
-        <div class="view-container">
-          <!-- <router-view :key="$route.meta.key + ''" /> -->
-          <router-view :key="$route.fullPath" />
-          <!-- <KeepAlive>
-            <router-view />
-          </KeepAlive> -->
-
-          <!-- <router-view v-slot="{ Component }">
-            <keep-alive>
-              <component :is="Component" />
-            </keep-alive>
-          </router-view> -->
-        </div>
-      </main>
-    </div>
-    <!-- 播放状态栏 (常驻底部) -->
-    <PlayerStatusBar @open-player="onOpenPlayerView" />
-    <!-- 播放器界面 -->
-    <PlayerView :show="showPlayerViewRef" @close="showPlayerViewRef = false" />
-    <Panel />
-    <Modal />
-    <UpdateModal />
-  </div>
-</template>
-
 <script setup lang="ts">
   import { ref, onMounted, onUnmounted, provide } from 'vue'
   import { getPlayManager } from '@/utils/playManager'
@@ -189,6 +153,42 @@
   // )
 </script>
 
+<template>
+  <div id="desktop">
+    <!-- 自定义标题栏 -->
+    <TitleBar />
+    <!-- 主界面 -->
+    <div class="main-container">
+      <!-- 侧边栏 -->
+      <Sidebar />
+      <!-- 主内容区 -->
+      <main class="main-content">
+        <!-- 路由视图 -->
+        <div class="view-container">
+          <!-- <router-view :key="$route.meta.key + ''" /> -->
+          <router-view :key="$route.fullPath" />
+          <!-- <KeepAlive>
+            <router-view />
+          </KeepAlive> -->
+
+          <!-- <router-view v-slot="{ Component }">
+            <keep-alive>
+              <component :is="Component" />
+            </keep-alive>
+          </router-view> -->
+        </div>
+      </main>
+    </div>
+    <!-- 播放状态栏 (常驻底部) -->
+    <PlayerStatusBar @open-player="onOpenPlayerView" />
+    <!-- 播放器界面 -->
+    <PlayerView :show="showPlayerViewRef" @close="showPlayerViewRef = false" />
+    <Panel />
+    <Modal />
+    <UpdateModal />
+  </div>
+</template>
+
 <style scoped lang="scss">
   #desktop {
     height: 100vh;
@@ -205,7 +205,7 @@
   .main-container {
     flex-grow: 1;
     height: 100%;
-    padding: 10px;
+    padding: 20px 10px 10px 10px;
     display: flex;
     flex-direction: row;
     overflow: hidden;

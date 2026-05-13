@@ -1,36 +1,21 @@
-<template>
-  <div class="titlebar">
-    <div class="titlebar-drag">
-      <div class="player-logo"></div>
-      <span class="player-name">元音播放器</span>
-    </div>
-    <div class="titlebar-controls">
-      <button class="titlebar-button" @click="onMinimize" title="最小化">
-        <svg width="12" height="1">
-          <line x1="0" y1="0.5" x2="12" y2="0.5" stroke="currentColor" />
-        </svg>
-      </button>
-      <button class="titlebar-button" @click="onMaximize" title="最大化">
-        <svg width="10" height="10">
-          <rect v-if="!isMaximized" width="9" height="9" fill="none" stroke="currentColor" />
-          <rect v-else width="8" height="8" x="1" y="1" fill="none" stroke="currentColor" />
-        </svg>
-      </button>
-      <button class="titlebar-button close" @click="onClose" title="关闭">
-        <svg width="12" height="12">
-          <line x1="1" y1="1" x2="11" y2="11" stroke="currentColor" />
-          <line x1="11" y1="1" x2="1" y2="11" stroke="currentColor" />
-        </svg>
-      </button>
-    </div>
-  </div>
-</template>
-
 <script setup lang="ts">
   import { ref } from 'vue'
+  import IconBase from '../base/IconBase.vue'
+  import { DefaultKey, IconEnum } from '@metatune/common'
+  import { useRouter } from 'vue-router'
+  import { getStoreManager } from '@/utils/storeManager'
 
-  // Electron 窗口控制
+  const router = useRouter()
+
+  const storeManager = getStoreManager()
+  const playerStore = storeManager.playerStore
+
   const isMaximized = ref(false)
+
+  const onSettings = () => {
+    router.replace('/settings')
+    playerStore.currentViewKey = DefaultKey.Settings
+  }
 
   const onMinimize = () => {
     if (window.electronAPI) {
@@ -51,6 +36,39 @@
     }
   }
 </script>
+
+<template>
+  <div class="titlebar">
+    <div class="titlebar-drag">
+      <div class="player-logo"></div>
+      <span class="player-name">元音播放器</span>
+    </div>
+    <div class="titlebar-controls">
+      <button class="titlebar-button settings" @click="onSettings" title="设置">
+        <IconBase class="menu-icon">
+          <component :is="IconEnum.Settings" />
+        </IconBase>
+      </button>
+      <button class="titlebar-button" @click="onMinimize" title="最小化">
+        <svg width="12" height="1">
+          <line x1="0" y1="0.5" x2="12" y2="0.5" stroke="currentColor" />
+        </svg>
+      </button>
+      <button class="titlebar-button" @click="onMaximize" title="最大化">
+        <svg width="10" height="10">
+          <rect v-if="!isMaximized" width="9" height="9" fill="none" stroke="currentColor" />
+          <rect v-else width="8" height="8" x="1" y="1" fill="none" stroke="currentColor" />
+        </svg>
+      </button>
+      <button class="titlebar-button close" @click="onClose" title="关闭">
+        <svg width="12" height="12">
+          <line x1="1" y1="1" x2="11" y2="11" stroke="currentColor" />
+          <line x1="11" y1="1" x2="1" y2="11" stroke="currentColor" />
+        </svg>
+      </button>
+    </div>
+  </div>
+</template>
 
 <style scoped lang="scss">
   .titlebar {
@@ -107,6 +125,12 @@
 
         &.close:hover {
           background: #e81123c7;
+        }
+
+        &.settings {
+          svg {
+            width: 16px;
+          }
         }
       }
     }

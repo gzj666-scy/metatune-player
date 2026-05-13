@@ -1,28 +1,3 @@
-<template>
-  <Teleport to="body">
-    <div class="action-menu" :style="actionStyle" v-click-outside="onClose">
-      <div class="action-menu-item" @click.stop="onAddToPlayList()">
-        <IconBase>
-          <component :is="IconEnum.Plus" />
-        </IconBase>
-        添加到歌单
-      </div>
-      <div class="action-menu-item" @click.stop="onLookSongInfo()">
-        <IconBase>
-          <component :is="IconEnum.Info" />
-        </IconBase>
-        歌曲信息
-      </div>
-      <div class="action-menu-item" @click.stop="onRemoveSong()">
-        <IconBase>
-          <component :is="IconEnum.Delete" />
-        </IconBase>
-        从列表中移除
-      </div>
-    </div>
-  </Teleport>
-</template>
-
 <script setup lang="ts">
   import { IconEnum, ModalType } from '@metatune/common'
   import type { IPanelProps, ISong } from '@metatune/common'
@@ -69,6 +44,31 @@
     }
   }
 </script>
+
+<template>
+  <Teleport to="body">
+    <div class="action-menu" :style="actionStyle" v-click-outside="onClose">
+      <div class="action-menu-item" @click.stop="onAddToPlayList()">
+        <IconBase>
+          <component :is="IconEnum.Plus" />
+        </IconBase>
+        添加到歌单
+      </div>
+      <div class="action-menu-item" @click.stop="onLookSongInfo()">
+        <IconBase>
+          <component :is="IconEnum.Info" />
+        </IconBase>
+        歌曲信息
+      </div>
+      <div class="action-menu-item" @click.stop="onRemoveSong()">
+        <IconBase>
+          <component :is="IconEnum.Delete" />
+        </IconBase>
+        从列表中移除
+      </div>
+    </div>
+  </Teleport>
+</template>
 
 <style scoped lang="scss">
   .action-menu {

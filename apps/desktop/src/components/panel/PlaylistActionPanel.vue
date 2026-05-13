@@ -1,28 +1,3 @@
-<template>
-  <Teleport to="body">
-    <div class="action-menu" :style="actionStyle" v-click-outside="onClose">
-      <div class="action-menu-item" @click.stop="onPlay()">
-        <IconBase>
-          <component :is="IconEnum.Play" />
-        </IconBase>
-        播放
-      </div>
-      <div class="action-menu-item" @click.stop="onRename()">
-        <IconBase>
-          <component :is="IconEnum.PencilLine" />
-        </IconBase>
-        重命名
-      </div>
-      <div class="action-menu-item" @click.stop="onDelete()">
-        <IconBase>
-          <component :is="IconEnum.Delete" />
-        </IconBase>
-        删除
-      </div>
-    </div>
-  </Teleport>
-</template>
-
 <script setup lang="ts">
   import { IconEnum } from '@metatune/common'
   import type { IPanelProps } from '@metatune/common'
@@ -76,6 +51,31 @@
     }
   }
 </script>
+
+<template>
+  <Teleport to="body">
+    <div class="action-menu" :style="actionStyle" v-click-outside="onClose">
+      <div class="action-menu-item" @click.stop="onPlay()">
+        <IconBase>
+          <component :is="IconEnum.Play" />
+        </IconBase>
+        播放
+      </div>
+      <div class="action-menu-item" @click.stop="onRename()">
+        <IconBase>
+          <component :is="IconEnum.PencilLine" />
+        </IconBase>
+        重命名
+      </div>
+      <div class="action-menu-item" @click.stop="onDelete()">
+        <IconBase>
+          <component :is="IconEnum.Delete" />
+        </IconBase>
+        删除
+      </div>
+    </div>
+  </Teleport>
+</template>
 
 <style scoped lang="scss">
   .action-menu {

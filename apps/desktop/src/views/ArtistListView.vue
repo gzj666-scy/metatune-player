@@ -1,3 +1,26 @@
+<script setup lang="ts">
+  import { computed } from 'vue'
+  import { IconEnum } from '@metatune/common'
+  import type { IArtist } from '@metatune/common'
+  import { getStoreManager } from '@/utils/storeManager'
+  import IconBase from '@/components/base/IconBase.vue'
+  import { useRouter } from 'vue-router'
+  import { DefaultKey } from '@metatune/common'
+
+  const router = useRouter()
+
+  const storeManager = getStoreManager()
+  const playerStore = storeManager.playerStore
+
+  const artistList = computed(() => playerStore.artistLists)
+
+  const onArtist = (item: IArtist) => {
+    router.push('/artist/' + item.name)
+    playerStore.currentViewKey = DefaultKey.Artist
+    playerStore.currentArtistName = item.name
+  }
+</script>
+
 <template>
   <div class="artist-list-view">
     <div class="artist-list-container">
@@ -26,34 +49,11 @@
     </div>
   </div>
 </template>
-<script setup lang="ts">
-  import { computed } from 'vue'
-  import { IconEnum } from '@metatune/common'
-  import type { IArtist } from '@metatune/common'
-  import { getStoreManager } from '@/utils/storeManager'
-  import IconBase from '@/components/base/IconBase.vue'
-  import { useRouter } from 'vue-router'
-  import { DefaultKey } from '@metatune/common'
 
-  const router = useRouter()
-
-  const storeManager = getStoreManager()
-  const playerStore = storeManager.playerStore
-
-  const artistList = computed(() => playerStore.artistLists)
-
-  const onArtist = (item: IArtist) => {
-    router.push('/artist/' + item.name)
-    playerStore.currentViewKey = DefaultKey.Artist
-    playerStore.currentArtistName = item.name
-  }
-</script>
 <style scoped lang="scss">
   .artist-list-view {
     width: 100%;
     height: 100%;
-    padding-top: 10px;
-    // padding-left: 20px;
 
     .artist-list-container {
       width: 100%;

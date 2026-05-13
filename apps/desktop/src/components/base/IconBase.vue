@@ -1,7 +1,3 @@
-<template>
-  <component :is="svgElement" v-bind="combinedAttrs" :class="computedClass" :style="computedStyle" />
-</template>
-
 <script setup lang="ts">
   import { computed, useSlots, VNode, useCssModule } from 'vue'
   import type { SVGAttributes, CSSProperties } from 'vue'
@@ -77,6 +73,10 @@
     return { ...baseStyle, ...propsStyle }
   })
 </script>
+
+<template>
+  <component :is="svgElement" v-bind="combinedAttrs" :class="computedClass" :style="computedStyle" />
+</template>
 
 <style module lang="scss">
   .scy-icon {

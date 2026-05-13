@@ -1,184 +1,3 @@
-<template>
-  <Transition name="player-ani" appear>
-    <div v-if="show" class="player-view" :style="{ ...themeVarsRef }">
-      <!-- 背景模糊效果 -->
-      <div v-if="song?.albumArt" class="player-background">
-        <img :src="song.albumArt" alt="" class="background-image" />
-        <div class="background-overlay"></div>
-      </div>
-
-      <!-- 播放器内容 -->
-      <div class="player-content">
-        <!-- 顶部控制栏 -->
-        <div class="player-header">
-          <button class="header-btn" @click="$emit('close')" title="收起播放详情">
-            <IconBase>
-              <component :is="IconEnum.ChevronsDown" />
-            </IconBase>
-          </button>
-
-          <div class="song-info-header">
-            <div class="song-title-header">{{ song?.title || '--' }}</div>
-            <div class="song-artist-header">{{ song?.artist || '--' }}</div>
-          </div>
-
-          <div class="header-actions">
-            <button class="header-btn" :class="{ favorited: isFavorite }" @click="onToggleFavorite" :title="isFavorite ? '取消收藏' : '收藏'">
-              <IconBase>
-                <component :is="isFavorite ? IconEnum.HeartFilled : IconEnum.Heart" />
-              </IconBase>
-            </button>
-
-            <button class="header-btn" @click.stop="onShowMoreActions" title="更多操作">
-              <IconBase>
-                <component :is="IconEnum.EllipsisVertical" />
-              </IconBase>
-            </button>
-          </div>
-        </div>
-
-        <div class="player-body">
-          <!-- 专辑封面区域 -->
-          <div class="album-section">
-            <div class="album-art-wrapper">
-              <div v-if="song?.albumArt" class="album-art-container">
-                <img :src="song.albumArt" :alt="song.album" class="album-art-large" />
-                <div v-if="isPlaying" class="playing-overlay">
-                  <div class="equalizer">
-                    <div class="eq-bar" v-for="n in 5" :key="n"></div>
-                  </div>
-                </div>
-              </div>
-              <div v-else class="album-art-placeholder-large">
-                <IconBase class="icon-music-large">
-                  <component :is="IconEnum.Music" />
-                </IconBase>
-              </div>
-            </div>
-
-            <!-- 歌曲信息 -->
-            <div class="song-info-expanded">
-              <div v-if="song?.album" class="song-album-expanded">{{ song.album }}</div>
-
-              <!-- 音质信息 -->
-              <div v-if="song" class="quality-tags">
-                <div v-if="song.qualityFlag" class="quality-tag">{{ song.qualityFlag }}</div>
-
-                <div v-if="song.bitsPerSample" class="quality-tag">{{ song.bitsPerSample }}bit</div>
-
-                <div v-if="song.bitrate" class="quality-tag">{{ Math.floor(song.bitrate / 1000) }}kbps</div>
-
-                <div v-if="song.sampleRate" class="quality-tag">{{ song.sampleRate / 1000 }}kHz</div>
-              </div>
-            </div>
-          </div>
-
-          <!-- 歌词区域 -->
-          <div class="lyrics-section">
-            <div class="lyrics-container" ref="lyricsContainerRef">
-              <div v-if="lyricsLinesRef.length === 0" class="no-lyrics">
-                <div class="no-lyrics-text">暂无歌词</div>
-                <button class="load-lyrics-btn" @click="onLoadExternalLyrics">加载歌词</button>
-              </div>
-
-              <div v-else class="lyrics-scroll" :style="{ transform: `translateY(${lyricsScrollYRef}px)` }">
-                <div
-                  v-for="(line, index) in lyricsLinesRef"
-                  :key="index"
-                  class="lyric-line"
-                  :class="{ current: index === currentLyricIndexRef }"
-                  :style="{ opacity: getLyricOpacity(index) }"
-                  @click="onSeekToLyric(line.time)"
-                >
-                  <div class="lyric-text">{{ line.text }}</div>
-                  <div v-if="line.translatedText" class="lyric-translation">
-                    {{ line.translatedText }}
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- 进度控制 -->
-        <div class="player-footer">
-          <div class="progress-display">
-            <div class="time-display">{{ formatTime(currentTime) }}</div>
-            <div class="progress-wrapper">
-              <div class="visualizer-wrapper">
-                <canvas ref="canvasRef"></canvas>
-              </div>
-              <div class="progress-bar-large" ref="progressContainerRef" @click="onProgressClick">
-                <div class="progress-track-large" :style="{ width: progressPercent + '%' }">
-                  <div class="progress-thumb-large" @mousedown="onProgressDrag" @touchstart="onProgressDrag"></div>
-                </div>
-
-                <!-- 缓冲进度 -->
-                <!-- <div v-if="bufferedPercent > 0" class="buffered-track" :style="{ width: bufferedPercent + '%' }"></div> -->
-              </div>
-            </div>
-            <div class="time-display">{{ formatTime(duration) }}</div>
-          </div>
-
-          <!-- 播放控制 -->
-          <div class="playback-controls-large">
-            <button class="control-btn-large" @click="onPlayMode" :title="playModeTitle">
-              <IconBase>
-                <component :is="playModeIcon" />
-              </IconBase>
-            </button>
-
-            <button class="control-btn-large" @click="playManager.playPrev()" :disabled="!canGoPrev" title="上一首">
-              <IconBase>
-                <component :is="IconEnum.SkipBack" />
-              </IconBase>
-            </button>
-
-            <button class="play-pause-btn-large" @click="playManager.togglePlayPause()" :title="isPlaying ? '暂停' : '播放'">
-              <IconBase>
-                <component :is="isPlaying ? IconEnum.Pause : IconEnum.Play" />
-              </IconBase>
-            </button>
-
-            <button class="control-btn-large" @click="playManager.playNext()" :disabled="!canGoNext" title="下一首">
-              <IconBase>
-                <component :is="IconEnum.SkipForward" />
-              </IconBase>
-            </button>
-
-            <button
-              class="control-btn-large"
-              @click="onToggleMute"
-              @mouseenter="onVolumeMouseEnter"
-              @mouseleave="onVolumeMouseLeave"
-              :title="isMuted ? '取消静音' : '静音'"
-            >
-              <IconBase>
-                <component :is="volumeIcon" />
-              </IconBase>
-            </button>
-          </div>
-
-          <!-- 音量控制（桌面端） -->
-          <div
-            v-if="showVolumeControlRef"
-            class="volume-control"
-            :style="volumeControlStyleRef"
-            @mouseenter="onVolumeControlMouseEnter"
-            @mouseleave="onVolumeControlMouseLeave"
-          >
-            <div class="volume-slider" ref="volumeSliderRef" @click="onVolumeClick">
-              <div class="volume-track" :style="{ height: volume + '%' }"></div>
-              <div class="volume-thumb" :style="{ bottom: volume + '%' }" @mousedown="onVolumeDrag" @touchstart="onVolumeDrag"></div>
-            </div>
-            <div class="volume-label">{{ volume }}</div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </Transition>
-</template>
-
 <script setup lang="ts">
   import { ref, computed, watch, StyleValue, onUnmounted, onMounted } from 'vue'
   import {
@@ -692,6 +511,187 @@
     clearTimeout(visualizationIdRef.value)
   })
 </script>
+
+<template>
+  <Transition name="player-ani" appear>
+    <div v-if="show" class="player-view" :style="{ ...themeVarsRef }">
+      <!-- 背景模糊效果 -->
+      <div v-if="song?.albumArt" class="player-background">
+        <img :src="song.albumArt" alt="" class="background-image" />
+        <div class="background-overlay"></div>
+      </div>
+
+      <!-- 播放器内容 -->
+      <div class="player-content">
+        <!-- 顶部控制栏 -->
+        <div class="player-header">
+          <button class="header-btn" @click="$emit('close')" title="收起播放详情">
+            <IconBase>
+              <component :is="IconEnum.ChevronsDown" />
+            </IconBase>
+          </button>
+
+          <div class="song-info-header">
+            <div class="song-title-header">{{ song?.title || '--' }}</div>
+            <div class="song-artist-header">{{ song?.artist || '--' }}</div>
+          </div>
+
+          <div class="header-actions">
+            <button class="header-btn" :class="{ favorited: isFavorite }" @click="onToggleFavorite" :title="isFavorite ? '取消收藏' : '收藏'">
+              <IconBase>
+                <component :is="isFavorite ? IconEnum.HeartFilled : IconEnum.Heart" />
+              </IconBase>
+            </button>
+
+            <button class="header-btn" @click.stop="onShowMoreActions" title="更多操作">
+              <IconBase>
+                <component :is="IconEnum.EllipsisVertical" />
+              </IconBase>
+            </button>
+          </div>
+        </div>
+
+        <div class="player-body">
+          <!-- 专辑封面区域 -->
+          <div class="album-section">
+            <div class="album-art-wrapper">
+              <div v-if="song?.albumArt" class="album-art-container">
+                <img :src="song.albumArt" :alt="song.album" class="album-art-large" />
+                <div v-if="isPlaying" class="playing-overlay">
+                  <div class="equalizer">
+                    <div class="eq-bar" v-for="n in 5" :key="n"></div>
+                  </div>
+                </div>
+              </div>
+              <div v-else class="album-art-placeholder-large">
+                <IconBase class="icon-music-large">
+                  <component :is="IconEnum.Music" />
+                </IconBase>
+              </div>
+            </div>
+
+            <!-- 歌曲信息 -->
+            <div class="song-info-expanded">
+              <div v-if="song?.album" class="song-album-expanded">{{ song.album }}</div>
+
+              <!-- 音质信息 -->
+              <div v-if="song" class="quality-tags">
+                <div v-if="song.qualityFlag" class="quality-tag">{{ song.qualityFlag }}</div>
+
+                <div v-if="song.bitsPerSample" class="quality-tag">{{ song.bitsPerSample }}bit</div>
+
+                <div v-if="song.bitrate" class="quality-tag">{{ Math.floor(song.bitrate / 1000) }}kbps</div>
+
+                <div v-if="song.sampleRate" class="quality-tag">{{ song.sampleRate / 1000 }}kHz</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 歌词区域 -->
+          <div class="lyrics-section">
+            <div class="lyrics-container" ref="lyricsContainerRef">
+              <div v-if="lyricsLinesRef.length === 0" class="no-lyrics">
+                <div class="no-lyrics-text">暂无歌词</div>
+                <button class="load-lyrics-btn" @click="onLoadExternalLyrics">加载歌词</button>
+              </div>
+
+              <div v-else class="lyrics-scroll" :style="{ transform: `translateY(${lyricsScrollYRef}px)` }">
+                <div
+                  v-for="(line, index) in lyricsLinesRef"
+                  :key="index"
+                  class="lyric-line"
+                  :class="{ current: index === currentLyricIndexRef }"
+                  :style="{ opacity: getLyricOpacity(index) }"
+                  @click="onSeekToLyric(line.time)"
+                >
+                  <div class="lyric-text">{{ line.text }}</div>
+                  <div v-if="line.translatedText" class="lyric-translation">
+                    {{ line.translatedText }}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 进度控制 -->
+        <div class="player-footer">
+          <div class="progress-display">
+            <div class="time-display">{{ formatTime(currentTime) }}</div>
+            <div class="progress-wrapper">
+              <div class="visualizer-wrapper">
+                <canvas ref="canvasRef"></canvas>
+              </div>
+              <div class="progress-bar-large" ref="progressContainerRef" @click="onProgressClick">
+                <div class="progress-track-large" :style="{ width: progressPercent + '%' }">
+                  <div class="progress-thumb-large" @mousedown="onProgressDrag" @touchstart="onProgressDrag"></div>
+                </div>
+
+                <!-- 缓冲进度 -->
+                <!-- <div v-if="bufferedPercent > 0" class="buffered-track" :style="{ width: bufferedPercent + '%' }"></div> -->
+              </div>
+            </div>
+            <div class="time-display">{{ formatTime(duration) }}</div>
+          </div>
+
+          <!-- 播放控制 -->
+          <div class="playback-controls-large">
+            <button class="control-btn-large" @click="onPlayMode" :title="playModeTitle">
+              <IconBase>
+                <component :is="playModeIcon" />
+              </IconBase>
+            </button>
+
+            <button class="control-btn-large" @click="playManager.playPrev()" :disabled="!canGoPrev" title="上一首">
+              <IconBase>
+                <component :is="IconEnum.SkipBack" />
+              </IconBase>
+            </button>
+
+            <button class="play-pause-btn-large" @click="playManager.togglePlayPause()" :title="isPlaying ? '暂停' : '播放'">
+              <IconBase>
+                <component :is="isPlaying ? IconEnum.Pause : IconEnum.Play" />
+              </IconBase>
+            </button>
+
+            <button class="control-btn-large" @click="playManager.playNext()" :disabled="!canGoNext" title="下一首">
+              <IconBase>
+                <component :is="IconEnum.SkipForward" />
+              </IconBase>
+            </button>
+
+            <button
+              class="control-btn-large"
+              @click="onToggleMute"
+              @mouseenter="onVolumeMouseEnter"
+              @mouseleave="onVolumeMouseLeave"
+              :title="isMuted ? '取消静音' : '静音'"
+            >
+              <IconBase>
+                <component :is="volumeIcon" />
+              </IconBase>
+            </button>
+          </div>
+
+          <!-- 音量控制（桌面端） -->
+          <div
+            v-if="showVolumeControlRef"
+            class="volume-control"
+            :style="volumeControlStyleRef"
+            @mouseenter="onVolumeControlMouseEnter"
+            @mouseleave="onVolumeControlMouseLeave"
+          >
+            <div class="volume-slider" ref="volumeSliderRef" @click="onVolumeClick">
+              <div class="volume-track" :style="{ height: volume + '%' }"></div>
+              <div class="volume-thumb" :style="{ bottom: volume + '%' }" @mousedown="onVolumeDrag" @touchstart="onVolumeDrag"></div>
+            </div>
+            <div class="volume-label">{{ volume }}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </Transition>
+</template>
 
 <style lang="scss" scoped>
   .player-view {

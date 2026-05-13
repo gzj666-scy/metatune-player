@@ -1,3 +1,39 @@
+<script setup lang="ts">
+  import { computed, ref, VNode } from 'vue'
+  import ModalBase, { ModalConfig } from '../base/ModalBase.vue'
+
+  export interface NoticeModalProps extends ModalConfig {
+    icon?: string | VNode
+    content?: string | VNode
+    type?: 'info' | 'success' | 'warning' | 'error' | 'confirm'
+    showInput?: boolean
+    inputType?: string
+    inputPlaceholder?: string
+    defaultValue?: string
+  }
+
+  const props = withDefaults(defineProps<NoticeModalProps>(), {
+    visible: false,
+    showCancel: true,
+    showClose: true,
+    type: 'info',
+    showInput: false,
+    inputType: 'text',
+    inputPlaceholder: '请输入',
+    defaultValue: '',
+  })
+
+  const inputValueRef = ref(props.defaultValue)
+
+  const modalClass = computed(() => {
+    return `type-${props.type}`
+  })
+
+  const handleConfirm = async () => {
+    await props.onConfirm?.(props.showInput ? inputValueRef.value : undefined)
+  }
+</script>
+
 <template>
   <ModalBase
     :visible="visible"
@@ -35,42 +71,6 @@
     </div>
   </ModalBase>
 </template>
-
-<script setup lang="ts">
-  import { computed, ref, VNode } from 'vue'
-  import ModalBase, { ModalConfig } from '../base/ModalBase.vue'
-
-  export interface NoticeModalProps extends ModalConfig {
-    icon?: string | VNode
-    content?: string | VNode
-    type?: 'info' | 'success' | 'warning' | 'error' | 'confirm'
-    showInput?: boolean
-    inputType?: string
-    inputPlaceholder?: string
-    defaultValue?: string
-  }
-
-  const props = withDefaults(defineProps<NoticeModalProps>(), {
-    visible: false,
-    showCancel: true,
-    showClose: true,
-    type: 'info',
-    showInput: false,
-    inputType: 'text',
-    inputPlaceholder: '请输入',
-    defaultValue: '',
-  })
-
-  const inputValueRef = ref(props.defaultValue)
-
-  const modalClass = computed(() => {
-    return `type-${props.type}`
-  })
-
-  const handleConfirm = async () => {
-    await props.onConfirm?.(props.showInput ? inputValueRef.value : undefined)
-  }
-</script>
 
 <style lang="scss">
   .nm-content {

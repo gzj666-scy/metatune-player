@@ -29,6 +29,7 @@ if (!app.isPackaged) {
 // 必须在 app.whenReady() 之前注册
 protocol.registerSchemesAsPrivileged([{ scheme: 'cache', privileges: { standard: true, secure: true, supportFetchAPI: true, corsEnabled: false } }])
 
+let isAutoCheckUpdate = false
 const setupAutoUpdater = () => {
   // 禁止自动下载，由用户确认后触发
   autoUpdater.autoDownload = false
@@ -37,7 +38,7 @@ const setupAutoUpdater = () => {
   // 监听更新事件
   autoUpdater.on('checking-for-update', () => {
     console.error('checking-for-update')
-    mainWindow?.webContents.send('update-status', { status: 'checking' })
+    mainWindow?.webContents.send('update-status', { status: 'checking', auto: isAutoCheckUpdate })
   })
 
   autoUpdater.on('update-available', info => {
@@ -46,12 +47,13 @@ const setupAutoUpdater = () => {
       status: 'available',
       version: info.version,
       releaseNotes: info.releaseNotes,
+      auto: isAutoCheckUpdate,
     })
   })
 
   autoUpdater.on('update-not-available', () => {
     console.error('update-not-available')
-    mainWindow?.webContents.send('update-status', { status: 'not-available' })
+    mainWindow?.webContents.send('update-status', { status: 'not-available', auto: isAutoCheckUpdate })
   })
 
   autoUpdater.on('download-progress', progress => {
@@ -68,6 +70,7 @@ const setupAutoUpdater = () => {
     mainWindow?.webContents.send('update-status', {
       status: 'downloaded',
       version: info.version,
+      auto: isAutoCheckUpdate,
     })
   })
 
@@ -76,6 +79,7 @@ const setupAutoUpdater = () => {
     mainWindow?.webContents.send('update-status', {
       status: 'error',
       message: err.message,
+      auto: isAutoCheckUpdate,
     })
   })
 
@@ -287,8 +291,8 @@ ipcMain.handle('cache:set:player', async (_, data: { playlists: IPlaylist; setti
 })
 
 // IPC：渲染进程触发更新操作
-ipcMain.on('update:check', () => {
-  console.log(111, 'update:check')
+ipcMain.on('update:check', (event, data) => {
+  isAutoCheckUpdate = data.auto
   autoUpdater.checkForUpdates()
 })
 ipcMain.on('update:download', () => autoUpdater.downloadUpdate())

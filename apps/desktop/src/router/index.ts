@@ -50,6 +50,11 @@ const router = createRouter({
       name: '歌单',
       component: () => import('@/views/SongListView.vue'),
     },
+    {
+      path: '/settings',
+      name: '设置',
+      component: () => import('@/views/SettingsView.vue'),
+    },
   ],
 })
 
