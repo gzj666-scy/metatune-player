@@ -140,7 +140,7 @@ const createTray = () => {
 /*********************** 创建窗口 ***********************/
 const createWindow = async () => {
   mainWindow = new BrowserWindow({
-    width: isDev ? 1200 : 1600,
+    width: isDev ? 1600 : 1200,
     height: 800,
     title: currentTitle,
     minWidth: 1000,

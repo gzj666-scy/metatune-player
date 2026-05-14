@@ -17,7 +17,13 @@ export class StoreManager {
     if (songs?.length > 0) this._playerStore.songs = songs
     if (player?.playlists) this._playerStore.playlists = player.playlists
     if (player?.settings) this._playerStore.settings = { ...this._playerStore.settings, ...player.settings }
-    if (player?.state) this._playerStore.currentState = { ...player.state, isPlaying: false }
+    if (player?.state) {
+      if (player?.settings?.setupResume) {
+        this._playerStore.currentState = { ...player.state, isPlaying: false }
+      } else {
+        this._playerStore.currentState = { ...player.state, currentListId: DefaultKey.Local, currentSongId: '', currentTime: 0, isPlaying: false }
+      }
+    }
   }
 
   /** 添加本地歌曲 */
