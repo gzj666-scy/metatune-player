@@ -1,5 +1,5 @@
 <script setup lang="ts">
-  import { ref } from 'vue'
+  import { computed, ref } from 'vue'
   import IconBase from '../base/IconBase.vue'
   import { DefaultKey, IconEnum } from '@metatune/common'
   import { useRouter } from 'vue-router'
@@ -11,6 +11,8 @@
   const playerStore = storeManager.playerStore
 
   const isMaximized = ref(false)
+
+  const settings = computed(() => playerStore.settings)
 
   const onSettings = () => {
     router.replace('/settings')
@@ -32,7 +34,7 @@
 
   const onClose = () => {
     if (window.electronAPI) {
-      window.electronAPI.closeWindow()
+      window.electronAPI.closeWindow(settings.value.closeQuit)
     }
   }
 </script>

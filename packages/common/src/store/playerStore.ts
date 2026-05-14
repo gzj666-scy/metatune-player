@@ -3,6 +3,26 @@ import { ref, computed, readonly } from 'vue'
 import type { ISong, IPlaybackState, IPlaylist, IAppSettings, IPanelProps, IModalProps, IArtist, IAlbum } from '../types'
 import { deepToRaw, DefaultKey, DefaultVolume, PlayMode, sortArtist, sortSong } from '../utils'
 
+export const defaultState = {
+  currentListId: DefaultKey.Local,
+  currentSongId: '',
+  currentTime: 0,
+  volume: DefaultVolume,
+  isPlaying: false,
+  playMode: PlayMode.REPEAT_ALL,
+  playbackRate: 1.0,
+  isMuted: false,
+}
+
+export const defaultSettings = {
+  // theme: 'auto',
+  // language: navigator.language.startsWith('zh') ? 'zh-CN' : 'en-US',
+  setupResume: false,
+  closeQuit: true,
+  autoOpenPlayView: false,
+  openVisualization: false,
+}
+
 export const usePlayerStore = defineStore('player', () => {
   /** 面板数据 */
   const panel = ref<IPanelProps>({ type: '' })
@@ -13,21 +33,9 @@ export const usePlayerStore = defineStore('player', () => {
   /** 自定义歌单数据 */
   const playlists = ref<IPlaylist>({})
   /** 播放状态 */
-  const currentState = ref<IPlaybackState>({
-    currentListId: DefaultKey.Local,
-    currentSongId: '',
-    currentTime: 0,
-    volume: DefaultVolume,
-    isPlaying: false,
-    playMode: PlayMode.REPEAT_ALL,
-    playbackRate: 1.0,
-    isMuted: false,
-  })
+  const currentState = ref<IPlaybackState>(defaultState)
   /** 设置信息 */
-  const settings = ref<IAppSettings>({
-    theme: 'auto',
-    language: navigator.language.startsWith('zh') ? 'zh-CN' : 'en-US',
-  })
+  const settings = ref<IAppSettings>(defaultSettings)
   /** 当前正在查看的视图key */
   const currentViewKey = ref<string>(DefaultKey.Local)
   /** 默认当做歌单处理的列表key（local、favorite） */

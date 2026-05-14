@@ -9,7 +9,7 @@ declare global {
 
       minimizeWindow: () => void
       maximizeWindow: () => void
-      closeWindow: () => void
+      closeWindow: (quit: boolean) => void
       openFileDialog: (options?: Omit<Electron.OpenDialogOptions, 'properties' | 'filters'>) => Promise<Electron.OpenDialogReturnValue>
       openDirectoryDialog: () => Promise<Electron.OpenDialogReturnValue>
       parseAudioMetadata: (filePaths: string[]) => Promise<ISong[]>
@@ -21,6 +21,7 @@ declare global {
       setLocalListCache: (data: ISong[]) => Promise<boolean>
       getPlayerCache: () => Promise<{ playlists: IPlaylist; settings: IAppSettings; state: IPlaybackState } | null>
       setPlayerCache: (data: { playlists: IPlaylist; settings: IAppSettings; state: IPlaybackState }) => Promise<boolean>
+      resetAllCache: () => Promise<boolean>
       setWindowTitle: (title: string) => void
 
       send: (channel: string, data?: any) => void

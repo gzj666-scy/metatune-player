@@ -31,7 +31,6 @@
     return playerStore.playlists[listKey.value]?.sortType
   })
   const filteredSongs = computed(() => {
-    console.log(44555, showBatchActionsRef.value, route.fullPath)
     let songs: ISong[] = []
     if (route.params.name && playerStore.currentArtistName === route.params.name) {
       // 歌手歌曲列表
@@ -217,7 +216,7 @@
 </script>
 
 <template>
-  <div class="song-list-view">
+  <section class="song-list-view">
     <!-- 工具栏 -->
     <ListToolBar
       :listKey="listKey"
@@ -282,7 +281,7 @@
         </button>
       </div>
     </div>
-  </div>
+  </section>
 </template>
 
 <style scoped lang="scss">

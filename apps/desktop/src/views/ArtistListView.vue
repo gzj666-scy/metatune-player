@@ -22,7 +22,7 @@
 </script>
 
 <template>
-  <div class="artist-list-view">
+  <section class="artist-list-view">
     <div class="artist-list-container">
       <div v-if="artistList.length > 0" class="artist-list">
         <div v-for="item in artistList" :key="item.name" class="artist-item" @click="onArtist(item)">
@@ -47,7 +47,7 @@
         <span>空空如也</span>
       </div>
     </div>
-  </div>
+  </section>
 </template>
 
 <style scoped lang="scss">

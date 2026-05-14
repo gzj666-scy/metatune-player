@@ -1,4 +1,4 @@
-import { usePlayerStore, SortTypeItems, mergeSong, DefaultKey } from '@metatune/common'
+import { usePlayerStore, SortTypeItems, mergeSong, DefaultKey, DefaultVolume, PlayMode, defaultState, defaultSettings } from '@metatune/common'
 import type { ISong, IPlaylist, IAppSettings, IPlaylistItem, IPlaybackState } from '@metatune/common'
 import { toRaw } from 'vue'
 
@@ -16,7 +16,7 @@ export class StoreManager {
   public initData(songs: ISong[], player: { playlists: IPlaylist; settings: IAppSettings; state: IPlaybackState } | null) {
     if (songs?.length > 0) this._playerStore.songs = songs
     if (player?.playlists) this._playerStore.playlists = player.playlists
-    if (player?.settings) this._playerStore.settings = player.settings
+    if (player?.settings) this._playerStore.settings = { ...this._playerStore.settings, ...player.settings }
     if (player?.state) this._playerStore.currentState = { ...player.state, isPlaying: false }
   }
 
@@ -146,6 +146,13 @@ export class StoreManager {
       settings: toRaw(this._playerStore.settings),
       state: toRaw(this._playerStore.currentState),
     })
+  }
+
+  public resetStore() {
+    this._playerStore.songs = []
+    this._playerStore.playlists = {}
+    this._playerStore.currentState = defaultState
+    this._playerStore.settings = defaultSettings
   }
 }
 

@@ -1,10 +1,11 @@
 <script setup lang="ts">
   import { ref, computed, markRaw } from 'vue'
-  import { getStoreManager } from '@/utils/storeManager'
+  // import { getStoreManager } from '@/utils/storeManager'
+  import General from '@/components/settings/General.vue'
   import About from '@/components/settings/About.vue'
 
-  const storeManager = getStoreManager()
-  const playerStore = storeManager.playerStore
+  // const storeManager = getStoreManager()
+  // const playerStore = storeManager.playerStore
 
   const tabs = [
     { id: 'general', name: '常规' },
@@ -19,7 +20,7 @@
 
   const currentTabComponent = computed(() => {
     const components = {
-      general: markRaw(About),
+      general: markRaw(General),
       about: markRaw(About),
     }
     return components[activeTabRef.value as keyof typeof components] || null
@@ -31,7 +32,7 @@
 </script>
 
 <template>
-  <div class="settings-view">
+  <section class="settings-view">
     <div class="settings-tab">
       <div v-for="tab in tabs" :key="tab.id" @click="onTabs(tab.id)" class="tab-item" :class="{ active: activeTabRef === tab.id }">
         {{ tab.name }}
@@ -40,7 +41,7 @@
     <div class="settings-content">
       <component :is="currentTabComponent" :key="activeTabRef" />
     </div>
-  </div>
+  </section>
 </template>
 
 <style scoped lang="scss">

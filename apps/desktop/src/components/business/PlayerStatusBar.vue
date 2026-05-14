@@ -245,7 +245,7 @@
 </script>
 
 <template>
-  <div class="player-status-bar">
+  <section class="player-status-bar">
     <!-- 进度条 -->
     <div class="progress-bar" ref="progressContainerRef" @click="onProgressClick">
       <div class="progress-track" :style="{ width: progressPercent + '%' }">
@@ -349,7 +349,7 @@
         </button>
       </div>
     </div>
-  </div>
+  </section>
 </template>
 
 <style lang="scss" scoped>

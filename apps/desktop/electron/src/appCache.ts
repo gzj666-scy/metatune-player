@@ -1,6 +1,6 @@
-import { IAppSettings, ICoverCache, IMetadataCache, IPlaybackState, IPlaylist, ISong } from '@metatune/common/types'
+import { IAppSettings, IPlaybackState, IPlaylist, ISong } from '@metatune/common/types'
 import { app } from 'electron'
-import { accessSync, constants, existsSync, mkdirSync, readFileSync, writeFileSync } from 'fs'
+import { accessSync, constants, existsSync, mkdirSync, rmSync } from 'fs'
 import { access, mkdir, readFile, rm, writeFile } from 'fs/promises'
 import { dirname, join } from 'path'
 import { fileURLToPath } from 'url'
@@ -133,6 +133,7 @@ const resolveCacheDir = (): string => {
     const exeDir = app.isPackaged ? dirname(app.getPath('exe')) : join(__dirname, '../../')
     return join(exeDir, '.metatune-cache')
   } else {
+    // C:\Users\scy\AppData\Roaming\Metatune Player\.cache
     return join(app.getPath('appData'), 'Metatune Player', '.cache')
   }
   // 1. 尝试放在可执行文件同级目录（避开 C 盘，适合便携版/自定义安装）
@@ -158,6 +159,15 @@ export const COVER_DIR = join(CACHE_DIR, 'covers')
 console.log('缓存目录 2 ', META_FILE, PLAY_FILE, COVER_DIR)
 const ensureDir = async () => {
   await Promise.all([mkdir(CACHE_DIR, { recursive: true }), mkdir(COVER_DIR, { recursive: true })])
+}
+
+export const getCacheDir = () => {
+  return { meta: META_FILE, play: PLAY_FILE, cover: COVER_DIR }
+}
+
+export const resetAllCache = () => {
+  rmSync(CACHE_DIR, { recursive: true, force: true, maxRetries: 3, retryDelay: 100 })
+  return true
 }
 
 export class MetadataCache {

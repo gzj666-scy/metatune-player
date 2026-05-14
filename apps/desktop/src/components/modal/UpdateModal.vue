@@ -7,6 +7,7 @@
   const newVersionRef = ref('')
   const releaseNotesRef = ref('')
   const isAutoRef = ref(true)
+  const waitingRef = ref(false)
   let cancelCall1: () => void
   let cancelCall2: () => void
 
@@ -17,7 +18,7 @@
   const confirmText = computed(() => {
     if (updateStatusRef.value === 'downloading') return `下载中 ${progressRef.value}%`
     if (updateStatusRef.value === 'downloaded') return '立即安装并重启'
-    if (updateStatusRef.value === 'error') return '立即重试'
+    if (updateStatusRef.value === 'error') return '确定'
     return '立即下载'
   })
 
@@ -26,16 +27,19 @@
   }
 
   const onUpdate = () => {
-    if (updateStatusRef.value === 'downloading') return
+    if (updateStatusRef.value === 'downloading' || updateStatusRef.value === 'checking') return
     if (updateStatusRef.value === 'downloaded') {
       window.electronAPI.send('update:install')
+      waitingRef.value = true
       return
     }
     if (updateStatusRef.value === 'error') {
-      window.electronAPI.send('update:check', { auto: false })
+      // window.electronAPI.send('update:check', { auto: false })
+      onClose()
       return
     }
     window.electronAPI.send('update:download')
+    waitingRef.value = true
   }
 
   onMounted(() => {
@@ -45,6 +49,9 @@
       isAutoRef.value = data.auto
       if (data.version) newVersionRef.value = data.version
       if (data.releaseNotesRef) releaseNotesRef.value = data.releaseNotesRef
+      if (data.status === 'downloaded') {
+        waitingRef.value = false
+      }
     })
 
     cancelCall2 = window.electronAPI.on('update-progress', (data: any) => {
@@ -72,6 +79,7 @@
       :onConfirm="onUpdate"
       :showCancel="false"
       :confirmText="confirmText"
+      :loading="waitingRef"
     >
       <div v-if="updateStatusRef === 'available' || updateStatusRef === 'downloading'" class="update-dialog">
         <div>发现新版本 v{{ newVersionRef }}</div>

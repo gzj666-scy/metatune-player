@@ -1,6 +1,6 @@
 {
-    "name": "@metatune/desktop",
-    "version": "1.0.0-beta.3",
+    "name": "metatunedesktop",
+    "version": "1.0.0-beta.4",
     "description": "元音本地音乐播放器-桌面版",
     "main": "./dist-electron/main.js",
     "type": "commonjs",
@@ -46,7 +46,7 @@
     },
     "build": {
         "appId": "com.gzj666-scy.metatune",
-        "productName": "Metatune Player",
+        "productName": "Metatune-Player",
         "copyright": "Copyright © 2026 gzj666-scy",
         "asar": true,
         "directories": {
@@ -57,23 +57,19 @@
             "dist-web/**/*",
             "dist-electron/**/*",
             "package.json",
-            "!**/node_modules/*/{CHANGELOG.md,README.md,readme.md,*.md}",
-            "!**/node_modules/*/{test,__tests__,tests,spec,powered-test,example,examples}",
-            "!**/node_modules/*.d.ts",
-            "!**/node_modules/.bin",
-            "!**/node_modules/*/{.tsbuildinfo,*.map}",
             "!**/*.d.ts",
             "!**/*.{iml,o,hprof,orig,pyc,pyo,rbc,swp,csproj,sln,xproj}",
             "!.editorconfig",
+            "!tsconfig.json",
+            "!vite.config.ts",
+            "!dev-app-update.yml",
             "!**/._*",
             "!**/{.DS_Store,.git,.hg,.svn,CVS,RCS,SCCS,.gitignore,.gitattributes}",
             "!**/{__pycache__,thumbs.db,.flowconfig,.idea,.vs,.nyc_output}",
             "!**/{appveyor.yml,.travis.yml,circle.yml}",
             "!**/{npm-debug.log,yarn.lock,.yarn-integrity,.yarn-metadata.json}",
-            "!**/node_modules/debug/**",
-            "!**/node_modules/typescript/**",
-            "!**/node_modules/@types/**",
-            "!**/node_modules/**/*" 
+            "!**/node_modules/**/*" ,
+            "!**/scripts/**/*" 
         ],
         "extraResources": [
             {
@@ -148,7 +144,8 @@
                 "owner": "gzj666-scy",
                 "repo": "metatune-player",
                 "private": false,
-                "releaseType": "release"
+                "releaseType": "release",
+                "updaterCacheDirName": "metatune-player-updater"
             }
         ],
         "afterPack": "./scripts/afterPack.js"

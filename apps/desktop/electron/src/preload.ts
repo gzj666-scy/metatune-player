@@ -12,7 +12,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   // 窗口控制
   minimizeWindow: () => ipcRenderer.invoke('window:minimize'),
   maximizeWindow: () => ipcRenderer.invoke('window:maximize'),
-  closeWindow: () => ipcRenderer.invoke('window:close'),
+  closeWindow: (quit: boolean) => ipcRenderer.invoke('window:close', quit),
 
   // 文件对话框
   /** 导入文件 */
@@ -36,6 +36,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
   getPlayerCache: () => ipcRenderer.invoke('cache:get:player'),
   /** 设置播放器数据 */
   setPlayerCache: (data: { playlists: IPlaylist; settings: IAppSettings; state: IPlaybackState }) => ipcRenderer.invoke('cache:set:player', data),
+  /** 重置所有缓存数据 */
+  resetAllCache: () => ipcRenderer.invoke('cache:reset:all'),
   /** 修改标题 */
   setWindowTitle: (title: string) => ipcRenderer.invoke('set-window-title', title),
   // 歌词处理

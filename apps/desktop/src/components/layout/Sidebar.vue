@@ -86,7 +86,7 @@
 </script>
 
 <template>
-  <div class="sidebar">
+  <aside class="sidebar">
     <!-- 导航菜单 -->
     <nav class="nav-menu">
       <div class="menu-section">
@@ -141,7 +141,7 @@
         </ul>
       </div>
     </nav>
-  </div>
+  </aside>
 </template>
 
 <style scoped lang="scss">
@@ -210,12 +210,11 @@
             height: 20px;
             border-radius: 50%;
             background: var(--btn-secondary-bg);
-            color: var(--text-color-secondary);
+            color: var(--btn-primary-bg);
             display: flex;
             align-items: center;
             justify-content: center;
             transition: all 0.2s;
-            color: var(--btn-primary-bg);
 
             &:hover {
               // filter: brightness(2);

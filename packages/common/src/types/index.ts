@@ -123,14 +123,26 @@ export interface IPlaylist {
 
 /** 应用设置 */
 export interface IAppSettings {
-  theme: 'light' | 'dark' | 'auto'
-  language: string
-  audioOutputDevice?: string
+  // theme: 'light' | 'dark' | 'auto'
+  // language: string
+  // audioOutputDevice?: string
   // 桌面端特有
-  alwaysOnTop?: boolean
+  // alwaysOnTop?: boolean
   // 移动端特有
-  enableMobileNetworkPlay?: boolean
+  // enableMobileNetworkPlay?: boolean
   // ... 其他设置
+
+  // 启停设置
+  /** 启动时恢复上次播放 */
+  setupResume: boolean
+  /** 关闭主窗口时退出程序 */
+  closeQuit: boolean
+
+  // 播放设置
+  /** 播放时自动拉起播放页 */
+  autoOpenPlayView: boolean
+  /** 开启播放页频谱动效 */
+  openVisualization: boolean
 }
 
 /** 歌手信息 */

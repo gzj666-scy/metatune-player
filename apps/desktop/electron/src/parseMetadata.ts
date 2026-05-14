@@ -1,11 +1,10 @@
 import { ISong, ILyricsText } from '@metatune/common/types'
 import { readdir, statSync } from 'fs'
 import { readFile } from 'fs/promises'
-
 import { parseFile } from 'music-metadata'
 import type { IFormat } from 'music-metadata'
 import { basename, dirname, extname, join } from 'path'
-import { calculateMD5, getExtname, uint8ArrayToBase64 } from './utils'
+import { calculateMD5, getExtname } from './utils'
 import { cache } from './appCache'
 
 // MPEG-4/AAC、、MPEG 1 Layer 3

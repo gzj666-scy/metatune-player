@@ -1,9 +1,9 @@
-import { app, BrowserWindow, ipcMain, shell, dialog, protocol } from 'electron'
+import { app, BrowserWindow, ipcMain, shell, dialog, protocol, Tray, nativeTheme, nativeImage, Menu } from 'electron'
 import { fileURLToPath } from 'url'
 import { join } from 'path'
 import { AudioStreamServer } from './audioServer.js'
 import { AudioFormat, parseMetadata } from './parseMetadata.js'
-import { cache, COVER_DIR } from './appCache'
+import { cache, COVER_DIR, getCacheDir, resetAllCache } from './appCache'
 import { stat } from 'fs/promises'
 import { IAppSettings, IPlaybackState, IPlaylist, ISong } from '@metatune/common/types'
 import { getMimeType } from './utils.js'
@@ -17,21 +17,20 @@ process.env.APP_ROOT = join(__dirname, '..')
 const isDev = process.env.NODE_ENV === 'development'
 
 let mainWindow: BrowserWindow | null = null
+let tray: Tray | null = null
 let audioServer: AudioStreamServer | null = null
 let currentTitle = '元音播放器'
 let isAutoCheckUpdate = false
+// 区分主动退出和用户关闭
+// let isQuiting = false
 
+/*********************** 检查更新 ***********************/
 app.setAppUserModelId('com.gzj666-scy.metatune')
-// 🔑 关键：生产环境才启用自动更新
 if (!app.isPackaged) {
   // 开发环境：指向本地测试服务器（可选）
   Object.defineProperty(app, 'isPackaged', { value: true })
   autoUpdater.updateConfigPath = join(__dirname, '../', 'dev-app-update.yml')
 }
-
-// 必须在 app.whenReady() 之前注册
-protocol.registerSchemesAsPrivileged([{ scheme: 'cache', privileges: { standard: true, secure: true, supportFetchAPI: true, corsEnabled: false } }])
-
 const setupAutoUpdater = () => {
   // 禁止自动下载，由用户确认后触发
   autoUpdater.autoDownload = false
@@ -39,12 +38,10 @@ const setupAutoUpdater = () => {
 
   // 监听更新事件
   autoUpdater.on('checking-for-update', () => {
-    console.error('checking-for-update')
     mainWindow?.webContents.send('update-status', { status: 'checking', auto: isAutoCheckUpdate })
   })
 
   autoUpdater.on('update-available', info => {
-    console.error('update-available:', info)
     mainWindow?.webContents.send('update-status', {
       status: 'available',
       version: info.version,
@@ -54,12 +51,10 @@ const setupAutoUpdater = () => {
   })
 
   autoUpdater.on('update-not-available', () => {
-    console.error('update-not-available')
     mainWindow?.webContents.send('update-status', { status: 'not-available', auto: isAutoCheckUpdate })
   })
 
   autoUpdater.on('download-progress', progress => {
-    console.error('download-progress:', progress)
     mainWindow?.webContents.send('update-progress', {
       percent: progress.percent,
       bytesPerSecond: progress.bytesPerSecond,
@@ -68,7 +63,6 @@ const setupAutoUpdater = () => {
   })
 
   autoUpdater.on('update-downloaded', info => {
-    console.error('update-downloaded:', info)
     mainWindow?.webContents.send('update-status', {
       status: 'downloaded',
       version: info.version,
@@ -77,45 +71,111 @@ const setupAutoUpdater = () => {
   })
 
   autoUpdater.on('error', err => {
-    console.error('更新错误:', err)
     mainWindow?.webContents.send('update-status', {
       status: 'error',
       message: err.message,
       auto: isAutoCheckUpdate,
     })
   })
-
-  // 检查更新（启动时 + 手动触发）
-  // setTimeout(() => {
-  //   autoUpdater.checkForUpdates().catch(console.error)
-  // }, 3000)
 }
 
+/*********************** 注册自定义协议 ***********************/
+// 必须在 app.whenReady() 之前注册
+protocol.registerSchemesAsPrivileged([{ scheme: 'cache', privileges: { standard: true, secure: true, supportFetchAPI: true, corsEnabled: false } }])
+
+/*********************** 创建托盘 ***********************/
+const createTray = () => {
+  // 1. 根据系统主题加载不同图标（macOS 必须用模板图标）
+  // const iconPath = join(
+  //   __dirname,
+  //   '../resources/icons',
+  //   process.platform === 'darwin' ? (nativeTheme.shouldUseDarkColors ? 'iconTemplate@2x.png' : 'iconTemplate@2x.png') : 'icon.ico'
+  // )
+  const iconPath = join(__dirname, '../resources/icons', 'icon.ico')
+
+  const trayIcon = nativeImage.createFromPath(iconPath)
+
+  // macOS 特殊处理：模板图标自动适配深色模式
+  if (process.platform === 'darwin') {
+    trayIcon.setTemplateImage(true)
+  }
+
+  tray = new Tray(trayIcon)
+  tray.setToolTip(currentTitle) // 鼠标悬停提示
+
+  // 2. 创建托盘菜单
+  const contextMenu = Menu.buildFromTemplate([
+    {
+      label: '显示主窗口',
+      click: () => {
+        mainWindow?.show()
+        mainWindow?.focus()
+        // macOS: 确保应用激活
+        if (process.platform === 'darwin') {
+          app.dock?.show()
+        }
+      },
+    },
+    {
+      label: '退出',
+      click: () => {
+        // isQuiting = true // 标记为主动退出
+        app.quit()
+      },
+    },
+  ])
+
+  tray.setContextMenu(contextMenu)
+
+  // 3. 单击托盘图标恢复窗口（跨平台兼容）
+  tray.on('click', () => {
+    if (mainWindow?.isVisible()) {
+      mainWindow.hide()
+    } else {
+      mainWindow?.show()
+      mainWindow?.focus()
+    }
+  })
+}
+/*********************** 创建窗口 ***********************/
 const createWindow = async () => {
   mainWindow = new BrowserWindow({
-    width: 1600,
+    width: isDev ? 1600 : 1600,
     height: 800,
     title: currentTitle,
-    minWidth: 800,
+    minWidth: 1000,
     minHeight: 600,
     webPreferences: {
       preload: join(__dirname, 'preload.js'),
-      nodeIntegration: false,
-      contextIsolation: true,
-      sandbox: false,
+      contextIsolation: true, // ✅ 必须开启
+      nodeIntegration: false, // ✅ 必须关闭
+      webSecurity: true, // ✅ 必须开启（启用 CSP）
+      sandbox: false, // ✅ 强烈建议开启（Electron 20+ 默认）
     },
-    // frame: false, // 隐藏窗口的顶部菜单栏和标题栏
-    frame: true,
+    frame: isDev ? true : false, // 隐藏窗口的顶部菜单栏和标题栏
     titleBarStyle: 'hiddenInset',
+    // macOS 特殊：隐藏标题栏按钮（可选）
+    // titleBarStyle: process.platform === 'darwin' ? 'hiddenInset' : 'default',
     show: false,
+    // 关键：隐藏任务栏图标（仅托盘显示）
+    skipTaskbar: false, // 保持任务栏图标，用户可手动最小化
   })
 
-  // 🚀 初始化自动更新
+  // 初始化自动更新
   setupAutoUpdater()
 
   // 初始化音频流服务
   audioServer = new AudioStreamServer()
   audioServer.start()
+
+  // 处理外部链接（在默认浏览器中打开）
+  mainWindow.webContents.setWindowOpenHandler(({ url }) => {
+    if (url.startsWith('https://') || url.startsWith('http://')) {
+      shell.openExternal(url)
+      return { action: 'deny' }
+    }
+    return { action: 'allow' }
+  })
 
   // 准备就绪后显示窗口
   mainWindow.once('ready-to-show', () => {
@@ -124,24 +184,31 @@ const createWindow = async () => {
     }
   })
 
-  // 处理外部链接（在新窗口中打开）
-  mainWindow.webContents.setWindowOpenHandler(({ url }) => {
-    // // 允许特定域名的链接
-    // if (url.startsWith('https://example.com')) {
-    //     return { action: 'allow' };
-    // }
-    // // 其他链接在默认浏览器中打开
-    // require('electron').shell.openExternal(url);
-    // return { action: 'deny' };
-
-    if (url.startsWith('https://') || url.startsWith('http://')) {
-      shell.openExternal(url)
-      return { action: 'deny' }
+  // 窗口显示时恢复 dock（macOS）
+  mainWindow.on('show', () => {
+    if (process.platform === 'darwin') {
+      app.dock?.show()
     }
-    return { action: 'allow' }
   })
 
-  // 处理窗口关闭
+  // 拦截关闭事件：最小化到托盘而非退出
+  // mainWindow.on('close', event => {
+  //   // 如果是主动退出（菜单点击"退出"），允许关闭
+  //   if (isQuiting) {
+  //     return
+  //   }
+
+  //   // 否则阻止默认关闭，隐藏窗口
+  //   event.preventDefault()
+  //   mainWindow?.hide()
+
+  //   // macOS: 隐藏 dock 图标（可选）
+  //   if (process.platform === 'darwin') {
+  //     app.dock?.hide()
+  //   }
+  // })
+
+  // 处理窗口关闭完成
   mainWindow.on('closed', () => {
     mainWindow = null
     audioServer?.stop()
@@ -167,10 +234,8 @@ const createWindow = async () => {
     mainWindow.webContents.openDevTools()
   }
 }
-
 // app.commandLine.appendSwitch('enable-gpu-compositing')
 // app.commandLine.appendSwitch('ignore-gpu-blacklist')
-
 // 应用准备就绪
 app.whenReady().then(async () => {
   // 设置协议处理器
@@ -193,22 +258,24 @@ app.whenReady().then(async () => {
     })
   })
 
+  // 🔑 必须先创建窗口，再创建托盘（避免托盘先于窗口初始化）
   await createWindow()
+  createTray()
+})
 
-  // macOS: 点击dock图标时重新创建窗口
-  app.on('activate', () => {
-    if (BrowserWindow.getAllWindows().length === 0) {
-      createWindow()
-    }
-  })
+// macOS: 点击dock图标时重新创建窗口
+app.on('activate', () => {
+  if (BrowserWindow.getAllWindows().length === 0) {
+    createWindow()
+  }
 })
 
 // 所有窗口关闭时退出应用（macOS除外）
-// app.on('window-all-closed', () => {
-//   if (process.platform !== 'darwin') {
-//     app.quit()
-//   }
-// })
+app.on('window-all-closed', () => {
+  if (process.platform !== 'darwin') {
+    app.quit()
+  }
+})
 
 ipcMain.handle('get-app-info', () => {
   return {
@@ -234,10 +301,17 @@ ipcMain.handle('window:maximize', () => {
   }
 })
 
-ipcMain.handle('window:close', () => {
-  if (mainWindow) {
-    mainWindow.close()
+ipcMain.handle('window:close', (_, quit: boolean) => {
+  if (quit) {
+    app.quit()
+  } else {
+    mainWindow?.hide()
+    // macOS: 隐藏 dock 图标（可选）
+    if (process.platform === 'darwin') {
+      app.dock?.hide()
+    }
   }
+  // mainWindow?.close()
 })
 
 // 处理文件导入
@@ -291,7 +365,7 @@ ipcMain.handle('cache:get:localList', () => {
   return cache.meta.get()
 })
 
-ipcMain.handle('cache:set:localList', async (_, data: ISong[]) => {
+ipcMain.handle('cache:set:localList', (_, data: ISong[]) => {
   return cache.meta.set(data)
 })
 
@@ -299,22 +373,27 @@ ipcMain.handle('cache:get:player', () => {
   return cache.player.get()
 })
 
-ipcMain.handle('cache:set:player', async (_, data: { playlists: IPlaylist; settings: IAppSettings; state: IPlaybackState }) => {
+ipcMain.handle('cache:set:player', (_, data: { playlists: IPlaylist; settings: IAppSettings; state: IPlaybackState }) => {
   return cache.player.set(data)
+})
+
+ipcMain.handle('cache:reset:all', () => {
+  return resetAllCache()
 })
 
 // 监听渲染进程的语言切换请求
 ipcMain.handle('set-window-title', (_, title: string) => {
   currentTitle = title
   mainWindow?.setTitle(currentTitle)
+  tray?.setToolTip(currentTitle)
 })
 
 // IPC：渲染进程触发更新操作
 ipcMain.on('update:check', (event, data) => {
   isAutoCheckUpdate = data.auto
-  autoUpdater.checkForUpdates()
+  autoUpdater.checkForUpdates().catch(() => {})
 })
-ipcMain.on('update:download', () => autoUpdater.downloadUpdate())
+ipcMain.on('update:download', () => autoUpdater.downloadUpdate().catch(() => {}))
 ipcMain.on('update:install', () => {
   autoUpdater.quitAndInstall(false, true) // 不强制关闭，重启后安装
 })

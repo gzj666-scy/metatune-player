@@ -1,6 +1,6 @@
 <script setup lang="ts">
   import { IconEnum } from '@metatune/common'
-  import { ref, onMounted, nextTick, watch, onUnmounted } from 'vue'
+  import { onMounted, nextTick, watch, onUnmounted } from 'vue'
   import IconBase from './IconBase.vue'
 
   export interface ModalConfig {
@@ -15,6 +15,7 @@
     confirmButtonClass?: string
     maskClosable?: boolean
     autoFocus?: boolean
+    loading?: boolean
     classNames?: { root?: string; header?: string; content?: string; footer?: string }
     onConfirm?: (inputValue?: string) => void | Promise<void>
     onCancel?: () => void
@@ -30,6 +31,7 @@
     confirmText: '确定',
     maskClosable: true,
     autoFocus: true,
+    loading: false,
   })
 
   const emit = defineEmits<{
@@ -38,22 +40,20 @@
     close: []
   }>()
 
-  const isWaiting = ref(false)
-
   const onClose = () => {
-    if (isWaiting.value) return
+    if (props.loading) return
     props.onClose?.()
   }
 
   const onOverlayClick = () => {
-    if (isWaiting.value) return
+    if (props.loading) return
     if (props.maskClosable) {
       onClose()
     }
   }
 
   const onCancel = () => {
-    if (isWaiting.value) return
+    if (props.loading) return
     if (props.onCancel) {
       props.onCancel()
     } else {
@@ -62,13 +62,10 @@
   }
 
   const onConfirm = async () => {
-    if (isWaiting.value) return
-    isWaiting.value = true
-
+    if (props.loading) return
     try {
       await props.onConfirm?.()
     } finally {
-      isWaiting.value = false
     }
   }
 
@@ -77,7 +74,6 @@
     () => props.visible,
     newVal => {
       if (newVal) {
-        isWaiting.value = false
         // 自动聚焦确认按钮
         if (props.autoFocus && props.showFooter) {
           nextTick(() => {
@@ -117,28 +113,30 @@
   <Transition name="modal-fade">
     <div v-if="visible" class="modal-overlay" @click.self="onOverlayClick">
       <div class="modal-container" :class="classNames?.root">
-        <div v-if="title" class="modal-header">
+        <header v-if="title" class="modal-header">
           <div class="modal-title">{{ title }}</div>
           <button v-if="showClose" :class="'modal-close'" @click="onClose">
             <IconBase class="close-icon">
               <component :is="IconEnum.Close" />
             </IconBase>
           </button>
-        </div>
+        </header>
 
-        <div class="modal-content" :class="classNames?.content">
+        <section class="modal-content" :class="classNames?.content">
           <slot />
-        </div>
+        </section>
 
-        <div v-if="showFooter" class="modal-footer" :class="classNames?.footer">
-          <button v-if="showCancel" class="modal-btn modal-btn-cancel" :class="cancelButtonClass" @click="onCancel" :disabled="isWaiting">
+        <footer v-if="showFooter" class="modal-footer" :class="classNames?.footer">
+          <button v-if="showCancel" class="modal-btn modal-btn-cancel" :class="cancelButtonClass" @click="onCancel" :disabled="props.loading">
             {{ cancelText }}
           </button>
-          <button class="modal-btn modal-btn-confirm" :class="confirmButtonClass" @click="onConfirm" :disabled="isWaiting" ref="confirmButton">
-            <span v-if="isWaiting" class="loading-spinner"></span>
+          <button class="modal-btn modal-btn-confirm" :class="confirmButtonClass" @click="onConfirm" :disabled="props.loading" ref="confirmButton">
+            <IconBase v-if="props.loading" class="loading-spinner">
+              <component :is="IconEnum.RefreshCw" />
+            </IconBase>
             <span v-else>{{ confirmText }}</span>
           </button>
-        </div>
+        </footer>
       </div>
     </div>
   </Transition>
@@ -247,11 +245,6 @@
           }
 
           .loading-spinner {
-            width: 20px;
-            height: 20px;
-            border: 2px solid rgba(255, 255, 255, 0.3);
-            border-radius: 50%;
-            border-top-color: white;
             animation: spinner 0.8s linear infinite;
           }
         }

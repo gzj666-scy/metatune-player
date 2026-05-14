@@ -1,3 +1,6 @@
-provider: github
 owner: gzj666-scy
 repo: metatune-player
+provider: github
+private: false
+releaseType: release
+updaterCacheDirName: 'metatune-player-updater'

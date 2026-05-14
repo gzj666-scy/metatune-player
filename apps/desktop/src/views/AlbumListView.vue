@@ -22,7 +22,7 @@
 </script>
 
 <template>
-  <div class="album-list-view">
+  <section class="album-list-view">
     <div class="album-list-container">
       <div v-if="albumList.length > 0" class="album-list">
         <div v-for="item in albumList" :key="item.name" class="album-item" @click="onArtist(item)">
@@ -47,7 +47,7 @@
         <span>空空如也</span>
       </div>
     </div>
-  </div>
+  </section>
 </template>
 
 <style scoped lang="scss">

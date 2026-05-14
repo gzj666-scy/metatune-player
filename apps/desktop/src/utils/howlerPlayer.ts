@@ -45,8 +45,6 @@ export class HowlerPlayer {
   }
 
   constructor() {
-    // this.initWebAudio();
-    // 初始化事件监听器
     this.initializeEventSystem()
   }
 
@@ -57,24 +55,6 @@ export class HowlerPlayer {
       this._eventListeners.set(event, new Set())
     })
   }
-
-  // private initWebAudio() {
-  //     try {
-  //         // 创建 Web Audio API 上下文
-  //         this.audioContext = new (window.AudioContext || (window as any).webkitAudioContext)({
-  //             sampleRate: 48000, // 尝试设置采样率，但浏览器可能忽略
-  //             latencyHint: 'interactive',
-  //         });
-
-  //         // 创建分析器用于可视化
-  //         // this.analyser = this.audioContext.createAnalyser();
-  //         // this.analyser.fftSize = 2048;
-
-  //         console.log('Web Audio API 初始化成功，采样率:', this.audioContext.sampleRate);
-  //     } catch (error) {
-  //         console.error('Web Audio API 初始化失败:', error);
-  //     }
-  // }
 
   // 播放歌曲
   public async play(song: ISong, startTime: number = 0) {
@@ -246,112 +226,6 @@ export class HowlerPlayer {
     }
   }
 
-  // 连接到 Web Audio API
-  // private connectToWebAudio() {
-  //     if (!this.currentHowl || !this.audioContext || !this.analyser) return;
-
-  //     try {
-  //         // 获取 Howler 的音频元素
-  //         const sound = (this.currentHowl as any)._sounds[0];
-  //         if (!sound || !sound._node) return;
-
-  //         const audioElement = sound._node;
-
-  //         // 创建媒体源节点
-  //         this.source = this.audioContext.createMediaElementSource(audioElement);
-
-  //         // 创建增益节点
-  //         const gainNode = this.audioContext.createGain();
-  //         gainNode.gain.value = this.volume;
-
-  //         // 连接音频处理链
-  //         this.source.connect(gainNode);
-  //         gainNode.connect(this.analyser);
-  //         this.analyser.connect(this.audioContext.destination);
-
-  //         console.log('已连接到 Web Audio API');
-  //     } catch (error) {
-  //         console.error('连接到 Web Audio API 失败:', error);
-  //     }
-  // }
-
-  // 获取可视化数据
-  // getVisualizationData(): { frequency: Uint8Array; waveform: Uint8Array } {
-  //     if (!this.analyser) {
-  //         return { frequency: new Uint8Array(0), waveform: new Uint8Array(0) };
-  //     }
-
-  //     const bufferLength = this.analyser.frequencyBinCount;
-  //     const frequencyData = new Uint8Array(bufferLength);
-  //     const waveformData = new Uint8Array(bufferLength);
-
-  //     this.analyser.getByteFrequencyData(frequencyData);
-  //     this.analyser.getByteTimeDomainData(waveformData);
-
-  //     return { frequency: frequencyData, waveform: waveformData };
-  // }
-
-  // 应用音频效果
-  // applyAudioEffect(effect: 'reverb' | 'echo' | 'flanger' | 'distortion') {
-  //     if (!this.audioContext || !this.source) return;
-
-  //     switch (effect) {
-  //         case 'reverb':
-  //             this.applyReverb();
-  //             break;
-  //         case 'echo':
-  //             this.applyEcho();
-  //             break;
-  //         case 'flanger':
-  //             this.applyFlanger();
-  //             break;
-  //         case 'distortion':
-  //             this.applyDistortion();
-  //             break;
-  //     }
-  // }
-
-  // private applyReverb() {
-  //     if (!this.audioContext || !this.source) return;
-
-  //     const convolver = this.audioContext.createConvolver();
-
-  //     // 创建脉冲响应（模拟房间混响）
-  //     const sampleRate = this.audioContext.sampleRate;
-  //     const length = sampleRate * 3; // 3秒混响
-  //     const impulse = this.audioContext.createBuffer(2, length, sampleRate);
-
-  //     for (let channel = 0; channel < 2; channel++) {
-  //         const channelData = impulse.getChannelData(channel);
-  //         for (let i = 0; i < length; i++) {
-  //             channelData[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / length, 2);
-  //         }
-  //     }
-
-  //     convolver.buffer = impulse;
-
-  //     // 重新连接音频链
-  //     this.source.disconnect();
-  //     this.source.connect(convolver);
-  //     convolver.connect(this.analyser!);
-  // }
-
-  // 其他效果实现类似...
-
-  // getFormat(filePath: string): string {
-  //     const ext = filePath.toLowerCase().split('.').pop();
-  //     const formatMap: Record<string, string> = {
-  //         'mp3': 'mp3',
-  //         'wav': 'wav',
-  //         'flac': 'flac',
-  //         'ogg': 'ogg',
-  //         'm4a': 'm4a',
-  //         'aac': 'aac',
-  //         'opus': 'opus',
-  //     };
-  //     return formatMap[ext!] || '';
-  // }
-
   // 时间追踪
   private startTimeTracking() {
     this.stopTimeTracking()
@@ -389,21 +263,6 @@ export class HowlerPlayer {
     }
   }
 
-  stop() {
-    if (this._howl) {
-      this._howl.stop()
-      this._howl.unload()
-      this._howl = null
-    }
-    if (this._analyser) {
-      this._analyser.disconnect()
-      this._analyser = null
-    }
-    this.stopTimeTracking()
-    this._isPlaying = false
-    this._isSeeking = false
-  }
-
   seek(time: number) {
     if (this._howl) {
       this._isSeeking = true
@@ -430,12 +289,29 @@ export class HowlerPlayer {
     }
   }
 
+  stop() {
+    if (this._howl) {
+      this._howl.stop()
+      this._howl.unload()
+      this._howl = null
+    }
+    if (this._analyser) {
+      this._analyser.disconnect()
+      this._analyser = null
+    }
+    this.stopTimeTracking()
+    this._isPlaying = false
+    this._isSeeking = false
+  }
+
+  reset() {
+    this._isMuted = false
+    this._volume = DefaultVolume
+    this._currentSong = null
+  }
+
   destroy() {
     this.stop()
-
-    // if (this.audioContext && this.audioContext.state !== 'closed') {
-    //     this.audioContext.close();
-    // }
     this._eventListeners.forEach(listeners => {
       listeners.clear()
     })

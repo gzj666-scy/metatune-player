@@ -4,9 +4,8 @@
   import { IconEnum } from '@metatune/common'
   import { Modal } from '@/utils/modal'
 
-  // const updateStatusRef = ref<'idle' | 'checking' | 'available' | 'not-available' | 'downloading' | 'downloaded' | 'error'>('idle')
   const appInfoRef = ref<{ name: string; version: string; platform: string }>()
-  const checkingRef = ref(false)
+  const waitingRef = ref(false)
   let cancelCall: () => void
 
   const onGit = () => {
@@ -16,17 +15,16 @@
   const onUpdate = () => {
     try {
       window.electronAPI.send('update:check', { auto: false })
-      checkingRef.value = true
+      waitingRef.value = true
     } catch (error) {
-      checkingRef.value = false
+      waitingRef.value = false
     }
   }
 
   onMounted(async () => {
     cancelCall = window.electronAPI.on('update-status', (data: any) => {
-      // updateStatusRef.value = data.status
-      if (data.status === 'not-available') {
-        checkingRef.value = false
+      if (data.status === 'not-available' && !data.auto) {
+        waitingRef.value = false
         Modal.alert('当前已是最新版本')
       }
     })
@@ -62,8 +60,8 @@
         GitHub 仓库
       </div>
       <div class="about-btn update" @click="onUpdate">
-        <IconBase :class="{ rotate: checkingRef }">
-          <component :is="checkingRef ? IconEnum.RefreshCw : IconEnum.ArrowBigUpDash" />
+        <IconBase :class="{ rotate: waitingRef }">
+          <component :is="waitingRef ? IconEnum.RefreshCw : IconEnum.ArrowBigUpDash" />
         </IconBase>
         检查更新
       </div>

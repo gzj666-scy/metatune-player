@@ -112,6 +112,7 @@
     if (playlist?.songIds) return playlist.songIds.includes(song.value?.uid || '')
     return false
   })
+  const settings = computed(() => playerStore.settings)
 
   const onShowMoreActions = (e: MouseEvent) => {
     if (!song.value) return
@@ -318,8 +319,8 @@
 
   /** 绘制频谱图的函数 */
   const drawSpectrum = () => {
-    // animationIdRef.value && cancelAnimationFrame(animationIdRef.value)
     clearTimeout(visualizationIdRef.value)
+    if (!settings.value.openVisualization) return
     if (!canvasRef.value) return
     const canvas = canvasRef.value
     const ctx = canvas.getContext('2d')
@@ -384,7 +385,6 @@
     ctx.closePath()
     ctx.fill() // 一次性填充所有柱
 
-    // animationIdRef.value = requestAnimationFrame(drawSpectrum)
     visualizationIdRef.value = setTimeout(drawSpectrum, visualizationTimeRef.value)
   }
 
@@ -392,17 +392,13 @@
     const player = playManager.getPlayer()
     if (!player) return
     player.on('play', () => {
-      // animationIdRef.value && cancelAnimationFrame(animationIdRef.value)
-      // animationIdRef.value = requestAnimationFrame(drawSpectrum)
       clearTimeout(visualizationIdRef.value)
       visualizationIdRef.value = setTimeout(drawSpectrum, visualizationTimeRef.value)
     })
     player.on('pause', () => {
-      // animationIdRef.value && cancelAnimationFrame(animationIdRef.value)
       clearTimeout(visualizationIdRef.value)
     })
     player.on('stop', () => {
-      // animationIdRef.value && cancelAnimationFrame(animationIdRef.value)
       clearTimeout(visualizationIdRef.value)
     })
   }
@@ -422,9 +418,7 @@
     canvas.height = rect.height * dpr
     ctx.scale(dpr, dpr)
     ctx.imageSmoothingEnabled = false // 频谱图不需要抗锯齿，提升性能
-    // console.log('canvas ', rect.width, rect.height, dpr, canvas.width, canvas.height)
     clearInterval(setupCanvasTimerRef.value)
-    // animationIdRef.value = requestAnimationFrame(drawSpectrum)
     visualizationIdRef.value = setTimeout(drawSpectrum, visualizationTimeRef.value)
     // 🔑 监听容器尺寸变化，自动重设 Canvas
     // resizeObserverRef.value = new ResizeObserver(() => {
@@ -491,6 +485,17 @@
     }
   )
 
+  watch(
+    () => settings.value.openVisualization,
+    newVal => {
+      if (newVal) {
+        visualizationIdRef.value = setTimeout(drawSpectrum, visualizationTimeRef.value)
+      } else {
+        clearTimeout(visualizationIdRef.value)
+      }
+    }
+  )
+
   onMounted(() => {
     initPlayerEvent()
   })
@@ -498,14 +503,13 @@
   onUnmounted(() => {
     clearTimeout(delayHideVolumeRef.value)
     clearInterval(setupCanvasTimerRef.value)
-    // animationIdRef.value && cancelAnimationFrame(animationIdRef.value)
     clearTimeout(visualizationIdRef.value)
   })
 </script>
 
 <template>
   <Transition name="player-ani" appear>
-    <div v-if="show" class="player-view" :style="{ ...themeVarsRef }">
+    <section v-if="show" class="player-view" :style="{ ...themeVarsRef }">
       <!-- 背景模糊效果 -->
       <div v-if="song?.albumArt" class="player-background">
         <img :src="song.albumArt" alt="" class="background-image" />
@@ -680,7 +684,7 @@
           </div>
         </div>
       </div>
-    </div>
+    </section>
   </Transition>
 </template>
 
