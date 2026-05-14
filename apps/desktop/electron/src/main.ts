@@ -140,7 +140,7 @@ const createTray = () => {
 /*********************** 创建窗口 ***********************/
 const createWindow = async () => {
   mainWindow = new BrowserWindow({
-    width: isDev ? 1600 : 1600,
+    width: isDev ? 1200 : 1600,
     height: 800,
     title: currentTitle,
     minWidth: 1000,
@@ -231,7 +231,7 @@ const createWindow = async () => {
     mainWindow.webContents.openDevTools()
   } else {
     await mainWindow.loadFile(join(__dirname, '../dist-web/index.html'))
-    mainWindow.webContents.openDevTools()
+    // mainWindow.webContents.openDevTools()
   }
 }
 // app.commandLine.appendSwitch('enable-gpu-compositing')

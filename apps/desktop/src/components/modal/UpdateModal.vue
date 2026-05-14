@@ -29,8 +29,8 @@
   const onUpdate = () => {
     if (updateStatusRef.value === 'downloading' || updateStatusRef.value === 'checking') return
     if (updateStatusRef.value === 'downloaded') {
-      window.electronAPI.send('update:install')
       waitingRef.value = true
+      window.electronAPI.send('update:install')
       return
     }
     if (updateStatusRef.value === 'error') {
@@ -38,8 +38,8 @@
       onClose()
       return
     }
-    window.electronAPI.send('update:download')
     waitingRef.value = true
+    window.electronAPI.send('update:download')
   }
 
   onMounted(() => {

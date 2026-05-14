@@ -552,11 +552,11 @@
             <div class="album-art-wrapper">
               <div v-if="song?.albumArt" class="album-art-container">
                 <img :src="song.albumArt" :alt="song.album" class="album-art-large" />
-                <div v-if="isPlaying" class="playing-overlay">
+                <!-- <div v-if="isPlaying" class="playing-overlay">
                   <div class="equalizer">
                     <div class="eq-bar" v-for="n in 5" :key="n"></div>
                   </div>
-                </div>
+                </div> -->
               </div>
               <div v-else class="album-art-placeholder-large">
                 <IconBase class="icon-music-large">
@@ -853,48 +853,48 @@
                 object-fit: cover;
               }
 
-              .playing-overlay {
-                position: absolute;
-                top: 0;
-                left: 0;
-                right: 0;
-                bottom: 0;
-                background: rgba(0, 0, 0, 0.5);
-                display: flex;
-                align-items: center;
-                justify-content: center;
+              // .playing-overlay {
+              //   position: absolute;
+              //   top: 0;
+              //   left: 0;
+              //   right: 0;
+              //   bottom: 0;
+              //   background: rgba(0, 0, 0, 0.5);
+              //   display: flex;
+              //   align-items: center;
+              //   justify-content: center;
 
-                .equalizer {
-                  display: flex;
-                  align-items: flex-end;
-                  height: 40px;
-                  gap: 4px;
+              //   .equalizer {
+              //     display: flex;
+              //     align-items: flex-end;
+              //     height: 40px;
+              //     gap: 4px;
 
-                  .eq-bar {
-                    width: 4px;
-                    height: 20px;
-                    background: currentColor;
-                    border-radius: 2px;
-                    animation: eqAnimation 1s infinite ease-in-out;
+              //     .eq-bar {
+              //       width: 4px;
+              //       height: 20px;
+              //       background: currentColor;
+              //       border-radius: 2px;
+              //       animation: eqAnimation 1s infinite ease-in-out;
 
-                    &:nth-child(1) {
-                      animation-delay: 0s;
-                    }
-                    &:nth-child(2) {
-                      animation-delay: 0.1s;
-                    }
-                    &:nth-child(3) {
-                      animation-delay: 0.2s;
-                    }
-                    &:nth-child(4) {
-                      animation-delay: 0.3s;
-                    }
-                    &:nth-child(5) {
-                      animation-delay: 0.4s;
-                    }
-                  }
-                }
-              }
+              //       &:nth-child(1) {
+              //         animation-delay: 0s;
+              //       }
+              //       &:nth-child(2) {
+              //         animation-delay: 0.1s;
+              //       }
+              //       &:nth-child(3) {
+              //         animation-delay: 0.2s;
+              //       }
+              //       &:nth-child(4) {
+              //         animation-delay: 0.3s;
+              //       }
+              //       &:nth-child(5) {
+              //         animation-delay: 0.4s;
+              //       }
+              //     }
+              //   }
+              // }
             }
 
             .album-art-placeholder-large {
@@ -1213,13 +1213,13 @@
     transform: translateY(100%);
   }
 
-  @keyframes eqAnimation {
-    0%,
-    100% {
-      height: 10px;
-    }
-    50% {
-      height: 30px;
-    }
-  }
+  // @keyframes eqAnimation {
+  //   0%,
+  //   100% {
+  //     height: 10px;
+  //   }
+  //   50% {
+  //     height: 30px;
+  //   }
+  // }
 </style>
