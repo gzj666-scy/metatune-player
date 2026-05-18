@@ -51,7 +51,7 @@ export const judgeAudioQuality = (format: IFormat) => {
 }
 
 export const getBaseInfoFromFileName = (fileName: string = '') => {
-  const strArr = fileName.split('-')
+  const strArr = fileName.split(' - ')
   if (strArr.length >= 2) {
     return {
       title: strArr[1].trim(),

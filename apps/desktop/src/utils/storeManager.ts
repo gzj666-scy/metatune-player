@@ -61,6 +61,13 @@ export class StoreManager {
       }
     }
 
+    const currentSongId = this._playerStore.currentState.currentSongId
+    if (currentSongId) {
+      if (idMap[currentSongId]) {
+        this._playerStore.currentState.currentSongId = idMap[currentSongId]
+      }
+    }
+
     window.electronAPI.setLocalListCache(newSongs)
     this.savePlayCache()
   }

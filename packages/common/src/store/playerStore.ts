@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref, computed, readonly } from 'vue'
-import type { ISong, IPlaybackState, IPlaylist, IAppSettings, IPanelProps, IModalProps, IArtist, IAlbum } from '../types'
+import type { ISong, IPlaybackState, IPlaylist, IAppSettings, IPanelProps, IModalProps, IArtist, IAlbum, IBusinessData } from '../types'
 import { deepToRaw, DefaultKey, DefaultVolume, PlayMode, sortArtist, sortSong } from '../utils'
 
 export const defaultState = {
@@ -40,6 +40,10 @@ export const usePlayerStore = defineStore('player', () => {
   const currentViewKey = ref<string>(DefaultKey.Local)
   /** 默认当做歌单处理的列表key（local、favorite） */
   const defaultPlaylistKey = readonly(ref<string[]>([DefaultKey.Local, DefaultKey.Favorite]))
+
+  const business = ref<IBusinessData>({
+    isMaximized: false,
+  })
 
   // 计算属性不会只要依赖变了就立即重算。它会在依赖变了并且下一次被读取时才重算。
   /** 当前查看列表的歌曲数组(已排序) */
@@ -168,6 +172,8 @@ export const usePlayerStore = defineStore('player', () => {
     panel,
     /** 弹窗数据 */
     modal,
+    /** 业务数据(无需缓存) */
+    business,
     /** 本地列表 */
     songs,
     /** 自定义歌单数据 */

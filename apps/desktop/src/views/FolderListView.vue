@@ -30,7 +30,7 @@
             <img v-if="item.coverArt" :src="item.coverArt" :alt="item.name" class="folder-art-img" />
             <div v-else class="folder-art-placeholder">
               <IconBase>
-                <component :is="IconEnum.Disc" />
+                <component :is="IconEnum.Folder" />
               </IconBase>
             </div>
           </div>
@@ -65,7 +65,7 @@
         overflow: auto;
         display: flex;
         justify-content: space-between;
-        align-items: flex-start;
+        align-content: flex-start;
         flex-wrap: wrap;
         padding-right: 4px;
 

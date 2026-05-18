@@ -65,7 +65,7 @@
         overflow: auto;
         display: flex;
         justify-content: space-between;
-        align-items: flex-start;
+        align-content: flex-start;
         flex-wrap: wrap;
         padding-right: 4px;
 

@@ -1,3 +1,6 @@
+// import { Vibrant } from 'node-vibrant/browser'
+// import type { Palette } from '@vibrant/color'
+
 /**
  * 根据背景图片的主要颜色，动态计算前景文字颜色（黑/白）
  * 以确保足够的对比度和可读性
@@ -5,100 +8,134 @@
  */
 export class DynamicColorAdjuster {
   /**
-   * 从图片元素中获取主要色调
-   * 注意：实际实现中，这里应该使用更复杂的算法（如颜色量化）
-   * 此处为简化版本，通过Canvas获取图片平均颜色
-   */
-  static async getDominantColorFromImage(imageUrl?: string): Promise<{ color: [number, number, number]; hasImg: boolean }> {
-    return new Promise(resolve => {
-      const def: [number, number, number] = [102, 126, 234]
-      if (!imageUrl) {
-        resolve({ color: def, hasImg: false })
-        return
-      }
-      const img = new Image()
-      img.crossOrigin = 'Anonymous'
-      img.onload = () => {
-        const canvas = document.createElement('canvas')
-        const ctx = canvas.getContext('2d')
-        if (!ctx) {
-          resolve({ color: def, hasImg: false })
-          return
-        }
-
-        // 缩小图片以加速处理
-        canvas.width = 100
-        canvas.height = 100
-        ctx.drawImage(img, 0, 0, 100, 100)
-
-        const imageData = ctx.getImageData(0, 0, 100, 100).data
-        let r = 0,
-          g = 0,
-          b = 0
-
-        // 计算平均颜色
-        for (let i = 0; i < imageData.length; i += 4) {
-          r += imageData[i]
-          g += imageData[i + 1]
-          b += imageData[i + 2]
-        }
-
-        const pixelCount = imageData.length / 4
-        resolve({ color: [Math.floor(r / pixelCount), Math.floor(g / pixelCount), Math.floor(b / pixelCount)], hasImg: true })
-      }
-      img.onerror = () => {
-        resolve({ color: def, hasImg: false })
-      }
-      img.src = imageUrl
-    })
-  }
-
-  /**
    * 根据背景色计算适合的前景色（黑或白）
    * 使用WCAG 2.0对比度公式的简化判断
    * @param backgroundColor RGB数组 [r, g, b]
    * @returns 前景色应为 'black' 或 'white'
    */
-  static getForegroundColor(backgroundColor: [number, number, number]): 'black' | 'white' {
-    const [r, g, b] = backgroundColor
+  // static getForegroundColor(backgroundColor: [number, number, number]): 'black' | 'white' {
+  //   const [r, g, b] = backgroundColor
 
-    // 计算相对亮度 (Rec. 709)
-    const luminance = (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255
+  //   // 计算相对亮度 (Rec. 709)
+  //   const luminance = (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255
 
-    // 简化判断：较亮背景用黑色文字，较暗背景用白色文字
-    // 阈值可调整，0.5是基于中性灰
-    // return luminance > 0.5 ? 'black' : 'white'
-    return 'white'
-  }
+  //   // 简化判断：较亮背景用黑色文字，较暗背景用白色文字
+  //   // 阈值可调整，0.5是基于中性灰
+  //   // return luminance > 0.5 ? 'black' : 'white'
+  //   return 'white'
+  // }
 
   /**
    * 计算高对比度的文字颜色（带透明度调整，用于歌词高亮）
    * @param backgroundColor RGB数组
    * @param isHighlight 是否是高亮的当前歌词行
    */
-  static getTextColor(backgroundColor: [number, number, number], isHighlight: boolean = false): string {
-    const fgColor = this.getForegroundColor(backgroundColor)
+  // static getTextColor(backgroundColor: [number, number, number], isHighlight: boolean = false): string {
+  //   const fgColor = this.getForegroundColor(backgroundColor)
 
-    if (fgColor === 'white') {
-      // 深色背景：白色文字
-      return isHighlight
-        ? 'rgba(255, 255, 255, 1)' // 高亮：纯白
-        : 'rgba(255, 255, 255, 0.85)' // 普通：稍透明
-    } else {
-      // 浅色背景：黑色文字
-      return isHighlight
-        ? 'rgba(0, 0, 0, 1)' // 高亮：纯黑
-        : 'rgba(0, 0, 0, 0.75)' // 普通：稍透明
-    }
-  }
+  //   if (fgColor === 'white') {
+  //     // 深色背景：白色文字
+  //     return isHighlight
+  //       ? 'rgba(255, 255, 255, 1)' // 高亮：纯白
+  //       : 'rgba(255, 255, 255, 0.85)' // 普通：稍透明
+  //   } else {
+  //     // 浅色背景：黑色文字
+  //     return isHighlight
+  //       ? 'rgba(0, 0, 0, 1)' // 高亮：纯黑
+  //       : 'rgba(0, 0, 0, 0.75)' // 普通：稍透明
+  //   }
+  // }
+
+  /**
+   * 计算亮度 (0-255)如果，L值大于或等于128，建议使用黑色文本
+   * @param colorRgb
+   * @returns
+   */
+  // static getLuminance(colorRgb: [number, number, number]) {
+  //   const [r, g, b] = colorRgb
+  //   return 0.299 * r + 0.587 * g + 0.114 * b
+  // }
+
+  // 3. 混合两种颜色 (0-1比例)
+  // static mixColor(c1: [number, number, number], c2: [number, number, number], ratio: number) {
+  //   return {
+  //     r: Math.round(c1[0] + (c2[0] - c1[0]) * ratio),
+  //     g: Math.round(c1[1] + (c2[1] - c1[1]) * ratio),
+  //     b: Math.round(c1[2] + (c2[2] - c1[2]) * ratio),
+  //   }
+  // }
+
+  /**
+   * 根据主色生成整个界面的主题 CSS 变量
+   * @param colorRgb 根据主色生成整个界面的主题 CSS 变量
+   * @returns
+   */
+  // static generateThemeCSS(colorRgb: [number, number, number], hasImg?: boolean) {
+  //   const [r, g, b] = colorRgb
+  //   const { h, s, l } = this.rgbToHsl([r, g, b])
+  //   // const luminance = this.getLuminance([r, g, b])
+
+  //   let hlH = (h + 10) % 360
+  //   let hlS = Math.min(s + 10, 100)
+  //   let hlL = Math.min(l + 15, 100)
+
+  //   if (l < 25) {
+  //     hlS = Math.min(s + 20, 100)
+  //     hlL = Math.min(l + 25, 100)
+  //   } else if (l < 45) {
+  //     hlS = Math.min(s + 15, 100)
+  //     hlL = Math.min(l + 20, 100)
+  //   } else if (l < 70) {
+  //     hlS = Math.min(s + 10, 100)
+  //     hlL = Math.min(l + 15, 100)
+  //   } else {
+  //     hlS = Math.min(s + 20, 100)
+  //     hlL = Math.min(l + 25, 100)
+  //   }
+
+  //   const btnBg = 'rgba(255, 255, 255, 0.15)'
+  //   const btnBgHover = 'rgba(255, 255, 255, 0.25)'
+
+  //   const defaultBgGradient = 'linear-gradient(180deg, #667eea 0%, #764ba2 100%)'
+  //   const bgStyle = hasImg ? `hsl(${h}, ${s}%, ${l}%)` : defaultBgGradient
+  //   // console.log(444, luminance, bgStyle, `hsl(${hlH}, ${hlS}%, ${hlL}%)`)
+
+  //   return {
+  //     // --- 主背景 (保留原色) ---
+  //     '--player-theme-bg': bgStyle,
+  //     // --- 主体文字 (纯白，符合需求) ---
+  //     '--player-text-primary': 'rgba(255, 255, 255, 1)',
+  //     // --- 二级文字 (主体文字加透明度) ---
+  //     '--player-text-secondary': 'rgba(255, 255, 255, 0.8)',
+  //     // --- 歌词普通文字 (比二级文字略亮，方便阅读) ---
+  //     '--player-lyric-text': 'rgba(255, 255, 255, 0.8)',
+  //     // --- 高亮文字 (主视觉锚点) ---
+  //     // '--player-highlight': `hsl(${hlH}, ${hlS}%, ${hlL}%)`,
+  //     '--player-highlight': this.hslToHex(hlH, hlS, hlL),
+  //     // --- 按钮背景色 (与背景区分，能衬出图标) ---
+  //     '--player-btn-bg': btnBg,
+  //     '--player-btn-bg-hover': btnBgHover,
+  //   }
+  // }
+
+  // static hslToRgb(h: number, s: number, l: number) {
+  //   s /= 100
+  //   l /= 100
+  //   const c = (1 - Math.abs(2 * l - 1)) * s
+  //   const x = c * (1 - Math.abs(((h / 60) % 2) - 1))
+  //   const m = l - c / 2
+  //   let r, g, b
+  //   // ... 同上面的分情况逻辑 ...
+  //   return { r: Math.round((r + m) * 255), g: Math.round((g + m) * 255), b: Math.round((b + m) * 255) }
+  // }
 
   /**
    * RGB 转 HSL
-   * @param backgroundColor RGB数组
-   * @returns
+   * @param color RGB数组
+   * @returns HSL数组
    */
-  static rgbToHsl(backgroundColor: [number, number, number]) {
-    let [r, g, b] = backgroundColor
+  static rgbToHsl(color: [r: number, g: number, b: number]): [h: number, s: number, l: number] {
+    let [r, g, b] = color
     // 1、将 RGB 分量从 [0, 255] 范围归一化到 [0, 1]：
     r /= 255
     g /= 255
@@ -129,82 +166,16 @@ export class DynamicColorAdjuster {
       }
       h! /= 6
     }
-    return { h: h! * 360, s: s * 100, l: l * 100 }
+    return [h! * 360, s * 100, l * 100]
   }
 
   /**
-   * 计算亮度 (0-255)如果，L值大于或等于128，建议使用黑色文本
-   * @param colorRgb
-   * @returns
+   * HSL 转 HEX
+   * @param color RGB数组
+   * @returns HSL数组
    */
-  static getLuminance(colorRgb: [number, number, number]) {
-    const [r, g, b] = colorRgb
-    return 0.299 * r + 0.587 * g + 0.114 * b
-  }
-
-  // 3. 混合两种颜色 (0-1比例)
-  static mixColor(c1: [number, number, number], c2: [number, number, number], ratio: number) {
-    return {
-      r: Math.round(c1[0] + (c2[0] - c1[0]) * ratio),
-      g: Math.round(c1[1] + (c2[1] - c1[1]) * ratio),
-      b: Math.round(c1[2] + (c2[2] - c1[2]) * ratio),
-    }
-  }
-
-  /**
-   * 根据主色生成整个界面的主题 CSS 变量
-   * @param colorRgb 根据主色生成整个界面的主题 CSS 变量
-   * @returns
-   */
-  static generateThemeCSS(colorRgb: [number, number, number], hasImg?: boolean) {
-    const [r, g, b] = colorRgb
-    const { h, s, l } = this.rgbToHsl([r, g, b])
-    const luminance = this.getLuminance([r, g, b])
-
-    let hlH = (h + 10) % 360
-    let hlS = Math.min(s + 10, 100)
-    let hlL = Math.min(l + 15, 100)
-
-    if (l < 25) {
-      hlS = Math.min(s + 20, 100)
-      hlL = Math.min(l + 25, 100)
-    } else if (l < 45) {
-      hlS = Math.min(s + 15, 100)
-      hlL = Math.min(l + 20, 100)
-    } else if (l < 70) {
-      hlS = Math.min(s + 10, 100)
-      hlL = Math.min(l + 15, 100)
-    } else {
-      hlS = Math.min(s + 20, 100)
-      hlL = Math.min(l + 25, 100)
-    }
-
-    const btnBg = 'rgba(255, 255, 255, 0.15)'
-    const btnBgHover = 'rgba(255, 255, 255, 0.25)'
-
-    const defaultBgGradient = 'linear-gradient(180deg, #667eea 0%, #764ba2 100%)'
-    const bgStyle = hasImg ? `hsl(${h}, ${s}%, ${l}%)` : defaultBgGradient
-    // console.log(444, luminance, bgStyle, `hsl(${hlH}, ${hlS}%, ${hlL}%)`)
-
-    return {
-      // --- 主背景 (保留原色) ---
-      '--player-theme-bg': bgStyle,
-      // --- 主体文字 (纯白，符合需求) ---
-      '--player-text-primary': 'rgba(255, 255, 255, 1)',
-      // --- 二级文字 (主体文字加透明度) ---
-      '--player-text-secondary': 'rgba(255, 255, 255, 0.8)',
-      // --- 歌词普通文字 (比二级文字略亮，方便阅读) ---
-      '--player-lyric-text': 'rgba(255, 255, 255, 0.8)',
-      // --- 高亮文字 (主视觉锚点) ---
-      // '--player-highlight': `hsl(${hlH}, ${hlS}%, ${hlL}%)`,
-      '--player-highlight': this.hslToHex(hlH, hlS, hlL),
-      // --- 按钮背景色 (与背景区分，能衬出图标) ---
-      '--player-btn-bg': btnBg,
-      '--player-btn-bg-hover': btnBgHover,
-    }
-  }
-
-  static hslToHex(h: number, s: number, l: number) {
+  static hslToHex(color: [h: number, s: number, l: number]) {
+    let [h, s, l] = color
     // 1. 将饱和度、亮度 从 0-100 归一化到 0-1
     s /= 100
     l /= 100
@@ -253,14 +224,174 @@ export class DynamicColorAdjuster {
     return '#' + rgb.map(v => v.toString(16).padStart(2, '0')).join('')
   }
 
-  // static hslToRgb(h: number, s: number, l: number) {
-  //   s /= 100
-  //   l /= 100
-  //   const c = (1 - Math.abs(2 * l - 1)) * s
-  //   const x = c * (1 - Math.abs(((h / 60) % 2) - 1))
-  //   const m = l - c / 2
-  //   let r, g, b
-  //   // ... 同上面的分情况逻辑 ...
-  //   return { r: Math.round((r + m) * 255), g: Math.round((g + m) * 255), b: Math.round((b + m) * 255) }
+  /**
+   * 从图片元素中获取主要色调
+   * 注意：实际实现中，这里应该使用更复杂的算法（如颜色量化）
+   * 此处为简化版本，通过Canvas获取图片平均颜色
+   */
+  static async getDominantColorFromImage(imageUrl?: string): Promise<{ color: [number, number, number]; hasImg: boolean }> {
+    return new Promise(resolve => {
+      // const def: [number, number, number] = [102, 126, 234]
+      const def: [number, number, number] = [194, 146, 97]
+      if (!imageUrl) {
+        resolve({ color: def, hasImg: false })
+        return
+      }
+      const img = new Image()
+      img.crossOrigin = 'Anonymous'
+      img.onload = () => {
+        const canvas = document.createElement('canvas')
+        const ctx = canvas.getContext('2d')
+        if (!ctx) {
+          resolve({ color: def, hasImg: false })
+          return
+        }
+
+        // 缩小图片以加速处理
+        canvas.width = 100
+        canvas.height = 100
+        ctx.drawImage(img, 0, 0, 100, 100)
+
+        const imageData = ctx.getImageData(0, 0, 100, 100).data
+        let r = 0,
+          g = 0,
+          b = 0
+
+        // 计算平均颜色
+        for (let i = 0; i < imageData.length; i += 4) {
+          r += imageData[i]
+          g += imageData[i + 1]
+          b += imageData[i + 2]
+        }
+
+        const pixelCount = imageData.length / 4
+        resolve({ color: [Math.floor(r / pixelCount), Math.floor(g / pixelCount), Math.floor(b / pixelCount)], hasImg: true })
+      }
+      img.onerror = () => {
+        resolve({ color: def, hasImg: false })
+      }
+      img.src = imageUrl
+    })
+  }
+
+  static async getThemeCSSFromDominantColor(imageUrl?: string) {
+    const result = await this.getDominantColorFromImage(imageUrl)
+    const [r, g, b] = result.color
+    const [h, s, l] = this.rgbToHsl([r, g, b])
+    // const luminance = this.getLuminance([r, g, b])
+    // console.log('main ', h, s, l)
+    let hlH = (h - 20) % 360
+    let hlS = Math.min(s + 10, 90)
+    let hlL = Math.min(l + 10, 90)
+
+    if (s > 70) {
+      hlS = Math.min(s - 20, 90)
+    } else if (s > 60) {
+      hlS = Math.min(s - 15, 90)
+    } else if (s > 30) {
+      hlS = Math.min(s + 20, 90)
+    } else {
+      hlS = Math.min(s + 40, 90)
+    }
+
+    if (l > 70) {
+      hlL = Math.min(l - 20, 90)
+    } else if (l > 60) {
+      hlL = Math.min(l - 15, 90)
+    } else if (l > 30) {
+      hlL = Math.min(l + 20, 90)
+    } else {
+      hlL = Math.min(l + 40, 90)
+    }
+
+    // if (l < 25) {
+    //   hlS = Math.min(s + 20, 90)
+    //   hlL = Math.min(l + 20, 90)
+    // } else if (l < 45) {
+    //   hlS = Math.min(s + 15, 90)
+    //   hlL = Math.min(l + 15, 90)
+    // } else if (l < 70) {
+    //   hlS = Math.min(s + 10, 90)
+    //   hlL = Math.min(l + 10, 90)
+    // } else {
+    //   hlS = Math.min(s + 20, 90)
+    //   hlL = Math.min(l + 20, 90)
+    // }
+    // console.log('light ', hlH, hlS, hlL)
+    const btnBg = 'rgba(255, 255, 255, 0.15)'
+    const btnBgHover = 'rgba(255, 255, 255, 0.25)'
+
+    const defaultBgGradient = 'linear-gradient(180deg, #667eea 0%, #764ba2 100%)'
+    const bgStyle = result.hasImg ? `hsl(${h}, ${s}%, ${l}%)` : defaultBgGradient
+
+    return {
+      // --- 主背景 (保留原色) ---
+      '--player-theme-bg': bgStyle,
+      // --- 主体文字 (纯白，符合需求) ---
+      '--player-text-primary': 'rgba(255, 255, 255, 1)',
+      // --- 二级文字 (主体文字加透明度) ---
+      '--player-text-secondary': 'rgba(255, 255, 255, 0.8)',
+      // --- 歌词普通文字 (比二级文字略亮，方便阅读) ---
+      '--player-lyric-text': 'rgba(255, 255, 255, 0.8)',
+      // --- 高亮文字 (主视觉锚点) ---
+      // '--player-highlight': `hsl(${hlH}, ${hlS}%, ${hlL}%)`,
+      // '--player-highlight': result.hasImg ? this.hslToHex([hlH, hlS, hlL]) : '#c29261',
+      // '--player-highlight': result.hasImg ? `hsl(${hlH}, ${hlS}%, ${hlL}%)` : '#c29261',
+      '--player-highlight': `hsl(${hlH}, ${hlS}%, ${hlL}%)`,
+      // --- 按钮背景色 (与背景区分，能衬出图标) ---
+      '--player-btn-bg': btnBg,
+      '--player-btn-bg-hover': btnBgHover,
+      '--player-canvas-l': `hsl(${hlH}, ${Math.max(hlS - 10, 10)}%, ${Math.max(hlL - 20, 10)}%)`,
+      '--player-canvas-m': `hsl(${hlH}, ${hlS}%, ${hlL}%)`,
+      '--player-canvas-r': `hsl(${hlH}, ${Math.min(hlS + 10, 90)}%, ${Math.min(hlL + 20, 90)}%)`,
+    }
+  }
+
+  // static async getThemeCSSFromPalette(imageUrl?: string) {
+  //   const palette = imageUrl ? await Vibrant.from(imageUrl).getPalette() : null
+  //   // // ✅ 获取六种标准颜色方案
+  //   // const vibrant = palette.Vibrant // 鲜艳色
+  //   // const muted = palette.Muted // 柔和色
+  //   // const lightVibrant = palette.LightVibrant // 明亮鲜艳
+  //   // const darkVibrant = palette.DarkVibrant // 暗色调鲜艳
+  //   // const lightMuted = palette.LightMuted
+  //   // const darkMuted = palette.DarkMuted
+
+  //   // // ✅ 直接获取颜色值
+  //   // const hex = vibrant.hex // #FFC107
+  //   // const rgb = vibrant.rgb // [255, 193, 7]
+  //   // const hsl = vibrant.hsl() // [45, 100, 50]
+
+  //   // // ✅ 重点：直接获取推荐的文字颜色（让文字“显而易见”）
+  //   // const titleColor = vibrant.titleTextColor // 推荐标题色 (通常是纯白或纯黑)
+  //   // const bodyColor = vibrant.bodyTextColor // 推荐正文色 (通常是白或黑，但略微带透明度)
+
+  //   const btnBg = 'rgba(255, 255, 255, 0.15)'
+  //   const btnBgHover = 'rgba(255, 255, 255, 0.25)'
+
+  //   const defaultBgGradient = 'linear-gradient(180deg, #667eea 0%, #764ba2 100%)'
+  //   const bgStyle = palette?.Vibrant ? palette.Vibrant.hex : defaultBgGradient
+
+  //   return {
+  //     // --- 主背景 (保留原色) ---
+  //     '--player-theme-bg': bgStyle,
+  //     // --- 主体文字 (纯白，符合需求) ---
+  //     '--player-text-primary': 'rgba(255, 255, 255, 1)',
+  //     // --- 二级文字 (主体文字加透明度) ---
+  //     '--player-text-secondary': 'rgba(255, 255, 255, 0.8)',
+  //     // --- 歌词普通文字 (比二级文字略亮，方便阅读) ---
+  //     '--player-lyric-text': 'rgba(255, 255, 255, 0.8)',
+  //     // --- 高亮文字 (主视觉锚点) ---
+  //     '--player-highlight': palette?.LightVibrant ? palette?.LightVibrant.hex : '#c29261',
+  //     // --- 按钮背景色 (与背景区分，能衬出图标) ---
+  //     '--player-btn-bg': btnBg,
+  //     '--player-btn-bg-hover': btnBgHover,
+  //     '--player-canvas-l': palette?.DarkVibrant ? palette?.DarkVibrant.hex : '#667eea',
+  //     '--player-canvas-m': palette?.LightVibrant ? palette?.LightVibrant.hex : '#60a5fa',
+  //     '--player-canvas-r': palette?.Vibrant ? palette?.Vibrant.hex : '#764ba2',
+  //     '--player-muted': palette?.Muted ? palette?.Muted.hex : '#764ba2',
+  //     '--player-muted-light': palette?.LightMuted ? palette?.LightMuted.hex : '#764ba2',
+  //     '--player-muted-dark': palette?.DarkMuted ? palette?.DarkMuted.hex : '#764ba2',
+  //   }
   // }
 }

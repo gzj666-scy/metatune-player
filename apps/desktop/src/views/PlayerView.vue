@@ -1,13 +1,14 @@
 <script setup lang="ts">
-  import { ref, computed, watch, StyleValue, onUnmounted, onMounted } from 'vue'
-  import { PlayMode, LyricParser, DynamicColorAdjuster, DefaultVolume, IconEnum, DefaultKey, PanelType, addRoundedTopSubpath } from '@metatune/common'
-  import type { ILyricLine } from '@metatune/common'
+  import { ref, computed, watch, StyleValue, onUnmounted, onMounted, watchEffect } from 'vue'
+  import { PlayMode, DynamicColorAdjuster, DefaultVolume, IconEnum, DefaultKey, PanelType, addRoundedTopSubpath } from '@metatune/common'
   import IconBase from '@/components/base/IconBase.vue'
   import { getStoreManager } from '@/utils/storeManager'
   import { getPlayManager } from '@/utils/playManager'
+  import PlayerLyric from '@/components/business/PlayerLyric.vue'
+  import TitleBar from '@/components/layout/TitleBar.vue'
 
   interface Props {
-    show: boolean
+    show?: boolean
   }
 
   const props = withDefaults(defineProps<Props>(), {
@@ -15,7 +16,7 @@
   })
 
   const emit = defineEmits<{
-    close: []
+    'toggle-player': [data: boolean]
     'load-lyrics': []
   }>()
 
@@ -24,25 +25,21 @@
   const playerStore = storeManager.playerStore
 
   const themeVarsRef = ref<Record<string, string>>({})
-  const bgDominantColorRef = ref<[number, number, number]>([0, 0, 0])
+
+  const progressContainerRef = ref<HTMLDivElement>()
   const isDraggingRef = ref(false)
   const dragTimeRef = ref(0)
-  const progressContainerRef = ref<HTMLDivElement>()
-  const lyricsLinesRef = ref<ILyricLine[]>([])
-  const currentLyricIndexRef = ref(-1)
-  const lyricsScrollYRef = ref(0)
-  const lyricsContainerRef = ref<HTMLDivElement>()
+
   const isVolumeDraggingRef = ref(false)
   const showVolumeControlRef = ref(false)
   const volumeControlStyleRef = ref<StyleValue>()
   const volumeSliderRef = ref<HTMLDivElement>()
   const delayHideVolumeRef = ref()
+
   const canvasRef = ref<HTMLCanvasElement>()
-  // const animationIdRef = ref<number>()
   const visualizationIdRef = ref()
   const visualizationTimeRef = ref(1000 / 50)
-  const setupCanvasTimerRef = ref()
-  const resizeObserverRef = ref()
+  const resizeObserverRef = ref<ResizeObserver>()
 
   const song = computed(() => playerStore.currentSong)
   const sampleRate = computed(() => song.value?.sampleRate || 44100)
@@ -122,8 +119,8 @@
     let style
     if (rect.top > windowHeight / 2) {
       style = {
-        bottom: `${windowHeight - rect.bottom}px`,
-        right: `${windowWidth - rect.left}px`,
+        bottom: `${windowHeight - rect.top + 5}px`,
+        right: `${windowWidth - rect.left - 10}px`,
       }
     } else {
       style = {
@@ -152,7 +149,6 @@
     const time = (percentage / 100) * duration.value
     playManager.seekTo(time)
   }
-
   const onProgressDrag = (event: MouseEvent | TouchEvent) => {
     if (!duration.value || duration.value <= 0) return
     const progressBar = progressContainerRef.value
@@ -194,6 +190,12 @@
 
     event.preventDefault()
   }
+  const formatTime = (seconds: number) => {
+    if (!seconds || seconds <= 0) return '00:00'
+    const mins = Math.floor(seconds / 60)
+    const secs = Math.floor(seconds % 60)
+    return `${mins}:${secs.toString().padStart(2, '0')}`
+  }
 
   const onPlayMode = () => {
     const modes: Array<PlayMode> = [PlayMode.REPEAT_ALL, PlayMode.SHUFFLE, PlayMode.REPEAT_ONE]
@@ -212,23 +214,19 @@
     volumeControlStyleRef.value = { left: rect.left + 'px', bottom: window.innerHeight - rect.top + 'px' }
     showVolumeControlRef.value = true
   }
-
   const onVolumeMouseLeave = () => {
     delayHideVolumeRef.value = setTimeout(() => {
       showVolumeControlRef.value = false
     }, 300)
   }
-
   const onVolumeControlMouseEnter = () => {
     clearTimeout(delayHideVolumeRef.value)
   }
-
   const onVolumeControlMouseLeave = () => {
     delayHideVolumeRef.value = setTimeout(() => {
       showVolumeControlRef.value = false
     }, 300)
   }
-
   const onVolumeClick = (event: MouseEvent) => {
     if (isVolumeDraggingRef.value) return
     const volumeSlider = event.currentTarget as HTMLElement
@@ -238,7 +236,6 @@
     const volume = Math.max(0, Math.min(percentage, 100))
     playManager.setVolume(volume)
   }
-
   const onVolumeDrag = (event: MouseEvent | TouchEvent) => {
     const volumeSlider = volumeSliderRef.value
     if (!volumeSlider) return
@@ -284,39 +281,6 @@
     }
   }
 
-  const parseLyrics = () => {
-    if (song.value?.lyrics) {
-      lyricsLinesRef.value = LyricParser.parseLRC(song.value.lyrics)
-    } else {
-      lyricsLinesRef.value = []
-    }
-  }
-
-  const scrollToCurrentLyric = () => {
-    if (currentLyricIndexRef.value < 0 || lyricsLinesRef.value.length === 0) return
-    const lyricsContainer = lyricsContainerRef.value
-    if (!lyricsContainer) return
-
-    const rect = lyricsContainer.getBoundingClientRect()
-    const lineHeight = 34 // 每行歌词的高度
-    const targetPosition = currentLyricIndexRef.value * lineHeight
-
-    lyricsScrollYRef.value = -targetPosition + rect.height / 2 - lineHeight / 2
-  }
-
-  const getLyricOpacity = (index: number) => {
-    if (index === currentLyricIndexRef.value) return 1
-    if (Math.abs(index - currentLyricIndexRef.value) <= 1) return 0.8
-    return 0.6
-  }
-
-  const formatTime = (seconds: number) => {
-    if (!seconds || seconds <= 0) return '00:00'
-    const mins = Math.floor(seconds / 60)
-    const secs = Math.floor(seconds % 60)
-    return `${mins}:${secs.toString().padStart(2, '0')}`
-  }
-
   /** 绘制频谱图的函数 */
   const drawSpectrum = () => {
     clearTimeout(visualizationIdRef.value)
@@ -350,9 +314,9 @@
     const barWidth = usableWidth / barCount - barGap
     // 定义渐变（从右到左）
     const gradient = ctx.createLinearGradient(width, 0, 0, 0)
-    gradient.addColorStop(0, themeVarsRef.value['--player-highlight'] || '#764ba2') // (右)
-    gradient.addColorStop(0.5, '#60a5fa') // 天蓝色 (中)
-    gradient.addColorStop(1, themeVarsRef.value['--player-highlight'] || '#667eea') // (左)
+    gradient.addColorStop(0, themeVarsRef.value['--player-canvas-r']) // (右)
+    gradient.addColorStop(0.5, themeVarsRef.value['--player-canvas-m']) // (中)
+    gradient.addColorStop(1, themeVarsRef.value['--player-canvas-l']) // (左)
     // 线性频率映射
     // for (let i = 0; i < barCount; i++) {
     //   // 归一化：将 0-255 的值映射到 0 - maxHeight
@@ -404,6 +368,7 @@
   }
 
   const setupCanvas = () => {
+    clearTimeout(visualizationIdRef.value)
     const canvas = canvasRef.value
     if (!canvas) return
     const ctx = canvas.getContext('2d')
@@ -418,21 +383,42 @@
     canvas.height = rect.height * dpr
     ctx.scale(dpr, dpr)
     ctx.imageSmoothingEnabled = false // 频谱图不需要抗锯齿，提升性能
-    clearInterval(setupCanvasTimerRef.value)
     visualizationIdRef.value = setTimeout(drawSpectrum, visualizationTimeRef.value)
-    // 🔑 监听容器尺寸变化，自动重设 Canvas
-    // resizeObserverRef.value = new ResizeObserver(() => {
-    //   renderer?.resize()
-    // })
-    // resizeObserver.observe(canvas.value.parentElement!)
   }
 
   const clearCanvas = () => {
-    // animationIdRef.value && cancelAnimationFrame(animationIdRef.value)
     clearTimeout(visualizationIdRef.value)
     const canvas = canvasRef.value
     canvas?.getContext('2d')?.clearRect(0, 0, canvas.width, canvas.height)
   }
+
+  watchEffect(
+    () => {
+      if (canvasRef.value) {
+        if (resizeObserverRef.value) {
+          resizeObserverRef.value.disconnect()
+          resizeObserverRef.value = undefined
+        }
+        resizeObserverRef.value = new ResizeObserver(() => {
+          setupCanvas()
+        })
+        resizeObserverRef.value.observe(canvasRef.value.parentElement!)
+      }
+    },
+    { flush: 'post' }
+  )
+
+  watch(
+    () => settings.value.openVisualization,
+    newVal => {
+      if (newVal) {
+        clearTimeout(visualizationIdRef.value)
+        visualizationIdRef.value = setTimeout(drawSpectrum, visualizationTimeRef.value)
+      } else {
+        clearCanvas()
+      }
+    }
+  )
 
   // 监听歌曲变化
   watch(
@@ -440,58 +426,12 @@
     async newSong => {
       if (newSong) {
         clearCanvas()
-        // 解析歌词
-        parseLyrics()
+        const cssObject = await DynamicColorAdjuster.getThemeCSSFromDominantColor(newSong.albumArt)
 
-        // 重置歌词位置
-        currentLyricIndexRef.value = -1
-        lyricsScrollYRef.value = (lyricsContainerRef.value?.getBoundingClientRect()?.height || 0) / 2 || 224
-
-        // 1. 获取图片主色
-        const result = await DynamicColorAdjuster.getDominantColorFromImage(newSong.albumArt)
-        // 2. 生成 CSS 变量
-        const cssObject = DynamicColorAdjuster.generateThemeCSS(result.color, result.hasImg)
-
+        // const cssObject = await DynamicColorAdjuster.getThemeCSSFromPalette(newSong.albumArt)
         themeVarsRef.value = cssObject
-        bgDominantColorRef.value = result.color
+
         window.electronAPI?.setWindowTitle(`${newSong.artist} - ${newSong.title}`)
-      }
-    }
-  )
-
-  // 监听当前时间变化
-  watch(
-    () => currentTime.value,
-    () => {
-      if (!isDraggingRef.value && lyricsLinesRef.value.length > 0) {
-        const { currentIndex } = LyricParser.getCurrentLyric(lyricsLinesRef.value, currentTime.value)
-
-        if (currentIndex !== currentLyricIndexRef.value) {
-          currentLyricIndexRef.value = currentIndex
-          scrollToCurrentLyric()
-        }
-      }
-    }
-  )
-
-  watch(
-    () => props.show,
-    newVal => {
-      if (newVal) {
-        setupCanvasTimerRef.value = setInterval(() => {
-          setupCanvas()
-        }, 20)
-      }
-    }
-  )
-
-  watch(
-    () => settings.value.openVisualization,
-    newVal => {
-      if (newVal) {
-        visualizationIdRef.value = setTimeout(drawSpectrum, visualizationTimeRef.value)
-      } else {
-        clearTimeout(visualizationIdRef.value)
       }
     }
   )
@@ -502,8 +442,8 @@
 
   onUnmounted(() => {
     clearTimeout(delayHideVolumeRef.value)
-    clearInterval(setupCanvasTimerRef.value)
     clearTimeout(visualizationIdRef.value)
+    resizeObserverRef.value?.disconnect()
   })
 </script>
 
@@ -516,34 +456,18 @@
         <div class="background-overlay"></div>
       </div>
 
+      <!-- 顶部控制栏 -->
+      <TitleBar
+        :style="{ position: 'absolute', zIndex: 3, '--titlebar-btn-color': themeVarsRef['--player-highlight'] }"
+        :in-player="true"
+        @toggle-player="$emit('toggle-player', false)"
+      />
+
       <!-- 播放器内容 -->
       <div class="player-content">
-        <!-- 顶部控制栏 -->
         <div class="player-header">
-          <button class="header-btn" @click="$emit('close')" title="收起播放详情">
-            <IconBase>
-              <component :is="IconEnum.ChevronsDown" />
-            </IconBase>
-          </button>
-
-          <div class="song-info-header">
-            <div class="song-title-header">{{ song?.title || '--' }}</div>
-            <div class="song-artist-header">{{ song?.artist || '--' }}</div>
-          </div>
-
-          <div class="header-actions">
-            <button class="header-btn" :class="{ favorited: isFavorite }" @click="onToggleFavorite" :title="isFavorite ? '取消收藏' : '收藏'">
-              <IconBase>
-                <component :is="isFavorite ? IconEnum.HeartFilled : IconEnum.Heart" />
-              </IconBase>
-            </button>
-
-            <button class="header-btn" @click.stop="onShowMoreActions" title="更多操作">
-              <IconBase>
-                <component :is="IconEnum.EllipsisVertical" />
-              </IconBase>
-            </button>
-          </div>
+          <div class="song-title-header">{{ song?.title || '--' }}</div>
+          <div class="song-artist-header">{{ song?.artist || '--' }}</div>
         </div>
 
         <div class="player-body">
@@ -575,48 +499,28 @@
 
                 <div v-if="song.bitsPerSample" class="quality-tag">{{ song.bitsPerSample }}bit</div>
 
-                <div v-if="song.bitrate" class="quality-tag">{{ Math.floor(song.bitrate / 1000) }}kbps</div>
-
                 <div v-if="song.sampleRate" class="quality-tag">{{ song.sampleRate / 1000 }}kHz</div>
+
+                <div v-if="song.bitrate" class="quality-tag">{{ Math.floor(song.bitrate / 1000) }}kbps</div>
               </div>
             </div>
           </div>
 
           <!-- 歌词区域 -->
           <div class="lyrics-section">
-            <div class="lyrics-container" ref="lyricsContainerRef">
-              <div v-if="lyricsLinesRef.length === 0" class="no-lyrics">
-                <div class="no-lyrics-text">暂无歌词</div>
-                <button class="load-lyrics-btn" @click="onLoadExternalLyrics">加载歌词</button>
-              </div>
-
-              <div v-else class="lyrics-scroll" :style="{ transform: `translateY(${lyricsScrollYRef}px)` }">
-                <div
-                  v-for="(line, index) in lyricsLinesRef"
-                  :key="index"
-                  class="lyric-line"
-                  :class="{ current: index === currentLyricIndexRef }"
-                  :style="{ opacity: getLyricOpacity(index) }"
-                  @click="onSeekToLyric(line.time)"
-                >
-                  <div class="lyric-text">{{ line.text }}</div>
-                  <div v-if="line.translatedText" class="lyric-translation">
-                    {{ line.translatedText }}
-                  </div>
-                </div>
-              </div>
-            </div>
+            <PlayerLyric :song="song" :currentTime="currentTime" :isDragging="isDraggingRef" @seek="onSeekToLyric" @load="onLoadExternalLyrics" />
           </div>
         </div>
 
-        <!-- 进度控制 -->
         <div class="player-footer">
           <div class="progress-display">
             <div class="time-display">{{ formatTime(currentTime) }}</div>
             <div class="progress-wrapper">
+              <!-- 可视化动画 -->
               <div class="visualizer-wrapper">
                 <canvas ref="canvasRef"></canvas>
               </div>
+              <!-- 进度控制 -->
               <div class="progress-bar-large" ref="progressContainerRef" @click="onProgressClick">
                 <div class="progress-track-large" :style="{ width: progressPercent + '%' }">
                   <div class="progress-thumb-large" @mousedown="onProgressDrag" @touchstart="onProgressDrag"></div>
@@ -629,43 +533,61 @@
             <div class="time-display">{{ formatTime(duration) }}</div>
           </div>
 
-          <!-- 播放控制 -->
-          <div class="playback-controls-large">
-            <button class="control-btn-large" @click="onPlayMode" :title="playModeTitle">
-              <IconBase>
-                <component :is="playModeIcon" />
-              </IconBase>
-            </button>
+          <div class="playback-actions">
+            <!-- 占位 -->
+            <div class="song-actions"></div>
+            <!-- 播放控制 -->
+            <div class="playback-controls-large">
+              <button class="control-btn-large" @click="onPlayMode" :title="playModeTitle">
+                <IconBase>
+                  <component :is="playModeIcon" />
+                </IconBase>
+              </button>
 
-            <button class="control-btn-large" @click="playManager.playPrev()" :disabled="!canGoPrev" title="上一首">
-              <IconBase>
-                <component :is="IconEnum.SkipBack" />
-              </IconBase>
-            </button>
+              <button class="control-btn-large" @click="playManager.playPrev()" :disabled="!canGoPrev" title="上一首">
+                <IconBase>
+                  <component :is="IconEnum.SkipBack" />
+                </IconBase>
+              </button>
 
-            <button class="play-pause-btn-large" @click="playManager.togglePlayPause()" :title="isPlaying ? '暂停' : '播放'">
-              <IconBase>
-                <component :is="isPlaying ? IconEnum.Pause : IconEnum.Play" />
-              </IconBase>
-            </button>
+              <button class="play-pause-btn-large" @click="playManager.togglePlayPause()" :title="isPlaying ? '暂停' : '播放'">
+                <IconBase>
+                  <component :is="isPlaying ? IconEnum.Pause : IconEnum.Play" />
+                </IconBase>
+              </button>
 
-            <button class="control-btn-large" @click="playManager.playNext()" :disabled="!canGoNext" title="下一首">
-              <IconBase>
-                <component :is="IconEnum.SkipForward" />
-              </IconBase>
-            </button>
+              <button class="control-btn-large" @click="playManager.playNext()" :disabled="!canGoNext" title="下一首">
+                <IconBase>
+                  <component :is="IconEnum.SkipForward" />
+                </IconBase>
+              </button>
 
-            <button
-              class="control-btn-large"
-              @click="onToggleMute"
-              @mouseenter="onVolumeMouseEnter"
-              @mouseleave="onVolumeMouseLeave"
-              :title="isMuted ? '取消静音' : '静音'"
-            >
-              <IconBase>
-                <component :is="volumeIcon" />
-              </IconBase>
-            </button>
+              <button
+                class="control-btn-large"
+                @click="onToggleMute"
+                @mouseenter="onVolumeMouseEnter"
+                @mouseleave="onVolumeMouseLeave"
+                :title="isMuted ? '取消静音' : '静音'"
+              >
+                <IconBase>
+                  <component :is="volumeIcon" />
+                </IconBase>
+              </button>
+            </div>
+            <!-- 歌曲操作 -->
+            <div class="song-actions">
+              <button class="header-btn" :class="{ favorited: isFavorite }" @click="onToggleFavorite" :title="isFavorite ? '取消收藏' : '收藏'">
+                <IconBase>
+                  <component :is="isFavorite ? IconEnum.HeartFilled : IconEnum.Heart" />
+                </IconBase>
+              </button>
+
+              <button class="header-btn" @click.stop="onShowMoreActions" title="更多操作">
+                <IconBase>
+                  <component :is="IconEnum.EllipsisVertical" />
+                </IconBase>
+              </button>
+            </div>
           </div>
 
           <!-- 音量控制（桌面端） -->
@@ -700,6 +622,7 @@
     flex-direction: column;
     background: var(--player-theme-bg);
     color: var(--player-text-primary);
+    transition: all 0.3s;
 
     .player-background {
       position: absolute;
@@ -717,15 +640,6 @@
         width: 150%;
         height: 150%;
         object-fit: contain;
-        // filter: blur(40px) brightness(1);
-        // filter: blur(40px) brightness(0.8) saturate(0.9);
-        // transform: scale(1.5);
-        // width: 200%;
-        // height: 200%;
-        // background-repeat: no-repeat;
-        // background-size: contain;
-        // background-position: center;
-        // filter: blur(40px) brightness(0.8);
       }
 
       .background-overlay {
@@ -734,7 +648,7 @@
         left: 0;
         right: 0;
         bottom: 0;
-        background: rgba(0, 0, 0, 0.3);
+        background: rgba(0, 0, 0, 0.4);
         backdrop-filter: blur(40px);
       }
     }
@@ -751,65 +665,28 @@
       .player-header {
         flex-shrink: 0;
         display: flex;
+        flex-direction: column;
         align-items: center;
-        justify-content: space-between;
-        padding: 0 10px 20px;
+        justify-content: center;
+        padding: 0 20px 20px;
         min-height: 60px;
 
-        .header-btn {
-          width: 36px;
-          height: 36px;
-          border-radius: 50%;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          transition: all 0.2s;
-          background: var(--player-btn-bg);
-          color: var(--player-highlight);
-
-          &:hover {
-            background: var(--player-btn-bg-hover);
-
-            svg {
-              filter: brightness(1.5);
-            }
-          }
-
-          &.favorited {
-            color: red;
-          }
-
-          svg {
-            width: 22px;
-          }
+        .song-title-header {
+          font-size: 20px;
+          line-height: 180%;
+          font-weight: 500;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
         }
 
-        .song-info-header {
-          flex: 1;
-          text-align: center;
-          padding: 0 20px;
-
-          .song-title-header {
-            font-size: 20px;
-            font-weight: 500;
-            margin-bottom: 8px;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-          }
-
-          .song-artist-header {
-            font-size: 14px;
-            color: var(--player-text-secondary);
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-          }
-        }
-
-        .header-actions {
-          display: flex;
-          gap: 8px;
+        .song-artist-header {
+          font-size: 14px;
+          line-height: 150%;
+          color: var(--player-text-secondary);
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
         }
       }
 
@@ -943,87 +820,7 @@
         .lyrics-section {
           flex: 1;
           min-height: 0;
-          overflow: hidden;
           padding: 20px 0;
-
-          .lyrics-container {
-            height: 100%;
-            overflow: hidden;
-            position: relative;
-
-            .no-lyrics {
-              display: flex;
-              flex-direction: column;
-              align-items: center;
-              justify-content: center;
-              height: 100%;
-              gap: 16px;
-              color: var(--player-highlight);
-
-              .no-lyrics-text {
-                font-size: 18px;
-                filter: brightness(1.3);
-              }
-
-              .load-lyrics-btn {
-                padding: 8px 20px;
-                border-radius: 20px;
-                border: none;
-                font-size: 12px;
-                transition: all 0.2s;
-                background: var(--player-btn-bg);
-                color: var(--player-text-primary);
-
-                &:hover {
-                  background: var(--player-btn-bg-hover);
-                }
-              }
-            }
-
-            .lyrics-scroll {
-              transition: transform 0.3s ease;
-
-              .lyric-line {
-                text-align: center;
-                cursor: pointer;
-                display: flex;
-                flex-direction: column;
-                align-items: center;
-                justify-content: center;
-
-                &.current {
-                  .lyric-text {
-                    font-weight: 500;
-                    transform: scale(1.3);
-                    color: var(--player-highlight);
-                  }
-                }
-
-                .lyric-text {
-                  font-weight: 400;
-                  font-size: 16px;
-                  margin-bottom: 4px;
-                  transition: all 0.3s;
-                  line-height: 34px;
-
-                  &:last-child {
-                    margin-bottom: 0;
-                  }
-                }
-
-                .lyric-translation {
-                  font-size: 0.9em;
-                  opacity: 0.8;
-                  font-style: italic;
-                }
-              }
-            }
-          }
-
-          .no-lyrics-icon {
-            font-size: 60px;
-            opacity: 0.5;
-          }
         }
       }
 
@@ -1096,53 +893,94 @@
           }
         }
 
-        .playback-controls-large {
+        .playback-actions {
           display: flex;
-          justify-content: center;
           align-items: center;
-          gap: 20px;
+          justify-content: space-between;
 
-          .control-btn-large {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
+          .playback-controls-large {
             display: flex;
-            align-items: center;
             justify-content: center;
-            transition: all 0.2s;
-            color: var(--player-highlight);
-
-            &:hover:not(:disabled) {
-              filter: brightness(1.5);
-            }
-
-            &:disabled {
-              opacity: 0.3;
-              cursor: not-allowed;
-            }
-          }
-
-          .play-pause-btn-large {
-            width: 50px;
-            height: 50px;
-            border-radius: 50%;
-            display: flex;
             align-items: center;
-            justify-content: center;
-            transition: all 0.2s;
-            background: var(--player-btn-bg);
-            color: var(--player-highlight);
+            gap: 20px;
 
-            &:hover {
-              background: var(--player-btn-bg-hover);
+            .control-btn-large {
+              width: 40px;
+              height: 40px;
+              border-radius: 50%;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              transition: all 0.2s;
+              color: var(--player-highlight);
 
-              svg {
-                filter: brightness(1.5);
+              &:hover:not(:disabled) {
+                filter: brightness(1.3);
+              }
+
+              &:disabled {
+                opacity: 0.3;
+                cursor: not-allowed;
               }
             }
 
-            svg {
-              width: 25px;
+            .play-pause-btn-large {
+              width: 50px;
+              height: 50px;
+              border-radius: 50%;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              transition: all 0.2s;
+              background: var(--player-btn-bg);
+              color: var(--player-highlight);
+
+              &:hover {
+                background: var(--player-btn-bg-hover);
+
+                svg {
+                  filter: brightness(1.3);
+                }
+              }
+
+              svg {
+                width: 25px;
+              }
+            }
+          }
+
+          .song-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 8px;
+            width: 150px;
+
+            .header-btn {
+              width: 36px;
+              height: 36px;
+              border-radius: 50%;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              transition: all 0.2s;
+              background: var(--player-btn-bg);
+              color: var(--player-highlight);
+
+              &:hover {
+                background: var(--player-btn-bg-hover);
+
+                svg {
+                  filter: brightness(1.3);
+                }
+              }
+
+              &.favorited {
+                color: red;
+              }
+
+              svg {
+                width: 22px;
+              }
             }
           }
         }

@@ -6,7 +6,7 @@
   import { getPlayManager } from '@/utils/playManager'
 
   const emit = defineEmits<{
-    'open-player': []
+    'toggle-player': [data: boolean]
   }>()
 
   const playManager = getPlayManager()
@@ -255,7 +255,7 @@
     <div class="controls-row">
       <!-- 左侧：歌曲信息 -->
       <div class="controls-left">
-        <div class="album-art-mini" @click="$emit('open-player')">
+        <div class="album-art-mini" @click="$emit('toggle-player', true)">
           <img v-if="song?.albumArt" :src="song.albumArt" :alt="song.album" class="album-art-img" />
           <div v-else class="album-art-placeholder">
             <IconBase>
@@ -342,7 +342,7 @@
           </IconBase>
         </button>
         <!-- 播放器视图切换 -->
-        <button class="control-btn2" @click="$emit('open-player')" title="打开播放详情">
+        <button class="control-btn2" @click="$emit('toggle-player', true)" title="打开播放详情">
           <IconBase>
             <component :is="IconEnum.ChevronsUp" />
           </IconBase>

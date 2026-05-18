@@ -19,17 +19,16 @@
   const song = computed(() => playerStore.currentSong)
   const settings = computed(() => playerStore.settings)
 
-  // 打开播放器界面
-  const onOpenPlayerView = () => {
+  const onTogglePlayerView = (data: boolean) => {
     if (!song.value) return
-    showPlayerViewRef.value = true
+    showPlayerViewRef.value = data
   }
 
   // 播放控制方法
   const handlePlaySong = (songId: string, listKey: string) => {
     playManager.playSong(songId, 0, listKey)
     if (settings.value.autoOpenPlayView) {
-      onOpenPlayerView()
+      onTogglePlayerView(true)
     }
   }
   const togglePlayPause = (listKey: string) => {
@@ -79,24 +78,20 @@
       <main class="main-content">
         <!-- 路由视图 -->
         <div class="view-container">
-          <!-- <router-view :key="$route.meta.key + ''" /> -->
-          <router-view :key="$route.fullPath" />
-          <!-- <KeepAlive>
-            <router-view />
-          </KeepAlive> -->
+          <!-- <router-view :key="$route.fullPath" /> -->
 
-          <!-- <router-view v-slot="{ Component }">
-            <keep-alive>
+          <router-view v-slot="{ Component }" :key="$route.fullPath">
+            <KeepAlive>
               <component :is="Component" />
-            </keep-alive>
-          </router-view> -->
+            </KeepAlive>
+          </router-view>
         </div>
       </main>
     </div>
     <!-- 播放状态栏 (常驻底部) -->
-    <PlayerStatusBar @open-player="onOpenPlayerView" />
+    <PlayerStatusBar @toggle-player="onTogglePlayerView" />
     <!-- 播放器界面 -->
-    <PlayerView :show="showPlayerViewRef" @close="showPlayerViewRef = false" />
+    <PlayerView :show="showPlayerViewRef" @toggle-player="onTogglePlayerView" />
     <Panel />
     <Modal />
     <UpdateModal />
@@ -105,114 +100,29 @@
 
 <style scoped lang="scss">
   #desktop {
+    width: 100vw;
     height: 100vh;
     display: flex;
     flex-direction: column;
-    // background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    // background: rgba(250, 250, 252, 0.75); /* 半透明浅色，非纯白 */
-    // backdrop-filter: blur(12px); /* 毛玻璃效果，提升质感 */
-    // border-radius: 20px;
-    // box-shadow: 0 20px 60px rgba(0, 0, 0, 0.05); /* 极淡阴影，保持轻盈 */
-    // color: white;
-  }
 
-  .main-container {
-    flex-grow: 1;
-    height: 100%;
-    padding: 20px 10px 10px 10px;
-    display: flex;
-    flex-direction: row;
-    overflow: hidden;
-  }
+    .main-container {
+      flex: 1;
+      min-height: 0;
+      padding: 10px;
+      display: flex;
+      flex-direction: row;
+      overflow: hidden;
 
-  .main-content {
-    flex: 1;
-    height: 100%;
-    padding-left: 20px;
+      .main-content {
+        flex: 1;
+        min-height: 0;
+        padding-left: 20px;
 
-    .view-container {
-      width: 100%;
-      height: 100%;
+        .view-container {
+          width: 100%;
+          height: 100%;
+        }
+      }
     }
-  }
-
-  .app-header {
-    text-align: center;
-    margin-bottom: 40px;
-  }
-
-  .app-header h1 {
-    font-size: 2.5em;
-    margin-bottom: 10px;
-  }
-
-  .subtitle {
-    font-size: 1.2em;
-    opacity: 0.8;
-  }
-
-  .features {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-    gap: 20px;
-    margin: 40px 0;
-  }
-
-  .feature-card {
-    background: rgba(255, 255, 255, 0.1);
-    padding: 20px;
-    border-radius: 10px;
-    backdrop-filter: blur(10px);
-    transition: transform 0.3s;
-  }
-
-  .feature-card:hover {
-    transform: translateY(-5px);
-  }
-
-  .demo-section {
-    background: rgba(255, 255, 255, 0.1);
-    padding: 30px;
-    border-radius: 15px;
-    margin: 40px 0;
-    backdrop-filter: blur(10px);
-  }
-
-  .demo-content {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 15px;
-    margin-top: 20px;
-  }
-
-  .demo-button {
-    padding: 10px 20px;
-    background: white;
-    color: #667eea;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
-    font-weight: bold;
-    transition: transform 0.2s;
-  }
-
-  .demo-button:hover {
-    transform: scale(1.05);
-  }
-
-  .system-info {
-    background: rgba(255, 255, 255, 0.1);
-    padding: 20px;
-    border-radius: 10px;
-    margin: 40px 0;
-    backdrop-filter: blur(10px);
-  }
-
-  .app-footer {
-    text-align: center;
-    padding: 20px;
-    opacity: 0.7;
-    font-size: 0.9em;
   }
 </style>

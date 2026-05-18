@@ -91,7 +91,8 @@ const createTray = () => {
   //   '../resources/icons',
   //   process.platform === 'darwin' ? (nativeTheme.shouldUseDarkColors ? 'iconTemplate@2x.png' : 'iconTemplate@2x.png') : 'icon.ico'
   // )
-  const iconPath = join(__dirname, '../resources/icons', 'icon.ico')
+
+  const iconPath = isDev ? join(__dirname, '../resources/icons', 'icon.ico') : join(process.resourcesPath, 'icons', 'icon.ico')
 
   const trayIcon = nativeImage.createFromPath(iconPath)
 
@@ -140,11 +141,11 @@ const createTray = () => {
 /*********************** 创建窗口 ***********************/
 const createWindow = async () => {
   mainWindow = new BrowserWindow({
-    width: isDev ? 1600 : 1200,
-    height: 800,
+    width: isDev ? 1600 : 1100,
+    height: 700,
     title: currentTitle,
     minWidth: 1000,
-    minHeight: 600,
+    minHeight: 640,
     webPreferences: {
       preload: join(__dirname, 'preload.js'),
       contextIsolation: true, // ✅ 必须开启

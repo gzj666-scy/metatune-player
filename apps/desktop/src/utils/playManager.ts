@@ -111,6 +111,7 @@ export class PlayManager {
 
     this.playerStore.currentState.currentSongId = songId
     this.playerStore.currentState.isPlaying = true
+    this.playerStore.currentState.currentTime = startTime
     // 如果歌曲不属于当前查看列表，将播放列表设为该歌曲所属当前查看列表
     if (listKey && listKey !== this.playerStore.currentState.currentListId) {
       this.playerStore.currentState.currentListId = listKey

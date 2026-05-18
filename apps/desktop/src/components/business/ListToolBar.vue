@@ -149,7 +149,7 @@
             <component :is="IconEnum.FileInput" />
           </IconBase>
         </button>
-        <button v-if="listKey === DefaultKey.Local" class="btn" @click="onImportLocalFolder" title="导入文件夹">
+        <button v-if="listKey === DefaultKey.Local" class="btn" @click="onImportLocalFolder" title="导入本地文件夹">
           <IconBase>
             <component :is="IconEnum.FolderInput" />
           </IconBase>

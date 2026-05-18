@@ -77,6 +77,7 @@ export default defineConfig({
                   if (id.includes('node_modules/music-metadata')) return 'vendor-audio'
                   if (id.includes('node_modules/lodash')) return 'vendor-utils'
                   if (id.includes('node_modules/js-md5')) return 'vendor-utils'
+                  if (id.includes('node_modules/node-vibrant')) return 'vendor-color'
 
                   // 3️⃣ 其他第三方库归为 vendor-default
                   return 'vendor-default'
@@ -143,6 +144,7 @@ export default defineConfig({
           if (id.includes('node_modules/lodash')) return 'vendor-utils'
           if (id.includes('node_modules/js-md5')) return 'vendor-utils'
           if (id.includes('node_modules/dayjs')) return 'vendor-utils'
+          if (id.includes('node_modules/node-vibrant')) return 'vendor-color'
 
           // 3️⃣ 其他第三方库归为 vendor-default
           return 'vendor-default'

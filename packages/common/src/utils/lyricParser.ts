@@ -26,20 +26,35 @@ export class LyricParser {
         const text = line.replace(/\[\d{2}:\d{2}(?:\.\d{2,3})?\]/g, '').trim()
 
         if (text) {
-          lines.push({ time: timeInSeconds, text })
+          // 翻译内容用「」包裹
+          const bracketMatch = text.match(/^(.+?)\s*「(.+?)」\s*$/)
+          if (bracketMatch) {
+            lines.push({ time: timeInSeconds, text: bracketMatch[1].trim(), translatedText: bracketMatch[2].trim() })
+          } else {
+            lines.push({ time: timeInSeconds, text: text })
+          }
         }
       }
-
       // 按时间排序
       lines.sort((a, b) => a.time - b.time)
       return lines
     }
 
     if (lyricsData && lyricsData.length > 0) {
-      return lyricsData.map(item => ({
-        time: (item.timestamp || 0) / 1000, // 毫秒 → 秒
-        text: item.text.trim(),
-      }))
+      lyricsData.forEach(v => {
+        const text = v.text?.trim()
+        if (text) {
+          const bracketMatch = text.match(/^(.+?)\s*「(.+?)」\s*$/)
+          if (bracketMatch) {
+            lines.push({ time: (v.timestamp || 0) / 1000, text: bracketMatch[1].trim(), translatedText: bracketMatch[2].trim() })
+          } else {
+            lines.push({ time: (v.timestamp || 0) / 1000, text: text })
+          }
+        }
+      })
+      // 按时间排序
+      lines.sort((a, b) => a.time - b.time)
+      return lines
     }
 
     return []

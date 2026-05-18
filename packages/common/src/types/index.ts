@@ -19,6 +19,10 @@ export interface IModalProps<T = any> {
   data?: T
 }
 
+export interface IBusinessData {
+  isMaximized: boolean
+}
+
 export interface IMainMenuItem {
   id: string
   name: string

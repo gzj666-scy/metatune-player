@@ -88,10 +88,10 @@
       <div class="song-info">
         <div class="song-name">{{ song.title }}</div>
         <div class="song-sub-info">
-          <div class="artist-name">{{ song.artist }}</div>
           <span v-if="song.qualityFlag" :class="`quality-badge ${song.qualityFlag?.toLowerCase()}`">
             {{ song.qualityFlag }}
           </span>
+          <div class="artist-name">{{ song.artist }}</div>
         </div>
       </div>
     </div>
