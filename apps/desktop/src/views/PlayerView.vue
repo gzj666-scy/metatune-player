@@ -467,7 +467,7 @@
       <div class="player-content">
         <div class="player-header">
           <div class="song-title-header">{{ song?.title || '--' }}</div>
-          <div class="song-artist-header">{{ song?.artist || '--' }}</div>
+          <div class="song-artist-header">{{ song ? song.artist || '<未知>' : '--' }}</div>
         </div>
 
         <div class="player-body">
@@ -491,7 +491,8 @@
 
             <!-- 歌曲信息 -->
             <div class="song-info-expanded">
-              <div v-if="song?.album" class="song-album-expanded">{{ song.album }}</div>
+              <!-- <div v-if="song?.album" class="song-album-expanded">{{ song.album }}</div> -->
+              <div class="song-album-expanded">{{ song ? song.album || '<未知>' : '--' }}</div>
 
               <!-- 音质信息 -->
               <div v-if="song" class="quality-tags">
@@ -622,7 +623,7 @@
     flex-direction: column;
     background: var(--player-theme-bg);
     color: var(--player-text-primary);
-    transition: all 0.3s;
+    transition: all 0.2s;
 
     .player-background {
       position: absolute;
@@ -639,7 +640,7 @@
       .background-image {
         width: 150%;
         height: 150%;
-        object-fit: contain;
+        object-fit: cover;
       }
 
       .background-overlay {
@@ -648,7 +649,7 @@
         left: 0;
         right: 0;
         bottom: 0;
-        background: rgba(0, 0, 0, 0.4);
+        background: rgba(0, 0, 0, 0.5);
         backdrop-filter: blur(40px);
       }
     }
@@ -668,25 +669,29 @@
         flex-direction: column;
         align-items: center;
         justify-content: center;
-        padding: 0 20px 20px;
+        padding: 10px 20px 20px;
         min-height: 60px;
 
         .song-title-header {
+          width: 100%;
           font-size: 20px;
-          line-height: 180%;
+          line-height: 150%;
           font-weight: 500;
-          white-space: nowrap;
-          overflow: hidden;
-          text-overflow: ellipsis;
+          text-align: center;
+          // white-space: nowrap;
+          // overflow: hidden;
+          // text-overflow: ellipsis;
         }
 
         .song-artist-header {
+          margin-top: 4px;
           font-size: 14px;
           line-height: 150%;
           color: var(--player-text-secondary);
-          white-space: nowrap;
-          overflow: hidden;
-          text-overflow: ellipsis;
+          text-align: center;
+          // white-space: nowrap;
+          // overflow: hidden;
+          // text-overflow: ellipsis;
         }
       }
 

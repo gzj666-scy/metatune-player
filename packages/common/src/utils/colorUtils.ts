@@ -232,7 +232,8 @@ export class DynamicColorAdjuster {
   static async getDominantColorFromImage(imageUrl?: string): Promise<{ color: [number, number, number]; hasImg: boolean }> {
     return new Promise(resolve => {
       // const def: [number, number, number] = [102, 126, 234]
-      const def: [number, number, number] = [194, 146, 97]
+      // const def: [number, number, number] = [194, 146, 97]
+      const def: [number, number, number] = [180, 150, 115]
       if (!imageUrl) {
         resolve({ color: def, hasImg: false })
         return
@@ -321,10 +322,12 @@ export class DynamicColorAdjuster {
     const btnBg = 'rgba(255, 255, 255, 0.15)'
     const btnBgHover = 'rgba(255, 255, 255, 0.25)'
 
-    const defaultBgGradient = 'linear-gradient(180deg, #667eea 0%, #764ba2 100%)'
+    // const defaultBgGradient = 'linear-gradient(180deg, #667eea 0%, #764ba2 100%)'
+    const defaultBgGradient = 'linear-gradient(180deg, #9e87bb 0%, #82aad5 100%)'
     const bgStyle = result.hasImg ? `hsl(${h}, ${s}%, ${l}%)` : defaultBgGradient
 
     return {
+      '--player-main-c': `rgba(${r}, ${g}, ${b}, 1)`,
       // --- 主背景 (保留原色) ---
       '--player-theme-bg': bgStyle,
       // --- 主体文字 (纯白，符合需求) ---

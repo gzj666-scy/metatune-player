@@ -66,7 +66,7 @@ export const usePlayerStore = defineStore('player', () => {
   const artistLists = computed(() => {
     const obj: Record<string, IArtist> = {}
     songs.value.forEach(v => {
-      const artistArr = v.artist?.split('、') || ['<未知>']
+      const artistArr = v.artist ? v.artist.split('、') : ['<未知>']
       artistArr.forEach(w => {
         if (obj[w]) {
           obj[w].songIds.push(v.uid)

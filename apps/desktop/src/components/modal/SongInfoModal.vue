@@ -22,13 +22,13 @@
 
 <template>
   <Teleport to="body">
-    <ModalBase :visible="true" :classNames="{ content: 'sim-content' }" title="歌曲信息" :onClose="onClose" :showFooter="false">
+    <ModalBase :visible="true" :classNames="{ content: 'sim-content' }" title="音频信息" :onClose="onClose" :showFooter="false">
       <div class="sim-item">
-        <span class="sim-item-label">歌名</span>
+        <span class="sim-item-label">名字</span>
         <span>{{ song?.title }}</span>
       </div>
       <div class="sim-item">
-        <span class="sim-item-label">歌手</span>
+        <span class="sim-item-label">艺人</span>
         <span>{{ song?.artist }}</span>
       </div>
       <div class="sim-item">
@@ -38,6 +38,10 @@
       <div class="sim-item">
         <span class="sim-item-label">大小</span>
         <span>{{ formatFileSize(song?.size || 0) }}</span>
+      </div>
+      <div class="sim-item">
+        <span class="sim-item-label">编码</span>
+        <span>{{ song?.codec }}</span>
       </div>
       <div class="sim-item">
         <span class="sim-item-label">路径</span>

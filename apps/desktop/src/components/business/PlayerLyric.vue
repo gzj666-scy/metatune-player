@@ -187,7 +187,7 @@
 
       .no-lyrics-text {
         font-size: 18px;
-        filter: brightness(1.3);
+        // filter: brightness(1.3);
       }
 
       .load-lyrics-btn {

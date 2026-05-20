@@ -58,7 +58,7 @@
         <IconBase>
           <component :is="IconEnum.Info" />
         </IconBase>
-        歌曲信息
+        详细信息
       </div>
       <div class="action-menu-item" @click.stop="onRemoveSong()">
         <IconBase>
