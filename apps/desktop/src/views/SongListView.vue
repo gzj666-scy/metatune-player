@@ -22,7 +22,7 @@
   const alphabet = [...'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split(''), '#']
   const currentAlphaRef = ref('')
   const clickAlphaRef = ref(false)
-  const delayClickAlphaMarkRef = ref()
+  const delayClickAlphaMarkRef = ref<number>()
   const songListContainerRef = ref<HTMLDivElement>()
   const [itemRefs, setRefs] = useRefs<InstanceType<typeof SongItem>>()
 
@@ -142,7 +142,7 @@
         clickAlphaRef.value = true
         const element = document.querySelector(`[data-song-id="${firstSongWithAlpha.uid}"]`)
         element?.scrollIntoView({ behavior: 'auto', block: 'start' })
-        delayClickAlphaMarkRef.value = setTimeout(() => {
+        delayClickAlphaMarkRef.value = window.setTimeout(() => {
           clickAlphaRef.value = false
         }, 300)
       }

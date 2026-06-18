@@ -455,3 +455,18 @@ export const addRoundedTopSubpath = (ctx: CanvasRenderingContext2D, x: number, y
 
   // ⚠️ 不调用 closePath()！由调用者批量处理后统一闭合
 }
+
+/**
+ * 将 TypedArray 按隔一留一降采样为一半长度
+ */
+export const downsampleHalf = <T extends Float32Array | Uint8Array>(typedArray: T, odd = false) => {
+  const olen = typedArray.length
+  const nlen = Math.floor(typedArray.length / 2)
+  const st = odd ? 1 : 0
+  const Constructor = typedArray.constructor as new (length: number) => T
+  const result = new Constructor(nlen)
+  for (let i = st, j = 0; i < olen; i += 2, j++) {
+    result[j] = typedArray[i]
+  }
+  return result
+}

@@ -8,7 +8,6 @@
 
 html {
   font-family: 'HarmonyOS_Sans';
-  /* font-family: "Switzer"; */
   font-size: 16px;
   font-weight: 400;
 }
@@ -136,6 +135,11 @@ scroll-view {
 
 @font-face {
   font-family: 'HarmonyOS_Sans';
+  src: url('@/assets/HarmonyOS_Sans_SC_Regular.ttf') format('truetype');
+}
+
+/* @font-face {
+  font-family: 'HarmonyOS_Sans';
   src: url('@/assets/HarmonyOS_Sans_Regular.ttf') format('truetype');
   font-weight: normal;
   font-style: normal;
@@ -153,32 +157,4 @@ scroll-view {
   src: url('@/assets/HarmonyOS_Sans_Bold.ttf') format('truetype');
   font-weight: bold;
   font-style: normal;
-}
-
-/* @font-face {
-    font-family: "Switzer";
-    src: url("@/assets/Switzer-Regular.woff2");
-    font-weight: normal;
-    font-style: normal;
-}
-
-@font-face {
-    font-family: "Switzer";
-    src: url("@/assets/Switzer-Medium.woff2");
-    font-weight: 500;
-    font-style: normal;
-}
-
-@font-face {
-    font-family: "Switzer";
-    src: url("@/assets/Switzer-Semibold.woff2");
-    font-weight: 600;
-    font-style: normal;
-}
-
-@font-face {
-    font-family: "Switzer";
-    src: url("@/assets/Switzer-Bold.woff2");
-    font-weight: bold;
-    font-style: normal;
 } */

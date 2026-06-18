@@ -210,7 +210,8 @@ export class PlayManager {
   }
 
   public getVisualizationData() {
-    return this.player.getVisualizationData()
+    // return this.player.getVisualizationData()
+    return this.player.getVisualizationDataBands()
   }
 
   /** 获取当前播放器实例 */

@@ -44,7 +44,7 @@ class ToastManager {
           'onUpdate:visible': (value: boolean) => {
             visible.value = value
             if (!value) {
-              setTimeout(() => {
+              window.setTimeout(() => {
                 toastManager.destroy(toastId)
               }, 300)
             }
@@ -59,7 +59,7 @@ class ToastManager {
 
     // 自动关闭
     if (config.duration && config.duration > 0) {
-      setTimeout(() => {
+      window.setTimeout(() => {
         handleClose()
       }, config.duration)
     }

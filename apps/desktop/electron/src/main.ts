@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain, shell, dialog, protocol, Tray, nativeTheme, nativeImage, Menu } from 'electron'
+import { app, BrowserWindow, ipcMain, shell, dialog, protocol, Tray, nativeTheme, nativeImage, Menu, powerSaveBlocker } from 'electron'
 import { fileURLToPath } from 'url'
 import { join } from 'path'
 import { AudioStreamServer } from './audioServer.js'
@@ -21,8 +21,16 @@ let tray: Tray | null = null
 let audioServer: AudioStreamServer | null = null
 let currentTitle = '元音播放器'
 let isAutoCheckUpdate = false
+let powerBlockId: number
 // 区分主动退出和用户关闭
 // let isQuiting = false
+
+// 禁止浏览器对后台页面的定时器（setTimeout / setInterval）进行节流（throttling）。
+// app.commandLine.appendSwitch('disable-background-timer-throttling')
+// 阻止 Chromium 在渲染进程（renderer process）失去焦点或隐藏时，降低其优先级或暂停其活动。
+// app.commandLine.appendSwitch('disable-renderer-backgrounding')
+// 禁用音频服务（Audio Service）的沙箱。
+// app.commandLine.appendSwitch('disable-features', 'AudioServiceSandbox')
 
 /*********************** 检查更新 ***********************/
 app.setAppUserModelId('com.gzj666-scy.metatune')
@@ -259,9 +267,16 @@ app.whenReady().then(async () => {
     })
   })
 
+  // 播放时阻止系统休眠/降频----阻止应用被暂停。保持系统活动状态，但允许屏幕关闭。
+  // powerBlockId = powerSaveBlocker.start('prevent-app-suspension')
+
   // 🔑 必须先创建窗口，再创建托盘（避免托盘先于窗口初始化）
   await createWindow()
   createTray()
+})
+
+app.on('will-quit', () => {
+  // if (powerBlockId !== undefined) powerSaveBlocker.stop(powerBlockId)
 })
 
 // macOS: 点击dock图标时重新创建窗口

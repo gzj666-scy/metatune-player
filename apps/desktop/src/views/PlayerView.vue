@@ -1,6 +1,15 @@
 <script setup lang="ts">
   import { ref, computed, watch, StyleValue, onUnmounted, onMounted, watchEffect } from 'vue'
-  import { PlayMode, DynamicColorAdjuster, DefaultVolume, IconEnum, DefaultKey, PanelType, addRoundedTopSubpath } from '@metatune/common'
+  import {
+    PlayMode,
+    DynamicColorAdjuster,
+    DefaultVolume,
+    IconEnum,
+    DefaultKey,
+    PanelType,
+    addRoundedTopSubpath,
+    downsampleHalf,
+  } from '@metatune/common'
   import IconBase from '@/components/base/IconBase.vue'
   import { getStoreManager } from '@/utils/storeManager'
   import { getPlayManager } from '@/utils/playManager'
@@ -34,11 +43,11 @@
   const showVolumeControlRef = ref(false)
   const volumeControlStyleRef = ref<StyleValue>()
   const volumeSliderRef = ref<HTMLDivElement>()
-  const delayHideVolumeRef = ref()
+  const delayHideVolumeRef = ref<number>()
 
   const canvasRef = ref<HTMLCanvasElement>()
-  const visualizationIdRef = ref()
-  const visualizationTimeRef = ref(1000 / 50)
+  const visualizationIdRef = ref<number>()
+  const visualizationTimeRef = ref(1000 / 15)
   const resizeObserverRef = ref<ResizeObserver>()
 
   const song = computed(() => playerStore.currentSong)
@@ -215,7 +224,7 @@
     showVolumeControlRef.value = true
   }
   const onVolumeMouseLeave = () => {
-    delayHideVolumeRef.value = setTimeout(() => {
+    delayHideVolumeRef.value = window.setTimeout(() => {
       showVolumeControlRef.value = false
     }, 300)
   }
@@ -223,7 +232,7 @@
     clearTimeout(delayHideVolumeRef.value)
   }
   const onVolumeControlMouseLeave = () => {
-    delayHideVolumeRef.value = setTimeout(() => {
+    delayHideVolumeRef.value = window.setTimeout(() => {
       showVolumeControlRef.value = false
     }, 300)
   }
@@ -299,19 +308,23 @@
     const height = canvas.height / dpr
     // 清空画布
     ctx.clearRect(0, 0, width, height)
-    let dataArray = visualizationData.frequency
+    let dataArray = visualizationData
+    // console.log('111 ', dataArray)
+    // dataArray = downsampleHalf(dataArray)
 
-    // 获取优化后的频域数据（过滤无效高频）
-    const maxFreq = Math.min(12000, sampleRate.value / 2)
-    const maxIndex = Math.floor((maxFreq / (sampleRate.value / 2)) * dataArray.length)
-    // const maxIndex = Math.floor((2 * dataArray.length) / 3)
-    dataArray = dataArray.slice(0, maxIndex)
+    // // 获取优化后的频域数据（过滤无效高频）
+    // const maxFreq = Math.min(12000, sampleRate.value / 2)
+    // // const maxIndex = Math.floor((maxFreq / (sampleRate.value / 2)) * dataArray.length)
+    // const maxIndex = Math.min(128, Math.floor((maxFreq / (sampleRate.value / 2)) * dataArray.length))
+    // // const maxIndex = Math.floor((2 * dataArray.length) / 3)
+    // dataArray = dataArray.slice(0, maxIndex)
 
-    const margin = 2 // 左右留白
+    const margin = 8 // 左右留白
     const usableWidth = width - margin * 2
     const barCount = dataArray.length
-    const barGap = 3 // 每根竖条之间的空隙（像素）
-    const barWidth = usableWidth / barCount - barGap
+    const barGap = usableWidth / (barCount * 2 - 1)
+    const barWidth = barGap
+
     // 定义渐变（从右到左）
     const gradient = ctx.createLinearGradient(width, 0, 0, 0)
     gradient.addColorStop(0, themeVarsRef.value['--player-canvas-r']) // (右)
@@ -338,18 +351,28 @@
     ctx.fillStyle = gradient
     ctx.beginPath()
     for (let i = 0; i < barCount; i++) {
-      // 归一化：将 0-255 的值映射到 0 - maxHeight
-      const value = dataArray[i] / 255
-      const barHeight = value * height
+      // const value = dataArray[i] / 255
+      // const barHeight = Math.min(3 + value * height, height)
+      // const x = margin + i * (barWidth + barGap)
+      // const y = height - barHeight - 0
+
+      // const value = Math.abs(dataArray[i] - 128) / 128
+      // const barHeight = 3 + value * 4 * height
+      // const x = margin + i * (barWidth + barGap)
+      // const y = height - barHeight - 0
+
+      const value = dataArray[i]
+      const barHeight = 3 + value * height
       const x = margin + i * (barWidth + barGap)
       const y = height - barHeight - 0
+
       // 为每个柱添加子路径（不 close，最后统一 close）
       addRoundedTopSubpath(ctx, x, y, barWidth, barHeight, 10)
     }
     ctx.closePath()
     ctx.fill() // 一次性填充所有柱
 
-    visualizationIdRef.value = setTimeout(drawSpectrum, visualizationTimeRef.value)
+    visualizationIdRef.value = window.setTimeout(drawSpectrum, visualizationTimeRef.value)
   }
 
   const initPlayerEvent = () => {
@@ -357,7 +380,7 @@
     if (!player) return
     player.on('play', () => {
       clearTimeout(visualizationIdRef.value)
-      visualizationIdRef.value = setTimeout(drawSpectrum, visualizationTimeRef.value)
+      visualizationIdRef.value = window.setTimeout(drawSpectrum, visualizationTimeRef.value)
     })
     player.on('pause', () => {
       clearTimeout(visualizationIdRef.value)
@@ -383,7 +406,7 @@
     canvas.height = rect.height * dpr
     ctx.scale(dpr, dpr)
     ctx.imageSmoothingEnabled = false // 频谱图不需要抗锯齿，提升性能
-    visualizationIdRef.value = setTimeout(drawSpectrum, visualizationTimeRef.value)
+    visualizationIdRef.value = window.setTimeout(drawSpectrum, visualizationTimeRef.value)
   }
 
   const clearCanvas = () => {
@@ -413,7 +436,7 @@
     newVal => {
       if (newVal) {
         clearTimeout(visualizationIdRef.value)
-        visualizationIdRef.value = setTimeout(drawSpectrum, visualizationTimeRef.value)
+        visualizationIdRef.value = window.setTimeout(drawSpectrum, visualizationTimeRef.value)
       } else {
         clearCanvas()
       }

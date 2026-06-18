@@ -79,7 +79,7 @@ class ModalManager {
       // 监听关闭
       const unwatch = watch(visible, newVal => {
         if (!newVal) {
-          setTimeout(() => {
+          window.setTimeout(() => {
             this.destroy(modalId)
             unwatch()
           }, 300)

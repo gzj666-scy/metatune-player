@@ -20,7 +20,7 @@
   const showVolumeControlRef = ref(false)
   const volumeControlStyleRef = ref<StyleValue>()
   const volumeSliderRef = ref<HTMLDivElement>()
-  const delayHideVolumeRef = ref()
+  const delayHideVolumeRef = ref<number>()
 
   const song = computed(() => playerStore.currentSong)
   const isPlaying = computed(() => playerStore.currentState.isPlaying)
@@ -162,7 +162,7 @@
   }
 
   const onVolumeMouseLeave = () => {
-    delayHideVolumeRef.value = setTimeout(() => {
+    delayHideVolumeRef.value = window.setTimeout(() => {
       showVolumeControlRef.value = false
     }, 300)
   }
@@ -172,7 +172,7 @@
   }
 
   const onVolumeControlMouseLeave = () => {
-    delayHideVolumeRef.value = setTimeout(() => {
+    delayHideVolumeRef.value = window.setTimeout(() => {
       showVolumeControlRef.value = false
     }, 300)
   }
