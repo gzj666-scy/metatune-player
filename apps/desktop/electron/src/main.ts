@@ -389,7 +389,7 @@ ipcMain.handle('cache:get:player', () => {
   return cache.player.get()
 })
 
-ipcMain.handle('cache:set:player', (_, data: { playlists: IPlaylist; settings: IAppSettings; state: IPlaybackState }) => {
+ipcMain.handle('cache:set:player', (_, data: { songDirs: string[]; playlists: IPlaylist; settings: IAppSettings; state: IPlaybackState }) => {
   return cache.player.set(data)
 })
 

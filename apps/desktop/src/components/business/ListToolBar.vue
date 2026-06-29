@@ -1,11 +1,12 @@
 <script setup lang="ts">
   import { DefaultKey, IconEnum, PanelType, SortTypeItems } from '@metatune/common'
   import type { ISong, SortTypeItemsIds } from '@metatune/common'
-  import { ref, watch } from 'vue'
+  import { ref, toRaw, watch } from 'vue'
   import { getStoreManager } from '@/utils/storeManager'
   import IconBase from '@/components/base/IconBase.vue'
   import { Loading } from '@/utils/loading'
   import { useRouter } from 'vue-router'
+  import { getPlayManager } from '@/utils/playManager'
 
   interface Props {
     listKey: string
@@ -27,6 +28,7 @@
 
   const router = useRouter()
 
+  const playManager = getPlayManager()
   const storeManager = getStoreManager()
   const playerStore = storeManager.playerStore
 
@@ -63,8 +65,24 @@
       const file = await window.electronAPI.openDirectoryDialog()
       if (file.filePaths.length > 0) {
         Loading.show()
+        storeManager.addSongDirs(file.filePaths)
         const results: ISong[] = await window.electronAPI.parseAudioMetadata(file.filePaths)
         storeManager.addSongs(results)
+        Loading.hide()
+      }
+    }
+  }
+
+  const onRefreshList = async () => {
+    if (window.electronAPI) {
+      const filePaths = toRaw(playerStore.songDirs)
+      if (filePaths?.length > 0) {
+        Loading.show()
+        const results: ISong[] = await window.electronAPI.parseAudioMetadata(filePaths)
+        const res = storeManager.refreshSongs(results)
+        if (res) {
+          playManager.seekTo(0)
+        }
         Loading.hide()
       }
     }
@@ -123,7 +141,7 @@
         </button>
       </div>
       <div class="toolbar-right">
-        <button v-if="listKey === DefaultKey.Local" class="btn-batch" @click="onToggleBatch(false)">退出批量操作</button>
+        <button class="btn-batch" @click="onToggleBatch(false)">退出批量操作</button>
       </div>
     </div>
     <div v-else class="tool-box">
@@ -152,6 +170,11 @@
         <button v-if="listKey === DefaultKey.Local" class="btn" @click="onImportLocalFolder" title="导入本地文件夹">
           <IconBase>
             <component :is="IconEnum.FolderInput" />
+          </IconBase>
+        </button>
+        <button v-if="listKey === DefaultKey.Local" class="btn" @click="onRefreshList" title="刷新列表">
+          <IconBase>
+            <component :is="IconEnum.RefreshCw" />
           </IconBase>
         </button>
         <button

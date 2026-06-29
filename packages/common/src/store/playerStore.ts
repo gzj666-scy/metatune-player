@@ -30,6 +30,7 @@ export const usePlayerStore = defineStore('player', () => {
   const modal = ref<IModalProps>({ type: '' })
   /** 本地列表 */
   const songs = ref<ISong[]>([])
+  const songDirs = ref<string[]>([])
   /** 自定义歌单数据 */
   const playlists = ref<IPlaylist>({})
   /** 播放状态 */
@@ -160,11 +161,14 @@ export const usePlayerStore = defineStore('player', () => {
     const playlistSongs = songs.value.filter(v => playlist?.songIds.includes(v.uid))
     return sortSong(deepToRaw(playlistSongs), playlist?.sortType)
   })
+  const currentPlaylistSongsValid = computed(() => {
+    return currentPlaylistSongs.value.filter(v => v.isValid)
+  })
   const canGoPrev = computed(() => {
-    return currentPlaylistSongs.value.length > 1
+    return currentPlaylistSongsValid.value.length > 1
   })
   const canGoNext = computed(() => {
-    return currentPlaylistSongs.value.length > 1
+    return currentPlaylistSongsValid.value.length > 1
   })
 
   return {
@@ -176,6 +180,7 @@ export const usePlayerStore = defineStore('player', () => {
     business,
     /** 本地列表 */
     songs,
+    songDirs,
     /** 自定义歌单数据 */
     playlists,
     /** 播放状态 */
@@ -188,6 +193,8 @@ export const usePlayerStore = defineStore('player', () => {
     defaultPlaylistKey,
     /** 当前播放的歌曲 */
     currentSong,
+    /** 当前播放列表的歌曲数组(已排序有效的) */
+    currentPlaylistSongsValid,
     /** 当前播放列表的歌曲数组(已排序) */
     currentPlaylistSongs,
     canGoPrev,

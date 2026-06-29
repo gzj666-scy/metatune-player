@@ -202,7 +202,7 @@ export class PlayerCache {
     }
   }
 
-  async set(data: { playlists: IPlaylist; settings: IAppSettings; state: IPlaybackState }): Promise<void> {
+  async set(data: { songDirs: string[]; playlists: IPlaylist; settings: IAppSettings; state: IPlaybackState }): Promise<void> {
     await ensureDir()
     await writeFile(PLAY_FILE, JSON.stringify(data), 'utf8')
   }

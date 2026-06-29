@@ -13,7 +13,7 @@ export class StoreManager {
     return this._playerStore
   }
 
-  public initData(songs: ISong[], player: { playlists: IPlaylist; settings: IAppSettings; state: IPlaybackState } | null) {
+  public initData(songs: ISong[], player: { playlists: IPlaylist; settings: IAppSettings; state: IPlaybackState; songDirs: string[] } | null) {
     if (songs?.length > 0) this._playerStore.songs = songs
     if (player?.playlists) this._playerStore.playlists = player.playlists
     if (player?.settings) this._playerStore.settings = { ...this._playerStore.settings, ...player.settings }
@@ -24,6 +24,7 @@ export class StoreManager {
         this._playerStore.currentState = { ...player.state, currentListId: DefaultKey.Local, currentSongId: '', currentTime: 0, isPlaying: false }
       }
     }
+    if (player?.songDirs && player.songDirs.length > 0) this._playerStore.songDirs = player.songDirs
   }
 
   /** 添加本地歌曲 */
@@ -70,6 +71,45 @@ export class StoreManager {
 
     window.electronAPI.setLocalListCache(newSongs)
     this.savePlayCache()
+  }
+
+  public refreshSongs(songs: ISong[]) {
+    if (songs.length <= 0) return false
+    const newSongs = songs
+    const invalids = toRaw(this._playerStore.songs)
+      .filter(v => !songs.find(w => v.uid === w.uid))
+      .map(v => ({ ...v, isValid: false }))
+    newSongs.push(...invalids)
+    const newSongIds = newSongs.map(v => v.uid)
+    this._playerStore.songs = [...newSongs]
+    // 本地列表也当做一种特殊歌单处理
+    if (this._playerStore.playlists[DefaultKey.Local]) {
+      this._playerStore.playlists[DefaultKey.Local].songIds = newSongIds
+    } else {
+      this._playerStore.playlists[DefaultKey.Local] = {
+        name: '本地列表',
+        songIds: newSongIds,
+        createTime: Date.now() + '',
+        sortType: SortTypeItems[0].value,
+      }
+    }
+
+    let reset = false
+    const currentSongId = this._playerStore.currentState.currentSongId
+    if (!songs.find(w => currentSongId === w.uid)) {
+      this._playerStore.currentState.currentSongId = ''
+      this._playerStore.currentState.currentTime = 0
+      reset = true
+    }
+
+    window.electronAPI.setLocalListCache(newSongs)
+    this.savePlayCache()
+    return reset
+  }
+
+  public addSongDirs(dirs: string[]) {
+    const newDirs = dirs.filter(v => !this._playerStore.songDirs.includes(v))
+    if (newDirs.length > 0) this._playerStore.songDirs.push(...newDirs)
   }
 
   /** 从指定列表移除歌曲，需用根据 listKey 区分逻辑 */
@@ -155,6 +195,7 @@ export class StoreManager {
 
   public savePlayCache() {
     window.electronAPI.setPlayerCache({
+      songDirs: toRaw(this._playerStore.songDirs),
       playlists: toRaw(this._playerStore.playlists),
       settings: toRaw(this._playerStore.settings),
       state: toRaw(this._playerStore.currentState),

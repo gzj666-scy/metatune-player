@@ -246,7 +246,7 @@ export const sortSong = (songs: ISong[], type: SortTypeItemsIds = SortTypeItems[
       return aValue - bValue
     })
 
-    return songs
+    return songs.sort((a, b) => Number(b.isValid) - Number(a.isValid))
   }
   // 1️⃣ 根据首字符分割成英文、中文、数字、其他四个大组
   const en_list: ISong[] = []
@@ -320,7 +320,7 @@ export const sortSong = (songs: ISong[], type: SortTypeItemsIds = SortTypeItems[
   })
   newArr = newArr.concat(num_list, symbol_list)
 
-  return newArr
+  return newArr.sort((a, b) => Number(b.isValid) - Number(a.isValid))
 }
 
 export const mergeSong = (target: ISong[], source: ISong[]) => {

@@ -54,11 +54,12 @@
     playerStore.panel = { type: PanelType.SongAction, data: { song: props.song, listKey: props.listKey, style } }
   }
 
-  const onPlay = (songId: string) => {
+  const onPlay = () => {
+    if (!props.song?.isValid) return
     if (isCurPlaying.value) {
       togglePlay(props.listKey)
     } else {
-      playSong(songId, props.listKey)
+      playSong(props.song.uid, props.listKey)
     }
   }
 
@@ -71,7 +72,13 @@
 </script>
 
 <template>
-  <div :key="song.uid" class="song-item" :class="{ selected: selected, isCurPlaying: isCurPlaying }" :data-song-id="song.uid" ref="rootRef">
+  <div
+    :key="song.uid"
+    class="song-item"
+    :class="{ selected: selected, isCurPlaying: isCurPlaying, invalid: !song.isValid }"
+    :data-song-id="song.uid"
+    ref="rootRef"
+  >
     <div class="cell-checkbox">
       <input v-if="isBatch" type="checkbox" :checked="selected" @click.stop @change="onSelect(song.uid)" />
       <span v-else>{{ index + 1 }}</span>
@@ -98,7 +105,7 @@
     <div class="cell-album">{{ song.album }}</div>
     <div class="cell-duration">{{ formatDuration(song.duration) }}</div>
     <div class="cell-actions">
-      <button class="action-btn" :title="playing ? '正在播放' : '播放'" @click="onPlay(song.uid)">
+      <button class="action-btn action-play" :title="playing ? '正在播放' : '播放'" @click="onPlay">
         <IconBase v-if="playing">
           <component :is="IconEnum.Pause" />
         </IconBase>
@@ -144,6 +151,14 @@
 
       .artist-name {
         color: var(--active-text-secondary) !important;
+      }
+    }
+
+    &.invalid {
+      opacity: 0.5;
+
+      .action-btn.action-play {
+        pointer-events: none;
       }
     }
 

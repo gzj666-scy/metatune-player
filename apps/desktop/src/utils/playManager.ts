@@ -49,7 +49,7 @@ export class PlayManager {
     this.playerStore.currentState.currentTime = 0
     if (!this.isAutoPlayNext) return
     const { playMode, currentSongId } = this.playerStore.currentState
-    const currentPlaylist = this.playerStore.currentPlaylistSongs
+    const currentPlaylist = this.playerStore.currentPlaylistSongsValid
     if (currentPlaylist.length === 0) return
     const currentIndex = currentPlaylist.findIndex(v => v.uid === currentSongId)
     let nextSongId: string | null = null
@@ -149,7 +149,7 @@ export class PlayManager {
   /** 播放上一首 */
   public playPrev() {
     const { currentSongId, playMode } = this.playerStore.currentState
-    const currentPlaylist = this.playerStore.currentPlaylistSongs
+    const currentPlaylist = this.playerStore.currentPlaylistSongsValid
     if (currentPlaylist.length === 0) return
     let prevIndex: number
     const currentIndex = currentPlaylist.findIndex(v => v.uid === currentSongId)

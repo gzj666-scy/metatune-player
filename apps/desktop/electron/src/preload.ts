@@ -35,7 +35,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
   /** 获取播放器数据 */
   getPlayerCache: () => ipcRenderer.invoke('cache:get:player'),
   /** 设置播放器数据 */
-  setPlayerCache: (data: { playlists: IPlaylist; settings: IAppSettings; state: IPlaybackState }) => ipcRenderer.invoke('cache:set:player', data),
+  setPlayerCache: (data: { songDirs: string[]; playlists: IPlaylist; settings: IAppSettings; state: IPlaybackState }) =>
+    ipcRenderer.invoke('cache:set:player', data),
   /** 重置所有缓存数据 */
   resetAllCache: () => ipcRenderer.invoke('cache:reset:all'),
   /** 修改标题 */

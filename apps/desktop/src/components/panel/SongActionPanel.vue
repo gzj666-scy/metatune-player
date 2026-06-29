@@ -48,13 +48,13 @@
 <template>
   <Teleport to="body">
     <div class="action-menu" :style="actionStyle" v-click-outside="onClose">
-      <div class="action-menu-item" @click.stop="onAddToPlayList()">
+      <div class="action-menu-item" :class="{ invalid: !data?.song?.isValid }" @click.stop="onAddToPlayList()">
         <IconBase>
           <component :is="IconEnum.Plus" />
         </IconBase>
         添加到歌单
       </div>
-      <div class="action-menu-item" @click.stop="onLookSongInfo()">
+      <div class="action-menu-item" :class="{ invalid: !data?.song?.isValid }" @click.stop="onLookSongInfo()">
         <IconBase>
           <component :is="IconEnum.Info" />
         </IconBase>
@@ -92,6 +92,11 @@
 
       &:hover {
         background: #f4f4f4;
+      }
+
+      &.invalid {
+        opacity: 0.5;
+        pointer-events: none;
       }
 
       svg {

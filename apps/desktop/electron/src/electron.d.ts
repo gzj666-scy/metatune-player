@@ -19,8 +19,8 @@ declare global {
 
       getLocalListCache: () => Promise<ISong[]>
       setLocalListCache: (data: ISong[]) => Promise<boolean>
-      getPlayerCache: () => Promise<{ playlists: IPlaylist; settings: IAppSettings; state: IPlaybackState } | null>
-      setPlayerCache: (data: { playlists: IPlaylist; settings: IAppSettings; state: IPlaybackState }) => Promise<boolean>
+      getPlayerCache: () => Promise<{ songDirs: string[]; playlists: IPlaylist; settings: IAppSettings; state: IPlaybackState } | null>
+      setPlayerCache: (data: { songDirs: string[]; playlists: IPlaylist; settings: IAppSettings; state: IPlaybackState }) => Promise<boolean>
       resetAllCache: () => Promise<boolean>
       setWindowTitle: (title: string) => void
 
