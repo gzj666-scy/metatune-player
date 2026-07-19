@@ -148,13 +148,17 @@ export class StoreManager {
   }
 
   /** 添加歌曲到歌单 */
-  public addToPlaylist(data: { id: string; songIds: string[] }[]) {
+  public addToPlaylist(data: { id: string; songIds: string[]; cover: boolean }[]) {
     for (let index = 0; index < data.length; index++) {
       const element = data[index]
       const playlist = this._playerStore.playlists[element.id]
       if (playlist) {
-        const arr = element.songIds.filter(v => !playlist.songIds.includes(v))
-        this._playerStore.playlists[element.id].songIds.push(...arr)
+        if (element.cover) {
+          this._playerStore.playlists[element.id].songIds = element.songIds
+        } else {
+          const arr = element.songIds.filter(v => !playlist.songIds.includes(v))
+          this._playerStore.playlists[element.id].songIds.push(...arr)
+        }
       }
     }
 
@@ -193,6 +197,32 @@ export class StoreManager {
     this.savePlayCache()
   }
 
+  /** 清理无效歌曲 */
+  public clearInvalidSongs() {
+    const newSongs = toRaw(this._playerStore.songs).filter(v => v.isValid)
+    const newSongIds = newSongs.map(v => v.uid)
+
+    this._playerStore.songs = [...newSongs]
+    for (const key in this._playerStore.playlists) {
+      if (key === DefaultKey.Local) {
+        this._playerStore.playlists[DefaultKey.Local].songIds = newSongIds
+      } else {
+        const playlist = this._playerStore.playlists[key]
+        this._playerStore.playlists[key]['songIds'] = playlist.songIds.filter(v => newSongIds.includes(v))
+      }
+    }
+
+    window.electronAPI.setLocalListCache(newSongs)
+    this.savePlayCache()
+  }
+
+  /** 清理无效专辑图 */
+  public clearInvalidAlbumArt() {
+    const newSongs = toRaw(this._playerStore.songs).filter(v => v.isValid)
+    const set = new Set(newSongs.map(v => v.albumArt?.slice('cache://'.length)).filter(v => v))
+    window.electronAPI.clearInvalidAlbumArt(set)
+  }
+
   public savePlayCache() {
     window.electronAPI.setPlayerCache({
       songDirs: toRaw(this._playerStore.songDirs),
@@ -208,8 +238,18 @@ export class StoreManager {
     this._playerStore.currentState = defaultState
     this._playerStore.settings = defaultSettings
   }
-}
 
+  public getPlaylistByName(name: string): IPlaylistItem | null {
+    if (!name) return null
+    for (const key in this._playerStore.playlists) {
+      const playlist = this._playerStore.playlists[key]
+      if (playlist.name === name) {
+        return playlist
+      }
+    }
+    return null
+  }
+}
 // 单例管理
 let instance: StoreManager | null = null
 export const getStoreManager = (): StoreManager => {

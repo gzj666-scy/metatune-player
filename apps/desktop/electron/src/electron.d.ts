@@ -23,6 +23,7 @@ declare global {
       setPlayerCache: (data: { songDirs: string[]; playlists: IPlaylist; settings: IAppSettings; state: IPlaybackState }) => Promise<boolean>
       resetAllCache: () => Promise<boolean>
       setWindowTitle: (title: string) => void
+      clearInvalidAlbumArt: (albumArts: Set<string | undefined>) => Promise<boolean>
 
       send: (channel: string, data?: any) => void
       on: (channel: string, func: (...args: any[]) => void) => () => void

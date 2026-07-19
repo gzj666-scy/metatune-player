@@ -1,7 +1,7 @@
 import { IAppSettings, IPlaybackState, IPlaylist, ISong } from '@metatune/common/types'
 import { app } from 'electron'
 import { accessSync, constants, existsSync, mkdirSync, rmSync } from 'fs'
-import { access, mkdir, readFile, rm, writeFile } from 'fs/promises'
+import { access, mkdir, readdir, readFile, rm, writeFile, stat, unlink } from 'fs/promises'
 import { dirname, join } from 'path'
 import { fileURLToPath } from 'url'
 // C:\Users\scy\AppData\Roaming\metatune-data.json
@@ -231,7 +231,22 @@ export class CoverCache {
     }
   }
 
-  async clear(): Promise<void> {
+  async clear(albumArts: Set<string | undefined>): Promise<void> {
+    // 读取目录
+    const files = await readdir(COVER_DIR)
+    const deletePromises = []
+    for (const file of files) {
+      // 只处理文件，忽略子目录
+      const filePath = join(COVER_DIR, file)
+      const stats = await stat(filePath)
+      if (stats.isFile() && !albumArts.has(file)) {
+        deletePromises.push(unlink(filePath))
+      }
+    }
+    await Promise.all(deletePromises)
+  }
+
+  async clearAll(): Promise<void> {
     await rm(COVER_DIR, { recursive: true, force: true })
   }
 }

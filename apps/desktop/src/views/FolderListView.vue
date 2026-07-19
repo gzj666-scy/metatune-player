@@ -25,7 +25,13 @@
   <section class="folder-list-view">
     <div class="folder-list-container">
       <div v-if="folderList.length > 0" class="folder-list">
-        <div v-for="item in folderList" :key="item.name" class="folder-item" @click="onArtist(item)">
+        <div
+          v-for="item in folderList"
+          :key="item.name"
+          class="folder-item"
+          :class="{ selected: playerStore.currentFolderName === item.name }"
+          @click="onArtist(item)"
+        >
           <div class="folder-art">
             <img v-if="item.coverArt" :src="item.coverArt" :alt="item.name" class="folder-art-img" />
             <div v-else class="folder-art-placeholder">
@@ -82,7 +88,12 @@
             background: var(--item-hover-bg);
           }
 
+          &.selected {
+            background: var(--item-selected-bg);
+          }
+
           .folder-art {
+            flex-shrink: 0;
             width: 40px;
             height: 40px;
             border-radius: 50%;

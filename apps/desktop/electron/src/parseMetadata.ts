@@ -9,17 +9,17 @@ import { cache } from './appCache'
 
 // MPEG-4/AAC、、MPEG 1 Layer 3
 export const AudioFormat = [
-  'mp3',
-  'm4a',
-  'flac',
+  'mp3', //codec: "MPEG 1 Layer 3"; container: "MPEG"
+  'm4a', //codec: "MPEG-4/AAC"; container: "M4A/isom/iso2"
+  'flac', //codec: "FLAC"; container: "FLAC"
   'aac',
   'wav',
-  'ape', //疑似需 FFmpeg / JS 软解
+  // 'ape', //疑似需 FFmpeg / JS 软解
   'alac',
-  'ogg',
-  'opus',
-  'webm',
-  'wma', //疑似浏览器不支持，需软解
+  // 'ogg', //codec: "Opus"; container: "Ogg"   疑似无法解析出时长、比特率信息，不予支持
+  // 'opus',
+  // 'webm', //codec: "OPUS"; container: "EBML/webm"   疑似无法解析出比特率信息，不予支持
+  // 'wma', //codec: "Windows Media Audio 9"; container: "ASF/audio"   浏览器不支持，需软解，不予支持
 ]
 
 /**

@@ -1,11 +1,7 @@
 {
   "compilerOptions": {
     "target": "ES2020",
-    "lib": [
-      "ES2020",
-      "DOM",
-      "DOM.Iterable"
-    ],
+    "lib": ["ES2020", "DOM", "DOM.Iterable"],
     "module": "ESNext",
     "skipLibCheck": true,
     "moduleResolution": "bundler",
@@ -23,23 +19,11 @@
     "jsx": "preserve",
     "jsxImportSource": "vue",
     "paths": {
-      "@metatune/common": [
-        "./packages/common/src"
-      ],
-      "@metatune/common/*": [
-        "./packages/common/src/*"
-      ]
-    }
+      "@metatune/common": ["./packages/common/src"],
+      "@metatune/common/*": ["./packages/common/src/*"]
+    },
+    "types": ["@types/node", "node"]
   },
-  "include": [
-    "packages/**/*.ts",
-    "packages/**/*.vue",
-    "packages/**/*.tsx",
-    "apps/**/*.ts",
-    "apps/**/*.vue"
-  ],
-  "exclude": [
-    "node_modules",
-    "dist"
-  ]
+  "include": ["packages/**/*.ts", "packages/**/*.vue", "packages/**/*.tsx", "apps/**/*.ts", "apps/**/*.vue"],
+  "exclude": ["node_modules", "dist"]
 }

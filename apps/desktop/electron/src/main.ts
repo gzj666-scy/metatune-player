@@ -397,6 +397,10 @@ ipcMain.handle('cache:reset:all', () => {
   return resetAllCache()
 })
 
+ipcMain.handle('cache:clear:invalidAlbumArt', (_, albumArts: Set<string | undefined>) => {
+  return cache.cover.clear(albumArts)
+})
+
 // 监听渲染进程的语言切换请求
 ipcMain.handle('set-window-title', (_, title: string) => {
   currentTitle = title

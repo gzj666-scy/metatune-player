@@ -21,7 +21,8 @@
     "electron:start": "cross-env NODE_ENV=production electron .",
     "compile:electron": "tsc -p electron/tsconfig.node.json",
     "compile:electron:watch": "tsc -p electron/tsconfig.json --watch --preserveWatchOutput",
-    "rebuild:native": "electron-rebuild -f -w speaker"
+    "rebuild:native": "electron-rebuild -f -w speaker",
+    "copy": "node scripts/copySongs.js"
   },
   "dependencies": {
     "@metatune/common": "workspace:*",

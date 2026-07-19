@@ -41,6 +41,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
   resetAllCache: () => ipcRenderer.invoke('cache:reset:all'),
   /** 修改标题 */
   setWindowTitle: (title: string) => ipcRenderer.invoke('set-window-title', title),
+  /** 清理无效专辑图 */
+  clearInvalidAlbumArt: (albumArts: Set<string | undefined>) => ipcRenderer.invoke('cache:clear:invalidAlbumArt', albumArts),
   // 歌词处理
   // readLyricFile: (lyricPath) => ipcRenderer.invoke('lyric:readFile', lyricPath),
 

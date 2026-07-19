@@ -1,6 +1,6 @@
 <script setup lang="ts">
   import { ref, computed, toRaw, onUnmounted } from 'vue'
-  import { getFirstLetter, IconEnum, ModalType, useRefs } from '@metatune/common'
+  import { getFirstLetter, IconEnum, ModalType, SortTypeItems, useRefs } from '@metatune/common'
   import type { ISong } from '@metatune/common'
   import SongItem from '@/components/business/SongItem.vue'
   import { getStoreManager } from '@/utils/storeManager'
@@ -18,6 +18,7 @@
   const searchQueryRef = ref('')
   const showBatchActionsRef = ref(false)
   const selectedSongsRef = ref<string[]>([])
+  const isLookPlaylistRef = ref(false)
   // 字母导航
   const alphabet = [...'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split(''), '#']
   const currentAlphaRef = ref('')
@@ -28,7 +29,7 @@
 
   const listKey = computed(() => playerStore.currentViewKey)
   const sortType = computed(() => {
-    return playerStore.playlists[listKey.value]?.sortType
+    return playerStore.playlists[listKey.value]?.sortType || SortTypeItems[0].value
   })
   const filteredSongs = computed(() => {
     let songs: ISong[] = []
@@ -76,6 +77,7 @@
     showBatchActionsRef.value = data
     if (!data) {
       selectedSongsRef.value = []
+      isLookPlaylistRef.value = false
     }
   }
 
@@ -100,10 +102,11 @@
     if (selectedSongsRef.value && selectedSongsRef.value.length > 0) {
       playerStore.modal = {
         type: ModalType.AddToPlaylist,
-        data: { songIds: selectedSongsRef.value },
+        data: { songIds: selectedSongsRef.value, cover: isLookPlaylistRef.value },
         closeCallBack: () => {
           showBatchActionsRef.value = false
           selectedSongsRef.value = []
+          isLookPlaylistRef.value = false
         },
       }
     }
@@ -116,7 +119,19 @@
         storeManager.removeSongs(selectedSongsRef.value, listKey.value)
         showBatchActionsRef.value = false
         selectedSongsRef.value = []
+        isLookPlaylistRef.value = false
       }
+    }
+  }
+
+  const onLookPlaylistSongs = async () => {
+    const name = await Modal.prompt('输入查看歌单')
+    const playlist = storeManager.getPlaylistByName(name || '')
+    const songIds = playlist?.songIds || []
+    if (songIds.length > 0 && filteredSongs.value.length > 0) {
+      onBatchChange(true)
+      selectedSongsRef.value = [...songIds]
+      isLookPlaylistRef.value = true
     }
   }
 
@@ -135,9 +150,8 @@
       const firstSongWithAlpha = filteredSongs.value.find(song => {
         // @ts-expect-error 不需要检测
         const testStr = song[sortType.value]
-        return getFirstLetter(testStr) === letter
+        return getFirstLetter(testStr, song.isValid) === letter
       })
-
       if (firstSongWithAlpha) {
         clickAlphaRef.value = true
         const element = document.querySelector(`[data-song-id="${firstSongWithAlpha.uid}"]`)
@@ -200,7 +214,7 @@
     if (topMostUid) {
       const song = filteredSongs.value.find(s => s.uid === topMostUid)
       if (song) {
-        const newLetter = getFirstLetter(song[sortType.value as 'title' | 'artist' | 'fileName'])
+        const newLetter = getFirstLetter(song[sortType.value as 'title' | 'artist' | 'fileName'], song.isValid)
         currentAlphaRef.value = newLetter
       }
     }
@@ -226,6 +240,7 @@
       @batch-change="onBatchChange"
       @add-to-playlist="onAddToPlayList"
       @remove-songs="onRemoveSongs"
+      @look-playlist-songs="onLookPlaylistSongs"
     />
     <div class="song-list-main">
       <div class="song-list-main-l">
@@ -300,6 +315,8 @@
       .song-list-main-l {
         width: 100%;
         position: relative;
+        display: flex;
+        flex-direction: column;
 
         .selected-count {
           flex-shrink: 0;
@@ -320,7 +337,7 @@
         .song-list-container {
           flex: 1;
           width: 100%;
-          height: 100%;
+          min-height: 0;
 
           .song-list {
             width: 100%;

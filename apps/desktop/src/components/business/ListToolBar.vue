@@ -24,6 +24,7 @@
     'batch-change': [data: boolean]
     'add-to-playlist': []
     'remove-songs': []
+    'look-playlist-songs': []
   }>()
 
   const router = useRouter()
@@ -46,6 +47,10 @@
 
   const onBack = () => {
     router.back()
+  }
+
+  const onLookSongs = async () => {
+    emit('look-playlist-songs')
   }
 
   const onImportLocalSongs = async () => {
@@ -162,6 +167,11 @@
         </div>
       </div>
       <div class="toolbar-right">
+        <button v-if="listKey === DefaultKey.Local" class="btn" @click="onLookSongs" title="查看歌单歌曲">
+          <IconBase>
+            <component :is="IconEnum.Eye" />
+          </IconBase>
+        </button>
         <button v-if="listKey === DefaultKey.Local" class="btn" @click="onImportLocalSongs" title="导入本地歌曲">
           <IconBase>
             <component :is="IconEnum.FileInput" />

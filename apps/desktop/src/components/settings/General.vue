@@ -28,8 +28,10 @@
   }
 
   const onClear = async () => {
-    const result = await Modal.confirm('清理数据（未使用的专辑图等）', '确认清理')
+    const result = await Modal.confirm('清理数据（未使用的专辑图、无效的歌曲等）', '确认清理')
     if (result) {
+      storeManager.clearInvalidSongs()
+      storeManager.clearInvalidAlbumArt()
     }
   }
 

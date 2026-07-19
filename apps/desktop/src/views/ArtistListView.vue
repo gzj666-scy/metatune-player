@@ -25,7 +25,13 @@
   <section class="artist-list-view">
     <div class="artist-list-container">
       <div v-if="artistList.length > 0" class="artist-list">
-        <div v-for="item in artistList" :key="item.name" class="artist-item" @click="onArtist(item)">
+        <div
+          v-for="item in artistList"
+          :key="item.name"
+          class="artist-item"
+          :class="{ selected: playerStore.currentArtistName === item.name }"
+          @click="onArtist(item)"
+        >
           <div class="artist-art">
             <img v-if="item.coverArt" :src="item.coverArt" :alt="item.name" class="artist-art-img" />
             <div v-else class="artist-art-placeholder">
@@ -82,7 +88,12 @@
             background: var(--item-hover-bg);
           }
 
+          &.selected {
+            background: var(--item-selected-bg);
+          }
+
           .artist-art {
+            flex-shrink: 0;
             width: 40px;
             height: 40px;
             border-radius: 50%;

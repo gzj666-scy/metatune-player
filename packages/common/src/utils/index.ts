@@ -154,7 +154,7 @@ const anchorChars = [
   '讥', // J
   '咔', // K
   '垃', // L
-  '痳', // M
+  '妈', // M
   '拏', // N
   '喔', // O
   '妑', // P
@@ -172,8 +172,8 @@ const anchorChars = [
 // 2. 对应的字母标签数组（确保索引一一对应）
 const alphabet = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z']
 /** 获取字符串的首字母（支持中文、英文、数字、特殊字符） */
-export const getFirstLetter = (str: string): string => {
-  if (!str) return '#'
+export const getFirstLetter = (str: string, isValid: boolean): string => {
+  if (!str || !isValid) return '#'
   const firstChar = str.charAt(0)
   if (/[a-zA-Z]/.test(firstChar)) return firstChar.toUpperCase()
   if (/[0-9]/.test(firstChar)) return '#'
@@ -203,7 +203,7 @@ export const getFirstLetter = (str: string): string => {
  * 中文：取首字符拼音首字母大写 + 原字符串
  * 其他：保留原样
  */
-export const getPinyinSortKey = (str: string): string => {
+const getPinyinSortKey = (str: string): string => {
   if (!str) return str
 
   const text = str.trim()
@@ -218,7 +218,7 @@ export const getPinyinSortKey = (str: string): string => {
 
   // 中文：取首字符拼音首字母 + 原字符串
   if (isChineseChar(first)) {
-    const pinyin = getFirstLetter(first)
+    const pinyin = getFirstLetter(first, true)
     if (alphabet.includes(pinyin)) {
       // 用拼音 + 原字符串，保证同拼音时按原序
       return pinyin + text
@@ -284,7 +284,7 @@ export const sortSong = (songs: ISong[], type: SortTypeItemsIds = SortTypeItems[
     cn_list.forEach(w => {
       // @ts-expect-error 不需要检测
       const name = w[type]?.trim() || ''
-      const first = getFirstLetter(name)
+      const first = getFirstLetter(name, w.isValid)
       if (first.toUpperCase() === v) {
         cn_list_letter[i].push(w)
       }

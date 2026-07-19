@@ -4,7 +4,7 @@
   import ModalBase from '../base/ModalBase.vue'
   import { IModalProps } from '@metatune/common'
 
-  const props = withDefaults(defineProps<IModalProps<{ songIds: string[] }>>(), {
+  const props = withDefaults(defineProps<IModalProps<{ songIds: string[]; cover?: boolean }>>(), {
     type: '',
   })
 
@@ -33,7 +33,7 @@
 
   const onAdd = () => {
     if (selectedListsRef.value.length > 0 && props.data?.songIds && props.data.songIds?.length > 0) {
-      storeManager.addToPlaylist(selectedListsRef.value.map(v => ({ id: v, songIds: props.data?.songIds || [] })))
+      storeManager.addToPlaylist(selectedListsRef.value.map(v => ({ id: v, songIds: props.data?.songIds || [], cover: props.data?.cover || false })))
     }
     onClose()
   }
