@@ -1,4 +1,4 @@
-import type { IAppSettings, IPlaylist, ISong, IPlaybackState } from '@metatune/common'
+import type { IAppSettings, IPlaylist, ISong, IPlaybackState } from '@metatune/common/types'
 import { contextBridge, ipcRenderer } from 'electron'
 import type Electron from 'electron'
 

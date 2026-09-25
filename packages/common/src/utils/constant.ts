@@ -1,4 +1,4 @@
-import { IMainMenuItem } from '@/types'
+import { IMainMenuItem } from '../types'
 import { IconEnum } from './svgIcons'
 
 export const AudioFormat = ['mp3', 'aac', 'm4a', 'flac', 'ape', 'alac', 'wav', 'wma', 'ogg']

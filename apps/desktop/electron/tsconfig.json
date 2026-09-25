@@ -1,29 +1,19 @@
 {
+  "extends": "../../../tsconfig.json",
   "compilerOptions": {
-    "target": "ES2022",
-    "module": "ESNext",
+    // 主进程运行在 Electron(Node) 里，不继承根的 DOM lib
     "lib": ["ES2022"],
-    "composite": true,
-    "strict": true,
-    "esModuleInterop": true,
-    "skipLibCheck": true,
-    "forceConsistentCasingInFileNames": true,
-    "allowSyntheticDefaultImports": true,
-    "resolveJsonModule": true,
-    "moduleResolution": "bundler",
+    "target": "ES2022",
+    "types": ["node", "electron"],
+    // 产物由 vite-plugin-electron 输出，这里只做类型检查
+    "noEmit": true,
     "paths": {
       "@/*": ["./src/*"],
       "@metatune/common": ["../../../packages/common/src"],
       "@metatune/common/*": ["../../../packages/common/src/*"]
-    },
-    "types": ["node", "electron"]
+    }
   },
-  "include": [
-    "src/**/*.ts",
-    "src/**/*.d.ts",
-    // "vite.config.ts",
-    // "../../../packages/common/src/types/*.ts"
-    "../../../packages/common/src/**/*.ts"
-  ],
-  "exclude": ["node_modules", "dist", "test"]
+  // 只收主进程源码；common 的类型由 import 链自动带入，不必整包 include
+  "include": ["src/**/*.ts"],
+  "exclude": ["node_modules", "dist"]
 }

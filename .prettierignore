@@ -12,6 +12,10 @@ dist
 dist-web
 dist-electron
 release
+unpackage
+.metatune-cache
 *.lock
 .husky
-.vscode
+
+# 项目记忆与日志（append-only，不该被格式化）
+.workbuddy

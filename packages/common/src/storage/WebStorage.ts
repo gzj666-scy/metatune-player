@@ -1,4 +1,4 @@
-import { IStorage } from "./IStorage.ts";
+import { IStorage } from "./IStorage";
 
 // src/storage/WebStorage.ts (Web/Electron实现)
 export class WebStorage implements IStorage {

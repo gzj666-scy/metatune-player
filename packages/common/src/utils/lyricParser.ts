@@ -1,4 +1,4 @@
-import { ILyricsText, ILyricLine } from '@/types'
+import { ILyricsText, ILyricLine } from '../types'
 
 /** 歌词解析器 */
 export class LyricParser {

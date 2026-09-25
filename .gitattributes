@@ -1,0 +1,55 @@
+# ============================================================
+# 默认行为
+# ------------------------------------------------------------
+# 自动识别文本文件，并在仓库中统一使用 LF 存储；
+# 检出到工作区时也使用 LF，保证跨平台一致。
+# 如果团队主要在 Windows 且希望检出 CRLF，可把 eol=lf 去掉。
+# ============================================================
+* text=auto eol=lf
+
+# ============================================================
+# 脚本类：强制换行符
+# ------------------------------------------------------------
+# Shell 脚本必须 LF，否则 Linux/macOS 下可能无法执行。
+# Windows 批处理必须 CRLF，否则可能出错。
+# ============================================================
+*.sh      text eol=lf
+*.bash    text eol=lf
+*.zsh     text eol=lf
+*.fish    text eol=lf
+*.bat     text eol=crlf
+*.cmd     text eol=crlf
+*.ps1     text eol=crlf
+*.reg     text eol=crlf
+*.vbs     text eol=crlf
+
+# ============================================================
+# 前端 / Node / 小程序
+# ============================================================
+*.js      text eol=lf
+*.jsx     text eol=lf
+*.mjs      text eol=lf
+*.ts      text eol=lf
+*.tsx     text eol=lf
+*.vue     text eol=lf
+*.css     text eol=lf
+*.scss    text eol=lf
+*.less    text eol=lf
+*.html    text eol=lf
+*.htm     text eol=lf
+*.json    text eol=lf
+*.jsonc   text eol=lf
+*.yaml    text eol=lf
+*.yml     text eol=lf
+*.md      text eol=lf
+*.wxml    text eol=lf
+*.wxss    text eol=lf
+*.wxs     text eol=lf
+
+# ============================================================
+# Kotlin / KMP / Gradle
+# ============================================================
+*.kt        text eol=lf
+*.kts       text eol=lf
+*.gradle    text eol=lf
+*.gradle.kts text eol=lf

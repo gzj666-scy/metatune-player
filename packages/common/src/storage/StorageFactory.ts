@@ -1,4 +1,4 @@
-import { IStorage } from "./IStorage.ts";
+import { IStorage } from "./IStorage";
 import { UniAppStorage } from "./UniAppStorage.js";
 import { WebStorage } from "./WebStorage.js";
 

@@ -1,4 +1,4 @@
-import type { ISong, IPlaylist, IAppSettings, IPlaybackState } from '@metatune/common'
+import type { ISong, IPlaylist, IAppSettings, IPlaybackState } from '@metatune/common/types'
 import type Electron from 'electron'
 export {}
 

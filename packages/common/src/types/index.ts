@@ -1,4 +1,4 @@
-import { ModalType, PanelType, PlayMode, SortTypeItemsIds } from '@/utils/constant'
+import { ModalType, PanelType, PlayMode, SortTypeItemsIds } from '../utils/constant'
 import { Component } from 'vue'
 
 export interface IPanelProps<T = any> {

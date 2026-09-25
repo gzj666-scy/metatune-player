@@ -1,4 +1,4 @@
-import { IStorage } from "./IStorage.ts";
+import { IStorage } from "./IStorage";
 
 // src/storage/UniAppStorage.ts (UniApp实现)
 export class UniAppStorage implements IStorage {

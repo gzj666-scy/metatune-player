@@ -1,3 +1,62 @@
 packages:
   - "packages/*"
   - "apps/*"
+  # 移动端暂缓开发（已确认先做桌面端），先移出工作区：
+  # 它的 36 个 @dcloudio/* 包体积大、安装慢，会拖累每次 pnpm install。
+  # 恢复开发时，删掉这一行即可（catalog:uni-app 的版本定义保留着，不用重新配）。
+  - "!apps/mobile"
+
+# ------------------------------------------------------------------- catalog
+# pnpm catalog（9.5+）：版本号集中在这里，子包用 `catalog:` / `catalog:<名字>` 引用。
+#
+# 收录原则：只放「多处引用」或「必须版本一致」的依赖。
+# 只在单个包里用一次的不要放进来 —— 那只是凭空多一层间接，看 package.json 时还得回查。
+#
+# 注意：catalog-mode 默认是 manual，所以 `pnpm add xxx` 不会自动写成 `catalog:`，
+# 新增依赖要显式 `pnpm add --save-catalog xxx`，或手动改。
+
+# 默认 catalog：引用时写 `catalog:`
+catalog:
+  # Vue 运行时与类型必须同版本，否则 SFC 的类型推断会漂移
+  vue: ^3.5.32
+  "@vue/runtime-core": ^3.5.32
+  # @vue/reactivity 是 vue 的底层包，common/src/hooks/useRefs.ts 直接 import 它，
+  # 版本必须跟 vue 走同一档，否则会出现两份响应式系统（isRef/toRaw 判不出来）
+  "@vue/reactivity": ^3.5.32
+  # pinia 被 desktop / common / mobile 三处引用，且 store 是跨包共享的单例
+  pinia: ^3.0.4
+
+# 命名 catalog：引用时写 `catalog:uni-app`
+catalogs:
+  uni-app:
+    # uni-app 各端包必须严格同版本（内部互相 peer），单独升任何一个都会炸
+    "@dcloudio/uni-app": 3.0.0-5000620260331001
+    "@dcloudio/uni-app-harmony": 3.0.0-5000620260331001
+    "@dcloudio/uni-app-plus": 3.0.0-5000620260331001
+    "@dcloudio/uni-components": 3.0.0-5000620260331001
+    "@dcloudio/uni-h5": 3.0.0-5000620260331001
+    "@dcloudio/uni-mp-alipay": 3.0.0-5000620260331001
+    "@dcloudio/uni-mp-baidu": 3.0.0-5000620260331001
+    "@dcloudio/uni-mp-harmony": 3.0.0-5000620260331001
+    "@dcloudio/uni-mp-jd": 3.0.0-5000620260331001
+    "@dcloudio/uni-mp-kuaishou": 3.0.0-5000620260331001
+    "@dcloudio/uni-mp-lark": 3.0.0-5000620260331001
+    "@dcloudio/uni-mp-qq": 3.0.0-5000620260331001
+    "@dcloudio/uni-mp-toutiao": 3.0.0-5000620260331001
+    "@dcloudio/uni-mp-weixin": 3.0.0-5000620260331001
+    "@dcloudio/uni-mp-xhs": 3.0.0-5000620260331001
+    "@dcloudio/uni-quickapp-webview": 3.0.0-5000620260331001
+    "@dcloudio/uni-automator": 3.0.0-5000620260331001
+    "@dcloudio/uni-cli-shared": 3.0.0-5000620260331001
+    "@dcloudio/uni-stacktracey": 3.0.0-5000620260331001
+    "@dcloudio/vite-plugin-uni": 3.0.0-5000620260331001
+
+# ---------------------------------------------------------- 依赖构建脚本放行
+# pnpm 10 起不再自动执行依赖的构建脚本，被跳过的包会记录在
+# node_modules/.modules.yaml 的 ignoredBuilds 中（本仓库已实测命中下面这几个）。
+# 不放行的话，全新安装后 Electron 拿不到二进制，项目无法启动。
+onlyBuiltDependencies:
+  - electron
+  - electron-winstaller
+  - esbuild
+  - "@parcel/watcher"

@@ -22,8 +22,10 @@
       "@metatune/common": ["./packages/common/src"],
       "@metatune/common/*": ["./packages/common/src/*"]
     },
-    "types": ["@types/node", "node"]
+    "types": ["node"]
   },
-  "include": ["packages/**/*.ts", "packages/**/*.vue", "packages/**/*.tsx", "apps/**/*.ts", "apps/**/*.vue"],
+  // 基底配置：只给子 tsconfig extends 用。真正的检查走 `pnpm -r type-check`
+  // （desktop / common 各自持有自己的 tsconfig），这里不再声明 include，
+  // 否则会把已冻结的 apps/mobile 也卷进来，且和 -r 路线重复。
   "exclude": ["node_modules", "dist"]
 }

@@ -1,4 +1,4 @@
-import { IArtist, ISong } from '@/types'
+import { IArtist, ISong } from '../types'
 import { SortTypeItems, SortTypeItemsIds } from './constant'
 import { isReactive, isRef, toRaw } from 'vue'
 

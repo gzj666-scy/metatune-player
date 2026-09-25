@@ -43,11 +43,6 @@ export default defineConfig({
               '@metatune/common': resolve(__dirname, '../../packages/common/src'),
             },
           },
-          worker: {
-            rollupOptions: {
-              external: ['electron'], // 不打包 electron
-            },
-          },
           build: {
             emptyOutDir: true,
             commonjsOptions: { transformMixedEsModules: true }, // 防止将 common 中的纯 TS 误当作外部依赖
@@ -73,6 +68,7 @@ export default defineConfig({
                   if (!id.includes('node_modules')) return
 
                   // 2️⃣ 按包名分组（支持子路径匹配）
+                  // 前缀匹配是故意的：electron 与 electron-updater 都归到 vendor-electron
                   if (id.includes('node_modules/electron')) return 'vendor-electron'
                   if (id.includes('node_modules/music-metadata')) return 'vendor-audio'
                   if (id.includes('node_modules/lodash')) return 'vendor-utils'

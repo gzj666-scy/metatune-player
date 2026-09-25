@@ -22,3 +22,6 @@ release/
 
 # misc
 .DS_Store
+
+.workbuddy/
+docs/
