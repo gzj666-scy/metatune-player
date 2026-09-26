@@ -172,6 +172,64 @@ importers:
         specifier: ^0.29.1
         version: 0.29.1
 
+  apps/desktop-v2:
+    dependencies:
+      '@metatune/common-v2':
+        specifier: workspace:*
+        version: link:../../packages/common-v2
+      electron-updater:
+        specifier: ^6.8.3
+        version: 6.8.3
+      howler:
+        specifier: ^2.2.4
+        version: 2.2.4
+      lodash:
+        specifier: ^4.18.1
+        version: 4.18.1
+      music-metadata:
+        specifier: ^11.12.3
+        version: 11.12.3
+      pinia:
+        specifier: 'catalog:'
+        version: 3.0.4(typescript@6.0.2)(vue@3.5.32(typescript@6.0.2))
+      vue:
+        specifier: 'catalog:'
+        version: 3.5.32(typescript@6.0.2)
+      vue-router:
+        specifier: ^4.2.0
+        version: 4.6.4(vue@3.5.32(typescript@6.0.2))
+    devDependencies:
+      '@types/howler':
+        specifier: ^2.2.12
+        version: 2.2.12
+      '@types/lodash':
+        specifier: ^4.17.24
+        version: 4.17.24
+      '@vitejs/plugin-vue':
+        specifier: ^6.0.9
+        version: 6.0.9(vite@8.0.5(@emnapi/core@1.9.2)(@emnapi/runtime@1.9.2)(@types/node@24.12.2)(jiti@2.6.1)(sass@1.99.0)(terser@5.46.1))(vue@3.5.32(typescript@6.0.2))
+      '@vitejs/plugin-vue-jsx':
+        specifier: ^5.1.6
+        version: 5.1.6(vite@8.0.5(@emnapi/core@1.9.2)(@emnapi/runtime@1.9.2)(@types/node@24.12.2)(jiti@2.6.1)(sass@1.99.0)(terser@5.46.1))(vue@3.5.32(typescript@6.0.2))
+      cross-env:
+        specifier: ^10.1.0
+        version: 10.1.0
+      electron:
+        specifier: 41.1.1
+        version: 41.1.1
+      electron-builder:
+        specifier: ^26.8.1
+        version: 26.8.1(electron-builder-squirrel-windows@26.8.1)
+      electron-fix:
+        specifier: ^1.1.7
+        version: 1.1.7
+      vite:
+        specifier: ^8.0.1
+        version: 8.0.5(@emnapi/core@1.9.2)(@emnapi/runtime@1.9.2)(@types/node@24.12.2)(jiti@2.6.1)(sass@1.99.0)(terser@5.46.1)
+      vite-plugin-electron:
+        specifier: ^0.29.1
+        version: 0.29.1
+
   packages/common:
     dependencies:
       '@vibrant/color':
@@ -189,6 +247,28 @@ importers:
       vue:
         specifier: 'catalog:'
         version: 3.5.32(typescript@6.0.2)
+
+  packages/common-v2:
+    dependencies:
+      '@vibrant/color':
+        specifier: ^4.0.4
+        version: 4.0.4
+      '@vue/reactivity':
+        specifier: 'catalog:'
+        version: 3.5.32
+      node-vibrant:
+        specifier: ^4.0.4
+        version: 4.0.4(encoding@0.1.13)
+      pinia:
+        specifier: 'catalog:'
+        version: 3.0.4(typescript@6.0.2)(vue@3.5.32(typescript@6.0.2))
+      vue:
+        specifier: 'catalog:'
+        version: 3.5.32(typescript@6.0.2)
+    devDependencies:
+      '@dcloudio/types':
+        specifier: ^3.4.32
+        version: 3.4.32
 
 packages:
 
@@ -392,6 +472,9 @@ packages:
     engines: {node: '>=18'}
     peerDependencies:
       postcss-selector-parser: ^7.0.0
+
+  '@dcloudio/types@3.4.32':
+    resolution: {integrity: sha512-sjhbkjUKxoym8KLEnyeXxCsxvRlBc7Bd/kNSZZRLj+lewS384bDPtq/x5FZ4iG+NrnzDmg3+HyiwV5u5vu2reQ==}
 
   '@develar/schema-utils@2.6.5':
     resolution: {integrity: sha512-0cp4PsWQ/9avqTVMCtZ+GirikIA36ikvjtHweU4/j8yLtgObI0+JUPhYFScgwlteveGB1rt3Cm8UhN04XayDig==}
@@ -3678,7 +3761,7 @@ snapshots:
 
   '@babel/generator@7.29.1':
     dependencies:
-      '@babel/parser': 7.29.2
+      '@babel/parser': 7.29.9
       '@babel/types': 7.29.0
       '@jridgewell/gen-mapping': 0.3.13
       '@jridgewell/trace-mapping': 0.3.31
@@ -3815,7 +3898,7 @@ snapshots:
   '@babel/template@7.28.6':
     dependencies:
       '@babel/code-frame': 7.29.0
-      '@babel/parser': 7.29.2
+      '@babel/parser': 7.29.9
       '@babel/types': 7.29.0
 
   '@babel/template@7.29.7':
@@ -3829,7 +3912,7 @@ snapshots:
       '@babel/code-frame': 7.29.0
       '@babel/generator': 7.29.1
       '@babel/helper-globals': 7.28.0
-      '@babel/parser': 7.29.2
+      '@babel/parser': 7.29.9
       '@babel/template': 7.28.6
       '@babel/types': 7.29.0
       debug: 4.4.3
@@ -3890,6 +3973,8 @@ snapshots:
   '@csstools/selector-specificity@5.0.0(postcss-selector-parser@7.1.1)':
     dependencies:
       postcss-selector-parser: 7.1.1
+
+  '@dcloudio/types@3.4.32': {}
 
   '@develar/schema-utils@2.6.5':
     dependencies:
@@ -4688,14 +4773,14 @@ snapshots:
       '@babel/core': 7.29.0
       '@babel/helper-module-imports': 7.28.6
       '@babel/helper-plugin-utils': 7.28.6
-      '@babel/parser': 7.29.2
+      '@babel/parser': 7.29.9
       '@vue/compiler-sfc': 3.5.32
     transitivePeerDependencies:
       - supports-color
 
   '@vue/compiler-core@3.5.32':
     dependencies:
-      '@babel/parser': 7.29.2
+      '@babel/parser': 7.29.9
       '@vue/shared': 3.5.32
       entities: 7.0.1
       estree-walker: 2.0.2
@@ -4708,7 +4793,7 @@ snapshots:
 
   '@vue/compiler-sfc@3.5.32':
     dependencies:
-      '@babel/parser': 7.29.2
+      '@babel/parser': 7.29.9
       '@vue/compiler-core': 3.5.32
       '@vue/compiler-dom': 3.5.32
       '@vue/compiler-ssr': 3.5.32

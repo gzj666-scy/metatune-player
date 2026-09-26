@@ -1,0 +1,12 @@
+{
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    // 刻意不设 @/* 别名：common 会被 desktop-v2 一起编译，
+    // 而路径映射取自「发起编译的那个 tsconfig」，会解析到 apps/desktop-v2/src/*，
+    // 两边恰好都有 src/utils/constant.ts，会静默串味。包内一律用相对路径。
+    // common 没有构建步骤（main/types 直接指向 src/index.ts），不设 outDir
+  },
+  "include": [
+    "src"
+  ]
+}

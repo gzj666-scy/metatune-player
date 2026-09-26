@@ -1,0 +1,103 @@
+.scy-loading {
+  position: fixed;
+  z-index: 999;
+  width: 100%;
+  height: 100%;
+  left: 0;
+  top: 0;
+  background: rgba(4, 9, 26, 0.4);
+
+  @keyframes scyLoadingIconGatesCircleAni {
+    0% {
+      stroke-dashoffset: 93.5;
+      transform: rotate(0deg);
+    }
+    6.25% {
+      stroke-dashoffset: 125;
+      transform: rotate(0deg);
+    }
+    12.5% {
+      stroke-dashoffset: 146;
+      transform: rotate(-88deg);
+    }
+    20% {
+      stroke-dashoffset: 125;
+      transform: rotate(-350deg);
+    }
+    28% {
+      stroke-dashoffset: 125;
+      transform: rotate(-370deg);
+    }
+    41.25% {
+      stroke-dashoffset: 156;
+      transform: rotate(-648deg);
+    }
+    /* 56% {
+        stroke-dashoffset: 125;
+        transform: rotate(-908deg);
+      } */
+    56%,
+    100% {
+      stroke-dashoffset: 93.5;
+      transform: rotate(-1080deg);
+    }
+  }
+
+  @keyframes scyLoadingIconGatesSquareAni {
+    0%,
+    66% {
+      transform: scaleY(0);
+      transform-origin: 0px 34px;
+    }
+    83% {
+      transform: scaleY(1);
+      transform-origin: 0px 34px;
+    }
+    93% {
+      transform: scaleY(1);
+      transform-origin: 0px 34px;
+    }
+    100% {
+      transform: scaleY(0);
+      transform-origin: 39px 18px;
+    }
+  }
+
+  .scy-loading-content {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+
+    .scy-loading-content-icon {
+      .scy-loading-icon-bars {
+        fill: rgb(255, 255, 255);
+      }
+
+      .scy-loading-icon-balls {
+        color: #2354e6;
+      }
+
+      .scy-loading-icon-gates {
+        &-circle {
+          stroke-dasharray: 187;
+          transform-origin: center center;
+          stroke-dashoffset: 93.5;
+          transform: rotate(0deg);
+          stroke: #2354e6;
+          animation: 2.5s linear 0s infinite normal none running scyLoadingIconGatesCircleAni;
+        }
+
+        &-square {
+          fill: #17e5a1;
+          animation: 2.5s linear 0s infinite normal none running scyLoadingIconGatesSquareAni;
+        }
+      }
+    }
+  }
+}
