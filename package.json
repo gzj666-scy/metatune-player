@@ -8,7 +8,7 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "preinstall": "npx -y only-allow pnpm",
-    "postinstall": "sort-package-json",
+    "postinstall": "sort-package-json \"**/package.json\" --ignore \"**/node_modules/**\"",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "lint:style": "stylelint \"**/*.{css,scss,vue}\"",
@@ -38,13 +38,14 @@
     "stylelint-config-standard": "^36.0.1",
     "stylelint-config-standard-scss": "^14.0.0",
     "stylelint-config-standard-vue": "^2.0.0",
+    "terser": "^5.46.1",
     "typescript": "^6.0.2",
     "typescript-eslint": "^8.70.1",
     "vue-tsc": "^3.3.11"
   },
   "packageManager": "pnpm@10.33.0",
   "engines": {
-    "node": ">=18.0.0",
+    "node": ">=20.19.0",
     "pnpm": ">=9.0.0"
   }
 }

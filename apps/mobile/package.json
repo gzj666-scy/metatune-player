@@ -1,5 +1,5 @@
 {
-  "name": "@metatune-player/mobile",
+  "name": "@metatune/mobile",
   "version": "1.0.0",
   "private": true,
   "type": "module",
@@ -42,6 +42,6 @@
     "@dcloudio/uni-stacktracey": "catalog:uni-app",
     "@dcloudio/vite-plugin-uni": "catalog:uni-app",
     "@vue/runtime-core": "catalog:",
-    "vite": "5.2.8"
+    "vite": "catalog:"
   }
 }

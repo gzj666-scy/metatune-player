@@ -1,9 +1,7 @@
 packages:
   - "packages/*"
   - "apps/*"
-  # 移动端暂缓开发（已确认先做桌面端），先移出工作区：
-  # 它的 36 个 @dcloudio/* 包体积大、安装慢，会拖累每次 pnpm install。
-  # 恢复开发时，删掉这一行即可（catalog:uni-app 的版本定义保留着，不用重新配）。
+  # 移动端暂缓开发（已确认先做桌面端），先移出工作区
   - "!apps/mobile"
 
 # ------------------------------------------------------------------- catalog
@@ -23,8 +21,8 @@ catalog:
   # @vue/reactivity 是 vue 的底层包，common/src/hooks/useRefs.ts 直接 import 它，
   # 版本必须跟 vue 走同一档，否则会出现两份响应式系统（isRef/toRaw 判不出来）
   "@vue/reactivity": ^3.5.32
-  # pinia 被 desktop / common / mobile 三处引用，且 store 是跨包共享的单例
   pinia: ^3.0.4
+  vite: 5.2.8
 
 # 命名 catalog：引用时写 `catalog:uni-app`
 catalogs:

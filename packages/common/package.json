@@ -9,9 +9,7 @@
     "type-check": "vue-tsc --noEmit"
   },
   "dependencies": {
-    "@vibrant/color": "^4.0.4",
     "@vue/reactivity": "catalog:",
-    "node-vibrant": "^4.0.4",
     "pinia": "catalog:",
     "vue": "catalog:"
   },
