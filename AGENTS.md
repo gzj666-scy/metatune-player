@@ -100,18 +100,20 @@ pnpm monorepo 音乐播放器。本文件是写代码的**唯一事实源**：�
 
 ## 8. 函数风格（个人约定，配置不检查）
 
+用箭头函数：
+
+- 回调：`items.map(item => ...)`
+- 模板里的内联事件：`@click="() => setOpen(true)"`
+- 简短纯函数：`const double = x => x * 2`
+- 函数内需要继承外层 `this` 的函数
+
 用 `function` 声明：
 
 - 组合式函数（composables）：`function usePlayer() {}`
 - 工具函数、顶层具名函数
 - 需要提升 / `arguments` / generator（`function*`）
 - 需要动态 `this` 的对象方法、类方法
-
-用箭头函数：
-
-- 回调：`items.map(item => ...)`
-- 模板里的内联事件：`@click="() => setOpen(true)"`
-- 简短纯函数：`const double = x => x * 2`
+- 其他不需用 `this` 的普通事件处理器、方法
 
 补充：
 

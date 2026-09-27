@@ -20,7 +20,9 @@
     "jsxImportSource": "vue",
     "paths": {
       "@metatune/common": ["./packages/common/src"],
-      "@metatune/common/*": ["./packages/common/src/*"]
+      "@metatune/common/*": ["./packages/common/src/*"],
+      "@metatune/common-v3": ["./packages/common-v3/src"],
+      "@metatune/common-v3/*": ["./packages/common-v3/src/*"]
     },
     "types": ["node"]
   },

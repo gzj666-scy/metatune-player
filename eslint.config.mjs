@@ -110,8 +110,20 @@ export default tseslint.config(
   // 交给 TypeScript 负责），所以这里主要是显式声明意图，防止规则组合变动后误报。
   {
     // Electron 主进程、构建脚本、配置文件运行在 Node
-    files: ['apps/desktop/electron/**/*.{ts,js}', '**/scripts/**/*.{js,ts,mjs,cjs}', '**/*.config.{js,ts,mjs,cjs,mts,cts}'],
+    files: [
+      'apps/desktop/electron/**/*.{ts,js}',
+      'apps/desktop-v3/electron/**/*.{ts,js}',
+      '**/scripts/**/*.{js,ts,mjs,cjs}',
+      '**/*.config.{js,ts,mjs,cjs,mts,cts}',
+    ],
     languageOptions: { globals: { ...globals.node } },
+  },
+  {
+    // Node CJS 构建脚本：afterPack 由 electron-builder 以 require() 加载，
+    // copySongs 由 node 直接执行（包 type: commonjs）。no-require-imports
+    // 面向由打包器转换的应用源码，对直接运行的 CJS 脚本不适用。
+    files: ['**/scripts/**/*.{js,ts,mjs,cjs}'],
+    rules: { '@typescript-eslint/no-require-imports': 'off' },
   },
   {
     // uni-app 各端运行时注入的全局对象，不是 import 进来的
