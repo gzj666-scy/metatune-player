@@ -17,7 +17,10 @@ export class StoreManager {
     return this._playerStore
   }
 
-  public initData(songs: ISong[], player: { songDirs: string[]; playlists: IPlaylist; settings: IAppSettings; state: IPlaybackState } | null) {
+  public initData(
+    songs: ISong[],
+    player: { songDirs: string[]; playlists: IPlaylist; settings: IAppSettings; state: IPlaybackState } | null
+  ) {
     if (songs?.length > 0) this._playerStore.songs = songs
     if (player?.playlists) this._playerStore.playlists = player.playlists
     if (player?.settings) this._playerStore.settings = { ...this._playerStore.settings, ...player.settings }
@@ -25,7 +28,13 @@ export class StoreManager {
       if (player?.settings?.setupResume) {
         this._playerStore.currentState = { ...player.state, isPlaying: false }
       } else {
-        this._playerStore.currentState = { ...defaultState, currentListId: DefaultKey.Local, currentSongId: '', currentTime: 0, isPlaying: false }
+        this._playerStore.currentState = {
+          ...defaultState,
+          currentListId: DefaultKey.Local,
+          currentSongId: '',
+          currentTime: 0,
+          isPlaying: false,
+        }
       }
     }
     if (player?.songDirs && player.songDirs.length > 0) this._playerStore.songDirs = player.songDirs
@@ -292,6 +301,7 @@ export class StoreManager {
     this._playerStore.playlists = {}
     this._playerStore.currentState = defaultState
     this._playerStore.settings = defaultSettings
+    this._playerStore.songDirs = []
   }
 
   public getPlaylistByName(name: string): IPlaylistItem | null {

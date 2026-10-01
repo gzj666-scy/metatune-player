@@ -4,16 +4,16 @@
   "license": "MIT",
   "author": "gzj666-scy",
   "scripts": {
-    "check": "pnpm format:check && pnpm lint && pnpm lint:style && pnpm type-check",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "preinstall": "npx -y only-allow pnpm",
-    "postinstall": "sort-package-json \"**/package.json\" --ignore \"**/node_modules/**\"",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "lint:style": "stylelint \"**/*.{css,scss,vue}\"",
     "lint:style:fix": "stylelint \"**/*.{css,scss,vue}\" --fix",
-    "type-check": "pnpm -r type-check"
+    "type-check": "pnpm -r type-check",
+    "check": "pnpm format:check && pnpm lint && pnpm lint:style && pnpm type-check",
+    "preinstall": "npx -y only-allow pnpm",
+    "postinstall": "node scripts/sort-pkg.cjs \"**/package.json\" --ignore \"**/node_modules/**\" --ignore \"apps/mobile\""
   },
   "dependencies": {},
   "devDependencies": {

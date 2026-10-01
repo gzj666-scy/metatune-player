@@ -49,6 +49,8 @@ export const usePlayerStore = defineStore('player', () => {
   const currentViewKey = ref<string>(DefaultKey.Local)
   /** 默认当做歌单处理的列表key（local、favorite） */
   const defaultPlaylistKey = readonly(ref<string[]>([DefaultKey.Local, DefaultKey.Favorite]))
+  /** 播放器读取到的音频时长，不一定准，部分歌曲媒体信息读取不到时长，以此兜底 */
+  const playerDuration = ref(0)
 
   const business = ref<IBusinessData>({
     isMaximized: false,
@@ -157,14 +159,14 @@ export const usePlayerStore = defineStore('player', () => {
     return getSongsByIds(songIds)
   })
 
-  /** 按 uid 数组从索引表取歌（v3：O(n) 替代原版逐个 find 的 O(n²)） */
+  /**
+   * 按 uid 集合过滤歌曲（v3：Set 索引，O(n+m) 替代原版逐个 find 的 O(n²)）。
+   * 注意：这里必须直接依赖 songs（而非经 songMap computed 间接依赖）——
+   * 链式 computed 的失效传播在 songs 整体替换时不可靠，曾导致视图恒为空。
+   */
   function getSongsByIds(songIds: string[]): ISong[] {
-    const result: ISong[] = []
-    songIds.forEach(id => {
-      const song = songMap.value.get(id)
-      if (song) result.push(song)
-    })
-    return sortSong(deepToRaw(result))
+    const idSet = new Set(songIds)
+    return sortSong(deepToRaw(songs.value.filter(v => idSet.has(v.uid))))
   }
 
   /** 当前播放的歌曲 */
@@ -252,5 +254,7 @@ export const usePlayerStore = defineStore('player', () => {
     currentFolderName,
     /** 当前正在查看的文件夹的歌曲数组(已排序) */
     currentFolderSongs,
+    /** 播放器读取到的音频时长 */
+    playerDuration,
   }
 })

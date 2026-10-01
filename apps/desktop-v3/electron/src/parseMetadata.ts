@@ -12,15 +12,16 @@ export const AudioFormat = [
   'mp3', //codec: "MPEG 1 Layer 3"; container: "MPEG"
   'm4a', //codec: "MPEG-4/AAC"; container: "M4A/isom/iso2"
   'flac', //codec: "FLAC"; container: "FLAC"
-  'aac',
-  'wav',
-  // 'ape', //疑似需 FFmpeg / JS 软解
+  'wav', //codec: "PCM"; container: "WAVE"
+  // 'aac', //codec: "AAC"; container: "ADTS/MPEG-4"   疑似无法解析出时长、比特率信息，不予支持
+  // 'ape', //codec: ""; container: "Monkey's Audio"   疑似需 FFmpeg / JS 软解，不予支持
   // 'alac',
   // 'ogg', //codec: "Opus"; container: "Ogg"   疑似无法解析出时长、比特率信息，不予支持
   // 'opus',
   // 'webm', //codec: "OPUS"; container: "EBML/webm"   疑似无法解析出比特率信息，不予支持
   // 'wma', //codec: "Windows Media Audio 9"; container: "ASF/audio"   浏览器不支持，需软解，不予支持
 ]
+const AudioCodecs = ['MPEG 1 Layer 3', 'MPEG-4/AAC', 'FLAC', 'PCM']
 
 /** 无损编码白名单（大小写不敏感） */
 const LOSSLESS_CODECS = ['flac', 'wav', 'wave', 'alac', 'ape', 'aiff', 'aif', 'dsd', 'dff', 'dsf']
@@ -68,6 +69,13 @@ async function parseSingleFile(filePath: string): Promise<ISong> {
 
   // music-metadata 内部自行读文件，无需再 readFile 全量读盘
   const metadata = await parseFile(filePath)
+  // console.log('解析音频文件:', filePath, metadata.format, metadata.common)
+  if (!metadata.format || !metadata.format.hasAudio || !AudioCodecs.includes(metadata.format.codec || '')) {
+    throw new Error('无效音频文件')
+  }
+  // if (!metadata.format?.duration) {
+  //   throw new Error('无法解析音频时长')
+  // }
 
   // 提取专辑图片（按图片内容 MD5 去重落盘）
   let albumArt = ''
@@ -119,9 +127,9 @@ async function parseSingleFile(filePath: string): Promise<ISong> {
 export async function parsePaths(paths: string[], onProgress?: OnProgress, concurrency = 4): Promise<IImportResult> {
   // 1. 展开目录、分离非音频文件
   const audioFiles: string[] = []
-  const skipped: string[] = []
   const stack = [...paths]
   const visited = new Set<string>()
+  const result: IImportResult = { songs: [], errors: [], skipped: [] }
   while (stack.length > 0) {
     const p = stack.pop()!
     if (visited.has(p)) continue
@@ -133,16 +141,16 @@ export async function parsePaths(paths: string[], onProgress?: OnProgress, concu
       } else if (AudioFormat.includes(extname(p).slice(1).toLowerCase())) {
         audioFiles.push(p)
       } else {
-        skipped.push(p)
+        result.errors.push({ filePath: p, reason: '不支持的文件格式' })
       }
     } catch (error: any) {
-      skipped.push(p)
+      result.skipped.push(p)
       console.error('读取路径失败:', p, error?.message)
     }
   }
 
   // 2. 并发解析
-  const result: IImportResult = { songs: [], errors: [], skipped }
+
   let done = 0
   const total = audioFiles.length
   let cursor = 0

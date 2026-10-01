@@ -135,7 +135,7 @@ scroll-view {
 
 @font-face {
   font-family: 'HarmonyOS_Sans';
-  src: url('@/assets/HarmonyOS_Sans_SC_Regular.ttf') format('truetype');
+  src: url('@/assets/HarmonyOS_Sans_SC_Regular.woff') format('woff');
 }
 
 /* @font-face {

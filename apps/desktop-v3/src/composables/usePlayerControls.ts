@@ -25,7 +25,7 @@ export function usePlayerControls(progressEl: Ref<HTMLDivElement | undefined>) {
     if (isDraggingRef.value) return dragTimeRef.value
     return playerStore.currentState.currentTime
   })
-  const duration = computed(() => song.value?.duration || 0)
+  const duration = computed(() => song.value?.duration || playerStore.playerDuration || 0)
   const playMode = computed(() => playerStore.currentState.playMode)
   const isMuted = computed(() => playerStore.currentState.isMuted)
   const volume = computed(() => playerStore.currentState.volume)

@@ -38,6 +38,9 @@ export default defineConfig({
     electron({
       main: {
         entry: 'electron/src/main.ts',
+        // dev 下插件仅负责构建 main/preload，不自动拉起 Electron——
+        // 由 start 脚本的 concurrently 启动（见 scripts/devElectron.js），避免双实例
+        onstart: () => {},
         vite: {
           resolve: {
             alias: {
@@ -47,7 +50,8 @@ export default defineConfig({
           build: {
             emptyOutDir: true,
             commonjsOptions: { transformMixedEsModules: true }, // 防止将 common 中的纯 TS 误当作外部依赖
-            minify: 'terser',
+            // dev 下关压缩：terser 是 main 构建耗时大头，且压缩产物无调试价值（生产仍走 terser）
+            minify: process.env.NODE_ENV === 'development' ? false : 'terser',
             terserOptions: {
               compress: {
                 drop_debugger: true, // 移除 debugger

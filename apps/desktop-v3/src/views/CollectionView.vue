@@ -26,7 +26,6 @@
     /** 专辑视图附加的歌手名 */
     artist?: string
   }
-
   const list = computed<ICollectionItem[]>(() => {
     // 歌手/文件夹视图的数据源（IArtist）没有 key 字段，统一补上
     if (props.kind === 'artist') return playerStore.artistLists.map(v => ({ ...v, key: v.name }))

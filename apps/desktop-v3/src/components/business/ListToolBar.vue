@@ -201,7 +201,12 @@
     </div>
     <div v-else class="tool-box">
       <div class="toolbar-left">
-        <button v-if="[DefaultKey.Artist, DefaultKey.Album, DefaultKey.Folder].includes(listKey)" class="btn" @click="handleBack" title="返回">
+        <button
+          v-if="[DefaultKey.Artist, DefaultKey.Album, DefaultKey.Folder].includes(listKey)"
+          class="btn"
+          @click="handleBack"
+          title="返回"
+        >
           <IconBase>
             <component :is="IconEnum.Back" />
           </IconBase>

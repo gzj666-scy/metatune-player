@@ -220,7 +220,13 @@
 
           <!-- 歌词区域 -->
           <div class="lyrics-section">
-            <PlayerLyric :song="song" :currentTime="currentTime" :isDragging="isDraggingRef" @seek="onSeekToLyric" @load="onLoadExternalLyrics" />
+            <PlayerLyric
+              :song="song"
+              :currentTime="currentTime"
+              :isDragging="isDraggingRef"
+              @seek="onSeekToLyric"
+              @load="onLoadExternalLyrics"
+            />
           </div>
         </div>
 
@@ -285,7 +291,12 @@
             </div>
             <!-- 歌曲操作 -->
             <div class="song-actions">
-              <button class="header-btn" :class="{ favorited: isFavorite }" @click="onToggleFavorite" :title="isFavorite ? '取消收藏' : '收藏'">
+              <button
+                class="header-btn"
+                :class="{ favorited: isFavorite }"
+                @click="onToggleFavorite"
+                :title="isFavorite ? '取消收藏' : '收藏'"
+              >
                 <IconBase>
                   <component :is="isFavorite ? IconEnum.HeartFilled : IconEnum.Heart" />
                 </IconBase>

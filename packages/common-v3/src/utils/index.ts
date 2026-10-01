@@ -169,7 +169,34 @@ const anchorChars = [
   '帀', // Z
 ]
 // 2. 对应的字母标签数组（确保索引一一对应）
-const alphabet = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z']
+const alphabet = [
+  'A',
+  'B',
+  'C',
+  'D',
+  'E',
+  'F',
+  'G',
+  'H',
+  'I',
+  'J',
+  'K',
+  'L',
+  'M',
+  'N',
+  'O',
+  'P',
+  'Q',
+  'R',
+  'S',
+  'T',
+  'U',
+  'V',
+  'W',
+  'X',
+  'Y',
+  'Z',
+]
 /** 获取字符串的首字母（支持中文、英文、数字、特殊字符） */
 export function getFirstLetter(str: string, isValid: boolean): string {
   if (!str || !isValid) return '#'
@@ -286,6 +313,15 @@ export function sortSong(songs: ISong[], type: SortTypeItemsIds = SortTypeItems[
     newArr = newArr.concat(en_list_letter[i], cn_list_letter[i])
   })
   newArr = newArr.concat(num_list, symbol_list)
+
+  // v3 修复：字母匹配阶段被遗漏的歌曲（如 isValid=false 的中文歌，getFirstLetter 返回 '#'，
+  // 落不进任何字母组）统一追加，避免从视图里消失；末尾排序会把无效歌曲排到后面
+  const kept = new Set(newArr)
+  const missed = songs.filter(v => !kept.has(v))
+  if (missed.length > 0) {
+    console.log('[sortSong] 追加被字母分组遗漏的歌曲:', missed.length)
+    newArr = newArr.concat(missed)
+  }
 
   return newArr.sort((a, b) => Number(b.isValid) - Number(a.isValid))
 }

@@ -7,13 +7,25 @@ import { Howl, Howler } from 'howler'
 // 代价：音频不经过 WebAudio 图，频谱可视化改用 captureStream 旁路取流（见 ensureVisualization）。
 
 // 自定义事件类型
-export type PlayerEvent = 'play' | 'pause' | 'stop' | 'end' | 'load' | 'error' | 'timeupdate' | 'seek' | 'volumechange' | 'buffering' | 'ready'
+export type PlayerEvent =
+  | 'play'
+  | 'pause'
+  | 'stop'
+  | 'end'
+  | 'load'
+  | 'error'
+  | 'timeupdate'
+  | 'seek'
+  | 'volumechange'
+  | 'buffering'
+  | 'ready'
 
 export interface PlayerEventDetail {
   time?: number
   error?: any
   volume?: number
   song?: ISong
+  duration?: number
 }
 
 /** 可视化音频链路（旁路采集，不影响播放） */
@@ -74,7 +86,19 @@ export class HowlerPlayer {
   }
 
   private initializeEventSystem() {
-    const events: PlayerEvent[] = ['play', 'pause', 'stop', 'end', 'load', 'error', 'timeupdate', 'seek', 'volumechange', 'buffering', 'ready']
+    const events: PlayerEvent[] = [
+      'play',
+      'pause',
+      'stop',
+      'end',
+      'load',
+      'error',
+      'timeupdate',
+      'seek',
+      'volumechange',
+      'buffering',
+      'ready',
+    ]
     events.forEach(event => {
       this._eventListeners.set(event, new Set())
     })
@@ -338,7 +362,12 @@ export class HowlerPlayer {
   }
 
   // 提取 Mel 能量（复用缓冲区，v3 修复原版每帧分配新 Float32Array 的问题）
-  private getMelEnergy(analyser: AnalyserNode, bufferData: Float32Array<ArrayBuffer>, linearOut: Float32Array, bandsOut: Float32Array): Float32Array {
+  private getMelEnergy(
+    analyser: AnalyserNode,
+    bufferData: Float32Array<ArrayBuffer>,
+    linearOut: Float32Array,
+    bandsOut: Float32Array
+  ): Float32Array {
     analyser.getFloatFrequencyData(bufferData)
 
     // 将 dB 转换为线性幅度 (0~1)
@@ -428,8 +457,9 @@ export class HowlerPlayer {
     this.stopTimeTracking()
     this._intervalId = window.setInterval(() => {
       if (this._howl && this._isPlaying && !this._isSeeking) {
-        const time = this._howl.seek() as number
-        this.dispatchEvent('timeupdate', { time })
+        const time = this._howl.seek() as number,
+          duration = this._howl.duration() as number
+        this.dispatchEvent('timeupdate', { time, duration })
       }
     }, 200)
   }

@@ -28,6 +28,7 @@ export class PlayManager {
       if (detail?.time !== undefined) {
         this.playerStore.currentState.currentTime = detail.time
       }
+      this.playerStore.playerDuration = detail?.duration || 0
     })
 
     // 监听播放事件

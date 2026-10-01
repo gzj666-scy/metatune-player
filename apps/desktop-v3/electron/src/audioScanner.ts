@@ -41,7 +41,8 @@ export function scanDirs(dirs: string[], known: IKnownSong[]): IScanResult {
       const prev = knownMap.get(fullPath)
       if (!prev) {
         newFiles.push(fullPath)
-      } else if (prev.size !== stats.size || prev.mtime !== stats.mtime.getTime()) {
+      } else if (!prev.isValid || prev.size !== stats.size || prev.mtime !== stats.mtime.getTime()) {
+        // 失效歌曲即使文件未变也视为需重新解析，否则文件恢复后 isValid 永远无法翻回 true
         changedFiles.push(fullPath)
       }
     }

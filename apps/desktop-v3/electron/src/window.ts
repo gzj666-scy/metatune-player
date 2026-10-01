@@ -55,11 +55,26 @@ export async function createWindow(onReadyToShow?: () => void): Promise<void> {
   mainWindow.webContents.on('page-title-updated', event => event.preventDefault())
 
   if (isDev) {
-    await mainWindow.loadURL('http://localhost:3000')
+    await loadDevServer(mainWindow)
     mainWindow.webContents.openDevTools()
   } else {
     await mainWindow.loadFile(join(__dirname, '../dist-web/index.html'))
   }
+}
+
+/** 等待 vite dev server 就绪后再加载（concurrently 并行启动时 Electron 可能先于 server 就绪） */
+async function loadDevServer(win: BrowserWindow): Promise<void> {
+  const url = 'http://localhost:3000'
+  for (let i = 0; i < 20; i++) {
+    try {
+      const res = await fetch(url)
+      if (res.ok) break
+    } catch {
+      // server 未就绪，继续等待
+    }
+    await new Promise(resolve => setTimeout(resolve, 500))
+  }
+  await win.loadURL(url)
 }
 
 /** 关闭窗口：按设置决定隐藏到托盘还是退出 */

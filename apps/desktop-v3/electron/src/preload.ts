@@ -45,12 +45,15 @@ contextBridge.exposeInMainWorld('electronAPI', {
   closeWindow: (quit: boolean) => ipcRenderer.invoke(IPC.WINDOW_CLOSE, quit),
 
   // 对话框
-  openFileDialog: (options?: Omit<Electron.OpenDialogOptions, 'properties' | 'filters'>) => ipcRenderer.invoke(IPC.DIALOG_OPEN_FILE, options),
+  openFileDialog: (options?: Omit<Electron.OpenDialogOptions, 'properties' | 'filters'>) =>
+    ipcRenderer.invoke(IPC.DIALOG_OPEN_FILE, options),
   openDirectoryDialog: () => ipcRenderer.invoke(IPC.DIALOG_OPEN_DIRECTORY),
 
   // 音频：导入 / 增量扫描 / 流地址
   importAudio: (paths: string[], onProgress?: OnProgress): Promise<IImportResult> => {
-    const unsubscribe = onProgress ? subscribe<IImportProgress>(IPC.AUDIO_IMPORT_PROGRESS, d => onProgress(d.done, d.total, d.fileName)) : null
+    const unsubscribe = onProgress
+      ? subscribe<IImportProgress>(IPC.AUDIO_IMPORT_PROGRESS, d => onProgress(d.done, d.total, d.fileName))
+      : null
     return ipcRenderer.invoke(IPC.AUDIO_IMPORT, paths).finally(() => unsubscribe?.())
   },
   scanAudioDirs: (dirs: string[], knownSongs: ISong[]): Promise<IScanResult> => ipcRenderer.invoke(IPC.AUDIO_SCAN_DIRS, dirs, knownSongs),
@@ -62,7 +65,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
   getPlayerCache: (): Promise<IPlayerData | null> => ipcRenderer.invoke(IPC.CACHE_GET_PLAYER),
   setPlayerCache: (data: IPlayerData): Promise<void> => ipcRenderer.invoke(IPC.CACHE_SET_PLAYER, data),
   resetAllCache: (): Promise<boolean> => ipcRenderer.invoke(IPC.CACHE_RESET_ALL),
-  clearInvalidAlbumArt: (albumArts: Set<string | undefined>): Promise<void> => ipcRenderer.invoke(IPC.CACHE_CLEAR_INVALID_ALBUM_ART, albumArts),
+  clearInvalidAlbumArt: (albumArts: Set<string | undefined>): Promise<void> =>
+    ipcRenderer.invoke(IPC.CACHE_CLEAR_INVALID_ALBUM_ART, albumArts),
 
   // 更新
   checkUpdate: (auto: boolean) => ipcRenderer.send(IPC.UPDATE_CHECK, { auto }),

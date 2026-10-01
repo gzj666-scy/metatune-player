@@ -37,14 +37,15 @@ app.on('before-quit', event => {
 })
 
 app.whenReady().then(async () => {
+  // IPC handler 必须在窗口加载页面前注册完毕：createWindow 内部会等待页面加载，
+  // 渲染层 onMounted 会立即调用 cache 类 IPC，注册滞后会报 "No handler registered"
+  audioServer = new AudioStreamServer()
+  await audioServer.start()
+  registerIpcHandlers(audioServer)
+
   await handleCacheProtocol()
   await createWindow()
   createTray()
-
-  audioServer = new AudioStreamServer()
-  // 等待流服务就绪后再注册 IPC，避免渲染层过早拿到错误端口
-  await audioServer.start()
-  registerIpcHandlers(audioServer)
 
   // 初始化自动更新
   const win = getWindow()

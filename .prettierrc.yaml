@@ -11,7 +11,7 @@ singleQuote: true
 # JSX 属性值是否使用单引号，默认为 false
 jsxSingleQuote: true
 # 每行最大字符数，超过则换行，默认 80
-printWidth: 150
+printWidth: 140
 # 对象大括号内是否加空格，如 { foo: bar }，默认 true
 bracketSpacing: true
 # HTML/Vue/JSX 的 > 是否跟最后一行属性同行，默认为 false 更清晰
