@@ -79,6 +79,17 @@ function registerAudioHandlers(audioServer: AudioStreamServer) {
       return null
     }
   })
+
+  /** 读取音频文件原始字节（响度测量：渲染进程解码后得到 PCM） */
+  ipcMain.handle(IPC.AUDIO_READ_BUFFER, async (_, filePath: string) => {
+    try {
+      const fs = await import('node:fs/promises')
+      return await fs.readFile(filePath)
+    } catch (error) {
+      console.error('读取音频字节失败:', filePath, error)
+      return null
+    }
+  })
 }
 
 function registerCacheHandlers() {

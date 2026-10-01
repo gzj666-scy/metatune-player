@@ -29,6 +29,10 @@ export const defaultSettings = {
   closeQuit: true,
   autoOpenPlayView: false,
   openVisualization: false,
+  // 响度归一化：默认关闭，目标响度 -14 LUFS、true peak 上限 -1.0 dBTP（现代音乐归一化最优默认）
+  loudnessNormalization: false,
+  targetLoudness: -14,
+  truePeakCeiling: -1.0,
 }
 
 export const usePlayerStore = defineStore('player', () => {

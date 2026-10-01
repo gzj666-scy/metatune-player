@@ -23,6 +23,7 @@ declare global {
       importAudio: (paths: string[], onProgress?: OnProgress) => Promise<IImportResult>
       scanAudioDirs: (dirs: string[], knownSongs: ISong[]) => Promise<IScanResult>
       getAudioStreamUrl: (filePath: string) => Promise<string>
+      readAudioBuffer: (filePath: string) => Promise<Uint8Array | null>
 
       getSongsCache: () => Promise<ISong[]>
       setSongsCache: (data: ISong[]) => Promise<void>

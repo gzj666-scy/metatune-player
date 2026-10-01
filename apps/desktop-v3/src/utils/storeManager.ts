@@ -282,6 +282,28 @@ export class StoreManager {
     }, this._saveDebounceMs)
   }
 
+  /** 写回单首歌的响度测量结果（增益 / 实测 LUFS / true peak）并防抖持久化 */
+  public updateSongLoudness(song: ISong, gain: number, lufs: number, truePeak: number) {
+    // 直接改响应式 store 元素：_currentSong / 弹窗 / 列表都引用同一对象，改动即触发视图更新
+    const target = this._playerStore.songs.find(v => v.uid === song.uid)
+    if (target) {
+      target.gain = gain
+      target.lufs = lufs
+      target.truePeak = truePeak
+    }
+    this.persistSongsCache()
+  }
+
+  private _songsSaveTimer: number | undefined = undefined
+  /** 防抖持久化歌曲列表（批量测量 / 扫描时合并写盘，避免高频 IPC） */
+  public persistSongsCache() {
+    if (this._songsSaveTimer) clearTimeout(this._songsSaveTimer)
+    this._songsSaveTimer = window.setTimeout(() => {
+      this._songsSaveTimer = undefined
+      window.electronAPI.setSongsCache(toRaw(this._playerStore.songs))
+    }, 400)
+  }
+
   /** 立即保存（退出前 flush 用） */
   public savePlayCacheNow() {
     if (this._saveTimer) {

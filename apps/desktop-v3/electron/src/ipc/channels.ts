@@ -20,6 +20,7 @@ export const IPC = {
   AUDIO_IMPORT_PROGRESS: 'audio:import-progress', // main -> renderer
   AUDIO_SCAN_DIRS: 'audio:scan-dirs', // 增量扫描已监视目录
   AUDIO_STREAM_URL: 'audio:stream-url',
+  AUDIO_READ_BUFFER: 'audio:read-buffer', // 读取音频文件字节（响度测量用）
 
   // 缓存
   CACHE_GET_SONGS: 'cache:get-songs',

@@ -73,6 +73,21 @@ export class HowlerPlayer {
   public get volume() {
     return this._volume
   }
+  /** 响度归一化是否启用（由设置开关同步；关闭时不套用任何补偿增益） */
+  public loudnessEnabled = false
+  /** 当前歌曲的 LUFS 补偿增益(线性值)：dB → 线性；缺省 0dB → 1.0(不改变音量) */
+  private get gainLinear(): number {
+    if (!this.loudnessEnabled) return 1
+    return Math.pow(10, (this._currentSong?.gain ?? 0) / 20)
+  }
+  /**
+   * 应用到 HTMLAudioElement 的有效音量：用户音量(0-1) × 补偿增益(线性)，
+   * 上限钳 1.0。html5 模式下 element.volume 规范限定 [0,1]，
+   * 钳顶既能避免 boost 时超出 0dBFS 产生削波，又兼容"响度大的歌照常衰减"。
+   */
+  private effectiveVolume(): number {
+    return Math.min(1, (this._volume / 100) * this.gainLinear)
+  }
   private _currentSong: ISong | null = null
   public get currentSong() {
     return this._currentSong
@@ -154,7 +169,7 @@ export class HowlerPlayer {
 
       if (startTime > 0) howl.seek(startTime)
 
-      this._howl?.fade(0, this._volume / 100, this._fadeDuration)
+      this._howl?.fade(0, this.effectiveVolume(), this._fadeDuration)
       this._howl?.play()
       this.dispatchEvent('ready', { song })
     })
@@ -196,7 +211,7 @@ export class HowlerPlayer {
       console.log('onseek ', song.fileName)
       this._isSeeking = false
       if (this._currentSong?.uid !== song.uid) return
-      this._howl?.fade(0, this._volume / 100, this._fadeDuration)
+      this._howl?.fade(0, this.effectiveVolume(), this._fadeDuration)
       this.dispatchEvent('seek', { time: this._howl?.seek() as number })
     })
 
@@ -476,7 +491,7 @@ export class HowlerPlayer {
   pause() {
     if (this._howl && this._isPlaying) {
       clearTimeout(this._fadeTimeoutId)
-      this._howl?.fade(this._volume / 100, 0, this._fadeDuration)
+      this._howl?.fade(this.effectiveVolume(), 0, this._fadeDuration)
       this._fadeTimeoutId = window.setTimeout(() => {
         this._howl?.pause()
       }, this._fadeDuration)
@@ -485,7 +500,7 @@ export class HowlerPlayer {
 
   resume() {
     if (this._howl && !this._isPlaying && this._currentSong) {
-      this._howl?.fade(0, this._volume / 100, this._fadeDuration)
+      this._howl?.fade(0, this.effectiveVolume(), this._fadeDuration)
       this._howl.play()
     }
   }
@@ -494,7 +509,7 @@ export class HowlerPlayer {
     if (this._howl) {
       this._isSeeking = true
       clearTimeout(this._fadeTimeoutId)
-      this._howl?.fade(this._volume / 100, 0, this._fadeDuration)
+      this._howl?.fade(this.effectiveVolume(), 0, this._fadeDuration)
       this._fadeTimeoutId = window.setTimeout(() => {
         this._howl?.seek(time)
       }, this._fadeDuration)
@@ -504,9 +519,20 @@ export class HowlerPlayer {
   setVolume(volume: number) {
     this._volume = volume
     if (this._howl) {
-      this._howl.volume(this._volume / 100)
+      this._howl.volume(this.effectiveVolume())
     }
     this.dispatchEvent('volumechange', { volume })
+  }
+
+  /**
+   * 测量完成后套用 LUFS 补偿增益：重新计算有效音量并平滑过渡。
+   * 不重新解码、不改动态、零音质损失；仅在当前正在播放该歌曲时生效。
+   */
+  public applyLoudness() {
+    if (!this._howl || !this._currentSong) return
+    const target = this.effectiveVolume()
+    this._howl.fade(this._howl.volume(), target, 250)
+    this.dispatchEvent('volumechange', { volume: this._volume })
   }
 
   toggleMute(muted: boolean) {

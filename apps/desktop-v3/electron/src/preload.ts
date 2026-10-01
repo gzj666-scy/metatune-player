@@ -58,6 +58,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
   },
   scanAudioDirs: (dirs: string[], knownSongs: ISong[]): Promise<IScanResult> => ipcRenderer.invoke(IPC.AUDIO_SCAN_DIRS, dirs, knownSongs),
   getAudioStreamUrl: (filePath: string): Promise<string> => ipcRenderer.invoke(IPC.AUDIO_STREAM_URL, filePath),
+  /** 读取音频文件字节（返回 Uint8Array，渲染进程解码为 PCM 供响度测量） */
+  readAudioBuffer: (filePath: string): Promise<Uint8Array | null> => ipcRenderer.invoke(IPC.AUDIO_READ_BUFFER, filePath),
 
   // 缓存
   getSongsCache: (): Promise<ISong[]> => ipcRenderer.invoke(IPC.CACHE_GET_SONGS),
