@@ -1,24 +1,20 @@
 <script setup lang="ts">
   import { formatFileSize } from '@metatune/common-v3'
-  import type { IModalProps, ISong } from '@metatune/common-v3'
+  import type { IModalProps } from '@metatune/common-v3'
   import { computed } from 'vue'
   import ModalBase from '../base/ModalBase.vue'
   import { getStoreManager } from '@/utils/storeManager'
 
-  const props = withDefaults(defineProps<IModalProps<{ song: ISong }>>(), {
+  const props = withDefaults(defineProps<IModalProps<{ songId: string }>>(), {
     type: '',
   })
 
   const storeManager = getStoreManager()
   const { playerStore } = storeManager
 
-  // 列表渲染经 deepToRaw 拿到的是深拷贝快照（与 store 断开引用），
-  // 若直接用 props.data.song，测量回写 gain/lufs/truePeak 后弹窗不会刷新。
-  // 故按 uid 从响应式 store 取实时对象，保证回写后自动更新。
   const song = computed(() => {
-    const s = props.data?.song
-    if (!s) return undefined
-    return playerStore.songMap.get(s.uid) ?? s
+    if (!props.data?.songId) return undefined
+    return playerStore.songMap.get(props.data.songId) ?? undefined
   })
 
   // 保留两位小数；缺失(undefined/NaN)显示 --

@@ -28,20 +28,49 @@ const LoadingIcon = defineComponent({
         return (
           <svg class='scy-loading-icon-balls' x='0px' y='0px' width='54px' height='12px' viewBox='0 0 36 8'>
             <circle fill='currentColor' stroke='none' cx='4' cy='4' r='4'>
-              <animate attributeName='opacity' attributeType='XML' values='1; .3; 1' begin='0s' dur='0.8s' repeatCount='indefinite'></animate>
+              <animate
+                attributeName='opacity'
+                attributeType='XML'
+                values='1; .3; 1'
+                begin='0s'
+                dur='0.8s'
+                repeatCount='indefinite'
+              ></animate>
             </circle>
             <circle fill='currentColor' stroke='none' cx='18' cy='4' r='4'>
-              <animate attributeName='opacity' attributeType='XML' values='1; .3; 1' begin='0.27s' dur='0.8s' repeatCount='indefinite'></animate>
+              <animate
+                attributeName='opacity'
+                attributeType='XML'
+                values='1; .3; 1'
+                begin='0.27s'
+                dur='0.8s'
+                repeatCount='indefinite'
+              ></animate>
             </circle>
             <circle fill='currentColor' stroke='none' cx='32' cy='4' r='4'>
-              <animate attributeName='opacity' attributeType='XML' values='1; .3; 1' begin='0.54s' dur='0.8s' repeatCount='indefinite'></animate>
+              <animate
+                attributeName='opacity'
+                attributeType='XML'
+                values='1; .3; 1'
+                begin='0.54s'
+                dur='0.8s'
+                repeatCount='indefinite'
+              ></animate>
             </circle>
           </svg>
         )
       } else if (props.type === 'gates') {
         return (
           <svg class='scy-loading-icon-gates' width='36px' height='36px' viewBox='0 0 66 66' xmlns='http://www.w3.org/2000/svg'>
-            <circle class='scy-loading-icon-gates-circle' fill='none' stroke-width='14' stroke-linecap='butt' cx='33' cy='33' r='20'></circle>
+            <circle
+              class='scy-loading-icon-gates-circle'
+              fill='none'
+              stroke-width='14'
+              stroke-linecap='butt'
+              cx='33'
+              cy='33'
+              r='20'
+            ></circle>
             <rect class='scy-loading-icon-gates-square' x='32' y='20' width='14' height='14' fill='#17E5A1'></rect>
           </svg>
         )

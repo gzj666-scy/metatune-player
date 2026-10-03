@@ -53,9 +53,10 @@
     }
 
     // v3：退出保存改由主进程 before-quit 主动通知（原版依赖 beforeunload 在 app.quit 时不可靠）
-    window.electronAPI.onFlushRequest(() => {
+    // 必须是 async + await：保存是异步 IPC 写盘，未 await 完 before-quit 就 app.quit() 会把写盘一起中断
+    window.electronAPI.onFlushRequest(async () => {
       try {
-        storeManager.savePlayCacheNow()
+        await storeManager.savePlayCacheNow()
         playManager.destroy()
       } catch (error) {
         console.error('退出保存失败:', error)

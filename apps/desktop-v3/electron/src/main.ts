@@ -14,6 +14,10 @@ process.env.APP_ROOT = join(__dirname, '..')
 
 const isDev = process.env.NODE_ENV === 'development'
 
+// 桌面播放器需允许音频在「非用户手势」下自动开始（启动续播、播完自动连下一首、LUFS 测量后套用增益），
+// 否则 html5 音频管线会被 Chromium 自动播放策略拦截，Howler 抛 "Playback was unable to start... not within a user interaction"
+// app.commandLine.appendSwitch('autoplay-policy', 'no-user-gesture-required')
+
 // 必须在 app.whenReady() 之前注册协议 scheme
 registerCacheProtocol()
 

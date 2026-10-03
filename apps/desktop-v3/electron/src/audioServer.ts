@@ -56,6 +56,21 @@ export class AudioStreamServer {
 
   private handle(req: IncomingMessage, res: ServerResponse): void {
     try {
+      // Private Network Access（PNA）预检：渲染进程以 http(s):// 源跨到 127.0.0.1 时，
+      // Chromium 会先发 OPTIONS 带 Access-Control-Request-Private-Network。
+      // Web Audio 模式（html5:false）下 Howler 用 XHR 加载流，XHR 受 PNA 约束；
+      // 而 <audio> 媒体加载豁免 PNA。必须应答预检，否则 XHR 永久挂起（既不 load 也不 error）。
+      if (req.method === 'OPTIONS') {
+        res.writeHead(204, {
+          'Access-Control-Allow-Origin': '*',
+          'Access-Control-Allow-Methods': 'GET, OPTIONS',
+          'Access-Control-Allow-Headers': '*',
+          'Access-Control-Allow-Private-Network': 'true',
+        })
+        res.end()
+        return
+      }
+
       const url = new URL(req.url || '/', this.baseUrl)
       if (url.pathname !== '/stream') {
         res.writeHead(404).end()
@@ -82,6 +97,8 @@ export class AudioStreamServer {
         'Accept-Ranges': 'bytes',
         // 已有 token 鉴权，此处放开 CORS 以便 <audio crossorigin> 取流用于可视化分析
         'Access-Control-Allow-Origin': '*',
+        // PNA 实际请求也必须带此头，Chromium 才放行跨到私有地址的 XHR
+        'Access-Control-Allow-Private-Network': 'true',
       }
 
       const { range } = req.headers

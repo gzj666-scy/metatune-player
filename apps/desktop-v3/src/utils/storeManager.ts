@@ -304,18 +304,26 @@ export class StoreManager {
     }, 400)
   }
 
-  /** 立即保存（退出前 flush 用） */
-  public savePlayCacheNow() {
+  /** 立即保存（退出前 flush 用）。必须 await：写盘是异步 IPC，未 await 会在 app.quit() 前被中断 */
+  public async savePlayCacheNow() {
     if (this._saveTimer) {
       clearTimeout(this._saveTimer)
       this._saveTimer = undefined
     }
-    window.electronAPI.setPlayerCache({
-      songDirs: toRaw(this._playerStore.songDirs),
-      playlists: toRaw(this._playerStore.playlists),
-      settings: toRaw(this._playerStore.settings),
-      state: toRaw(this._playerStore.currentState),
-    })
+    if (this._songsSaveTimer) {
+      clearTimeout(this._songsSaveTimer)
+      this._songsSaveTimer = undefined
+    }
+    // 播放器状态（歌单/设置/播放进度等）与歌曲列表（含响度增益）一并落盘，再回发 APP_FLUSHED
+    await Promise.all([
+      window.electronAPI.setPlayerCache({
+        songDirs: toRaw(this._playerStore.songDirs),
+        playlists: toRaw(this._playerStore.playlists),
+        settings: toRaw(this._playerStore.settings),
+        state: toRaw(this._playerStore.currentState),
+      }),
+      window.electronAPI.setSongsCache(toRaw(this._playerStore.songs)),
+    ])
   }
 
   public resetStore() {

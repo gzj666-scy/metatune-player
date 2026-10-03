@@ -30,7 +30,7 @@
   function handleLookSongInfo() {
     if (props.data?.song) {
       handleClose()
-      playerStore.modal = { type: ModalType.SongInfo, data: { song: props.data.song } }
+      playerStore.modal = { type: ModalType.SongInfo, data: { songId: props.data.song.uid } }
     }
   }
 

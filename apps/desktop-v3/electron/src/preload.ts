@@ -80,7 +80,12 @@ contextBridge.exposeInMainWorld('electronAPI', {
   // 退出前保存（主进程 before-quit 触发）
   onFlushRequest: (callback: () => void | Promise<void>) => {
     const unsubscribe = subscribe(IPC.APP_FLUSH, async () => {
-      await callback()
+      try {
+        await callback()
+      } catch (error) {
+        console.error('退出保存失败:', error)
+      }
+      // 无论保存成败都回发，避免主进程 before-quit 无限等待
       ipcRenderer.send(IPC.APP_FLUSHED)
     })
     return unsubscribe

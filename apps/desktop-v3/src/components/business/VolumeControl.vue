@@ -40,7 +40,12 @@
   <div class="volume-control" :style="props.style">
     <div class="volume-slider" ref="volumeSliderRef" @click="onVolumeClick">
       <div class="volume-track" :style="{ height: props.volume + '%' }"></div>
-      <div class="volume-thumb" :style="{ bottom: props.volume + '%' }" @mousedown="volumeDrag.startDrag" @touchstart="volumeDrag.startDrag"></div>
+      <div
+        class="volume-thumb"
+        :style="{ bottom: props.volume + '%' }"
+        @mousedown="volumeDrag.startDrag"
+        @touchstart="volumeDrag.startDrag"
+      ></div>
     </div>
     <div class="volume-label">{{ props.volume }}</div>
   </div>

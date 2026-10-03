@@ -67,6 +67,19 @@ export function deepToRaw<T>(source: T): T {
 }
 
 /**
+ * 列表渲染专用：浅层去响应 + 复制（只拷贝顶层 key，不递归嵌套对象）。
+ * 对比 deepToRaw：
+ *  - 给 sortSong 提供「可原地排序、但绝不碰 store 响应式源」的独立副本；
+ *  - 每次重算产出「新对象新身份」，让 v-memo 能按身份刷新行；
+ *  - 不递归深拷嵌套字段，省去大曲库重算时的递归/分配开销。
+ * 注意：直接展开响应式 Proxy（{...s}）会经 Proxy 的 get 陷阱读全部顶层属性，
+ * 因此仍会订阅每首歌的全部顶层字段 —— 任一字段变化都触发列表重算刷新，行为不变。
+ */
+export function shallowToRaw<T extends object>(source: T[]): T[] {
+  return source.map(s => ({ ...s }))
+}
+
+/**
  * 获取字符的排序优先级（数字越小越靠前，按首字符）
  * 1: 英文字母 (A-Z)
  * 2: 中文（简体+繁体）

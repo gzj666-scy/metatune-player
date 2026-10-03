@@ -1,11 +1,6 @@
 import { DefaultVolume, type ISong } from '@metatune/common-v3'
 import { Howl, Howler } from 'howler'
 
-// v3 音质策略：html5: true（HTMLAudioElement 原生媒体管线）。
-// 原版 html5: false 走 WebAudio，采样率被强制重采样到 44.1/48kHz、Float32 混音，
-// 高码率无损音质受损；html5 模式由系统媒体栈直接渲染，保留原始采样率/位深。
-// 代价：音频不经过 WebAudio 图，频谱可视化改用 captureStream 旁路取流（见 ensureVisualization）。
-
 // 自定义事件类型
 export type PlayerEvent =
   | 'play'
@@ -31,7 +26,7 @@ export interface PlayerEventDetail {
 /** 可视化音频链路（旁路采集，不影响播放） */
 interface Visualization {
   ctx: AudioContext
-  source: MediaStreamAudioSourceNode
+  source: GainNode
   splitter: ChannelSplitterNode
   leftAnalyser: AnalyserNode
   rightAnalyser: AnalyserNode
@@ -81,9 +76,9 @@ export class HowlerPlayer {
     return Math.pow(10, (this._currentSong?.gain ?? 0) / 20)
   }
   /**
-   * 应用到 HTMLAudioElement 的有效音量：用户音量(0-1) × 补偿增益(线性)，
-   * 上限钳 1.0。html5 模式下 element.volume 规范限定 [0,1]，
-   * 钳顶既能避免 boost 时超出 0dBFS 产生削波，又兼容"响度大的歌照常衰减"。
+   * 应用到 Howl 的有效音量：用户音量(0-1) × 补偿增益(线性)，上限钳 1.0。
+   * Web Audio 模式下音量经 GainNode（理论上可 >1 做 boost），钳顶既能避免
+   * boost 时超出 0dBFS 产生削波，又兼容"响度大的歌照常衰减"。
    */
   private effectiveVolume(): number {
     return Math.min(1, (this._volume / 100) * this.gainLinear)
@@ -94,10 +89,8 @@ export class HowlerPlayer {
   }
 
   constructor() {
+    Howler.autoSuspend = false // 防止 Chromium 闲置时挂起音频上下文（对齐最初版）
     this.initializeEventSystem()
-    // howler 构造时即开始加载，crossOrigin 必须在池化 Audio 元素出池时统一设置
-    // （可视化 captureStream 要求媒体经过 CORS 净化，否则采集到的是静音流）
-    this.patchHtml5AudioCrossOrigin()
   }
 
   private initializeEventSystem() {
@@ -119,16 +112,9 @@ export class HowlerPlayer {
     })
   }
 
-  private patchHtml5AudioCrossOrigin() {
-    const howlerAny = Howler as any
-    if (typeof howlerAny._obtainHtml5Audio !== 'function' || howlerAny.__crossOriginPatched) return
-    const obtain = howlerAny._obtainHtml5Audio.bind(Howler)
-    howlerAny._obtainHtml5Audio = () => {
-      const audio: HTMLAudioElement = obtain()
-      audio.crossOrigin = 'anonymous'
-      return audio
-    }
-    howlerAny.__crossOriginPatched = true
+  private getFormatFromFilePath(filePath: string): string {
+    const ext = filePath.split('.').pop() || ''
+    return ext.toLowerCase()
   }
 
   // 播放歌曲
@@ -139,13 +125,15 @@ export class HowlerPlayer {
 
     // 获取音频流 URL
     const streamUrl = await window.electronAPI.getAudioStreamUrl(song.filePath)
-    console.log('播放音频流:', streamUrl)
     if (this._currentSong?.uid !== song.uid) return
+    console.log('播放音频流:', streamUrl)
 
     const howl = new Howl({
       src: [streamUrl],
-      // v3：原生 html5 音频管线，最大化音质；扩展名提示不可省（流地址无后缀）
-      html5: true,
+      // 恢复最初版设计：Web Audio 管线（规避 html5 模式的 CSP / 自动播放策略报错）
+      html5: false,
+      // 流地址无后缀（.../stream?p=...），必须显式给 format。否则 Howler 在 load() 阶段
+      // 按 URL 末段取到 'stream' 选不到 codec，直接 _emit('loaderror') 返回、根本不发请求
       format: [this.getFormatFromFilePath(song.filePath)],
       preload: 'metadata',
       volume: 0,
@@ -155,11 +143,6 @@ export class HowlerPlayer {
     // load 事件在网络返回后异步触发，构造后立即绑定不会错过
     this.bindHowlEvents(howl, song, startTime)
     this._howl = howl
-  }
-
-  private getFormatFromFilePath(filePath: string): string {
-    const ext = filePath.split('.').pop() || ''
-    return ext.toLowerCase()
   }
 
   private bindHowlEvents(howl: Howl, song: ISong, startTime: number) {
@@ -286,29 +269,35 @@ export class HowlerPlayer {
   }
 
   /**
-   * 建立可视化旁路：captureStream 采集 <audio> 输出，经 MediaStreamSource → 分离左右声道 → 分析器。
-   * 不介入播放链路，音质不受影响；失败时返回 null（频谱静默）。
+   * 建立可视化：直接接入 Howler 内部音源节点（Web Audio 模式 sound._node 是 GainNode），
+   * 经 ChannelSplitter 分离左右声道 → 左右 AnalyserNode。不介入播放主链路（仅旁路监听），音质不受影响。
+   * 对齐最初版（apps/desktop）已验证的实现；失败时返回 null（频谱静默）。
    */
   private ensureVisualization(): Visualization | null {
     if (this._vis) return this._vis
     if (!this._howl) return null
-    const node = (this._howl as any)._sounds?.[0]?._node as HTMLAudioElement | undefined
-    if (!node || typeof (node as any).captureStream !== 'function') return null
+    const sound = (this._howl as any)._sounds?.[0]
+    const sourceNode = sound?._node as GainNode | undefined
+    if (!sourceNode) return null
 
+    const ctx = Howler.ctx as AudioContext
     try {
-      const stream: MediaStream = (node as any).captureStream()
-      if (!stream || stream.getAudioTracks().length === 0) return null
+      // 断开 Howler 内部 GainNode 到 destination 的原始连接，避免双重信号路径，会直接污染音频输出，并可能引发底层音频调度异常。
+      // 防御性断开 sound._node 到 destination 的直连（多数版本不直连，无害；对齐最初版）
+      try {
+        sourceNode.disconnect(ctx.destination)
+      } catch {
+        /* 首次连接时可能没有 */
+      }
 
-      const ctx = new AudioContext()
-      const source = ctx.createMediaStreamSource(stream)
       const splitter = ctx.createChannelSplitter(2)
+      sourceNode.connect(splitter)
       const leftAnalyser = ctx.createAnalyser()
       const rightAnalyser = ctx.createAnalyser()
       leftAnalyser.fftSize = 4096
       rightAnalyser.fftSize = 4096
       leftAnalyser.smoothingTimeConstant = 0.6
       rightAnalyser.smoothingTimeConstant = 0.6
-      source.connect(splitter)
       splitter.connect(leftAnalyser, 0)
       splitter.connect(rightAnalyser, 1)
 
@@ -319,7 +308,7 @@ export class HowlerPlayer {
       // 创建 Mel 滤波器组（用 2048 个线性 bin）
       this._filterBank = this.createMelFilterBank(2048, ctx.sampleRate, 64)
 
-      this._vis = { ctx, source, splitter, leftAnalyser, rightAnalyser }
+      this._vis = { ctx, source: sourceNode, splitter, leftAnalyser, rightAnalyser }
       return this._vis
     } catch (error) {
       console.warn('可视化链路建立失败:', error)
@@ -327,15 +316,19 @@ export class HowlerPlayer {
     }
   }
 
-  /** 销毁可视化旁路 */
+  /** 销毁可视化：断开分析器并恢复音源到 destination（对齐最初版 disconnectAnalyser，避免实例卸载残留） */
   private teardownVisualization() {
     if (!this._vis) return
     try {
-      this._vis.source.disconnect()
       this._vis.splitter.disconnect()
       this._vis.leftAnalyser.disconnect()
       this._vis.rightAnalyser.disconnect()
-      this._vis.ctx.close()
+      // 恢复音源直连 destination（多数版本已通过 howl._node → masterGain 输出，此处再连无害）
+      try {
+        this._vis.source.connect(this._vis.ctx.destination)
+      } catch {
+        /* 已连接则忽略 */
+      }
     } catch (e) {
       // 链路可能已部分销毁，忽略清理异常
     }

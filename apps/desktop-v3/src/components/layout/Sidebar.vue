@@ -87,7 +87,12 @@
           <div class="section-label">音乐库</div>
         </div>
         <ul class="menu-list">
-          <li v-for="item in mainMenuItems" :key="item.id" :class="clsx('menu-item', { active: activeView === item.id })" @click="onChangeView(item)">
+          <li
+            v-for="item in mainMenuItems"
+            :key="item.id"
+            :class="clsx('menu-item', { active: activeView === item.id })"
+            @click="onChangeView(item)"
+          >
             <IconBase class="menu-icon">
               <component :is="activePlayListId === item.id && isPlaying ? IconEnum.Playing : item.iconNode" />
             </IconBase>

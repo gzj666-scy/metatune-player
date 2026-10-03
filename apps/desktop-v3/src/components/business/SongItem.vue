@@ -134,7 +134,7 @@
     border-radius: 6px;
     // v3 性能优化：视口外条目跳过渲染，大曲库下滚动不掉帧
     content-visibility: auto;
-    contain-intrinsic-size: auto 56px;
+    contain-intrinsic-size: auto 61px;
 
     &:hover {
       background: var(--item-hover-bg);

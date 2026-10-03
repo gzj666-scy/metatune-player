@@ -11,7 +11,7 @@ import type {
   IAlbum,
   IBusinessData,
 } from '@metatune/common-v3/types'
-import { deepToRaw, DefaultKey, DefaultVolume, PlayMode, sortArtist, sortSong } from '@metatune/common-v3'
+import { shallowToRaw, DefaultKey, DefaultVolume, PlayMode, sortArtist, sortSong } from '@metatune/common-v3'
 
 export const defaultState = {
   currentListId: DefaultKey.Local,
@@ -73,7 +73,7 @@ export const usePlayerStore = defineStore('player', () => {
     console.log('当前查看列表：', currentViewKey.value)
     const playlist = playlists.value[currentViewKey.value]
     const playlistSongs = filterSongsByPlaylist(songs.value, playlist?.songIds)
-    return sortSong(deepToRaw(playlistSongs), playlist?.sortType)
+    return sortSong(shallowToRaw(playlistSongs), playlist?.sortType)
   })
 
   /** 按歌单 songIds 过滤歌曲（Set 索引，O(n+m)） */
@@ -170,7 +170,7 @@ export const usePlayerStore = defineStore('player', () => {
    */
   function getSongsByIds(songIds: string[]): ISong[] {
     const idSet = new Set(songIds)
-    return sortSong(deepToRaw(songs.value.filter(v => idSet.has(v.uid))))
+    return sortSong(shallowToRaw(songs.value.filter(v => idSet.has(v.uid))))
   }
 
   /** 当前播放的歌曲 */
@@ -194,7 +194,7 @@ export const usePlayerStore = defineStore('player', () => {
     console.log('当前播放列表：', currentState.value.currentListId)
     const playlist = playlists.value[currentState.value.currentListId]
     const playlistSongs = filterSongsByPlaylist(songs.value, playlist?.songIds)
-    return sortSong(deepToRaw(playlistSongs), playlist?.sortType)
+    return sortSong(shallowToRaw(playlistSongs), playlist?.sortType)
   })
   const currentPlaylistSongsValid = computed(() => {
     return currentPlaylistSongs.value.filter(v => v.isValid)

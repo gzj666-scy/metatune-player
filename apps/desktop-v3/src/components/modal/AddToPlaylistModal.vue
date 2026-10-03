@@ -33,7 +33,9 @@
 
   function onAdd() {
     if (selectedListsRef.value.length > 0 && props.data?.songIds && props.data.songIds?.length > 0) {
-      storeManager.addToPlaylist(selectedListsRef.value.map(v => ({ id: v, songIds: props.data?.songIds || [], cover: props.data?.cover || false })))
+      storeManager.addToPlaylist(
+        selectedListsRef.value.map(v => ({ id: v, songIds: props.data?.songIds || [], cover: props.data?.cover || false }))
+      )
     }
     onClose()
   }
