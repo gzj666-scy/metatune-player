@@ -41,7 +41,7 @@ const META_FILE = join(CACHE_DIR, 'metatune-data.json')
 const PLAY_FILE = join(CACHE_DIR, 'player-data.json')
 // 存放封面图缓存
 export const COVER_DIR = join(CACHE_DIR, 'covers')
-
+console.log('缓存目录 ', META_FILE, PLAY_FILE, COVER_DIR)
 /** 播放器持久化数据（读写结构对称，原版 get/set 类型不一致已修正） */
 export interface IPlayerData {
   songDirs: string[]

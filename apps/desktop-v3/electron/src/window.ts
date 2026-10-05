@@ -23,7 +23,7 @@ export async function createWindow(onReadyToShow?: () => void): Promise<void> {
       webSecurity: true,
       sandbox: false,
     },
-    frame: !isDev,
+    frame: isDev, // 隐藏窗口的顶部菜单栏和标题栏
     titleBarStyle: 'hiddenInset',
     show: false,
   })

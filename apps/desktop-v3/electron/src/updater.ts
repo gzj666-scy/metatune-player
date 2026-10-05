@@ -24,6 +24,17 @@ export function setupAutoUpdater(sender: SendStatus): void {
   sendStatus = sender
 
   app.setAppUserModelId('com.gzj666-scy.metatune')
+
+  // electron-updater 默认把更新缓存放在 LOCALAPPDATA/<updaterCacheDirName>（内部 hardcode 取 LOCALAPPDATA，
+  // 改 package.json 的 updaterCacheDirName 只能改子文件夹名、挪不动基路径）。项目约定所有应用数据放
+  // appData/Metatune Player 下，这里把缓存「基路径」重定向过去：
+  // 最终缓存目录 = appData/Metatune Player/metatune-player-updater
+  const updaterApp = (autoUpdater as unknown as { app: object }).app
+  Object.defineProperty(updaterApp, 'baseCachePath', {
+    configurable: true,
+    get: () => join(app.getPath('appData'), 'Metatune Player'),
+  })
+
   if (!app.isPackaged) {
     // 开发环境指向本地测试配置
     Object.defineProperty(app, 'isPackaged', { value: true })

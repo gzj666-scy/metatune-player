@@ -29,7 +29,7 @@
     showCancel: true,
     cancelText: '取消',
     confirmText: '确定',
-    maskClosable: true,
+    maskClosable: false,
     autoFocus: true,
     loading: false,
   })
@@ -131,7 +131,13 @@
         </section>
 
         <footer v-if="showFooter" class="modal-footer" :class="classNames?.footer">
-          <button v-if="showCancel" class="modal-btn modal-btn-cancel" :class="cancelButtonClass" @click="handleCancel" :disabled="props.loading">
+          <button
+            v-if="showCancel"
+            class="modal-btn modal-btn-cancel"
+            :class="cancelButtonClass"
+            @click="handleCancel"
+            :disabled="props.loading"
+          >
             {{ cancelText }}
           </button>
           <button

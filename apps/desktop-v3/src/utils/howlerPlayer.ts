@@ -1,5 +1,6 @@
 import { DefaultVolume, type ISong } from '@metatune/common-v3'
 import { Howl, Howler } from 'howler'
+import { AudioVisualizer, type VisualizationBands } from './audioVisualizer'
 
 // 自定义事件类型
 export type PlayerEvent =
@@ -37,20 +38,8 @@ export class HowlerPlayer {
   private _unloadTimer: number | undefined = undefined // 延迟卸载定时器
   private _howl: Howl | null = null
   private _vis: Visualization | null = null
-
-  // 左右声道分析状态
-  private _filterBank: Float32Array[] | null = null
-  private _dataBufferLeft = new Float32Array(0)
-  private _dataBufferRight = new Float32Array(0)
-  private _smoothLeft = new Float32Array(64)
-  private _smoothRight = new Float32Array(64)
-  private _peakLeft = new Float32Array(64)
-  private _peakRight = new Float32Array(64)
-  private _finalDataBuffer = new Float32Array(128)
-  private _melBandsLeft = new Float32Array(64)
-  private _melBandsRight = new Float32Array(64)
-  private _linearLeft = new Float32Array(0)
-  private _linearRight = new Float32Array(0)
+  // 频谱数据处理器（音频链建好即创建，数据加工逻辑全在其内）
+  private _visualizer: AudioVisualizer | null = null
 
   private _isSeeking = false
   private _intervalId: number | undefined = undefined
@@ -294,21 +283,19 @@ export class HowlerPlayer {
       sourceNode.connect(splitter)
       const leftAnalyser = ctx.createAnalyser()
       const rightAnalyser = ctx.createAnalyser()
-      leftAnalyser.fftSize = 4096
-      rightAnalyser.fftSize = 4096
-      leftAnalyser.smoothingTimeConstant = 0.6
-      rightAnalyser.smoothingTimeConstant = 0.6
+      // fftSize 降到 2048：每 bin 能量更高、更跟手，且 FFT 开销减半。
+      // smoothingTimeConstant 只做轻量去噪：真正的律动手感交给 AudioVisualizer 的 attack/release 包络，
+      // 避免 AnalyserNode 自身再平滑一道把鼓点瞬态吃掉（旧版 0.6 + 包络 = 双重平滑，所以「太平静」）。
+      leftAnalyser.fftSize = 2048
+      rightAnalyser.fftSize = 2048
+      leftAnalyser.smoothingTimeConstant = 0.5
+      rightAnalyser.smoothingTimeConstant = 0.5
       splitter.connect(leftAnalyser, 0)
       splitter.connect(rightAnalyser, 1)
 
-      this._dataBufferLeft = new Float32Array(leftAnalyser.frequencyBinCount)
-      this._dataBufferRight = new Float32Array(rightAnalyser.frequencyBinCount)
-      this._linearLeft = new Float32Array(leftAnalyser.frequencyBinCount)
-      this._linearRight = new Float32Array(rightAnalyser.frequencyBinCount)
-      // 创建 Mel 滤波器组（用 2048 个线性 bin）
-      this._filterBank = this.createMelFilterBank(2048, ctx.sampleRate, 64)
-
       this._vis = { ctx, source: sourceNode, splitter, leftAnalyser, rightAnalyser }
+      // 音频链建好即创建频谱数据处理器（滤波器组/缓冲/包络状态都在其内初始化）
+      this._visualizer = new AudioVisualizer(leftAnalyser, rightAnalyser)
       return this._vis
     } catch (error) {
       console.warn('可视化链路建立失败:', error)
@@ -333,131 +320,16 @@ export class HowlerPlayer {
       // 链路可能已部分销毁，忽略清理异常
     }
     this._vis = null
-    this._filterBank = null
+    this._visualizer = null
   }
 
-  // 定义 Mel 滤波器组 (将 2048 个线性 bin 映射到 64 个 Mel 频带)
-  private createMelFilterBank(numBins: number, sampleRate: number, numMelBands = 64) {
-    const lowFreq = 20 // 最低频率
-    const highFreq = sampleRate / 2 // Nyquist
-    // 梅尔刻度是模仿人耳对频率感知的非线性刻度。公式是：mel = 2595 * Math.log10(1 + freq / 700)
-    const lowMel = 2595 * Math.log10(1 + lowFreq / 700)
-    const highMel = 2595 * Math.log10(1 + highFreq / 700)
-    const melPoints: number[] = []
-    for (let i = 0; i <= numMelBands + 1; i++) {
-      const mel = lowMel + (highMel - lowMel) * (i / (numMelBands + 1))
-      const freq = 700 * (Math.pow(10, mel / 2595) - 1)
-      const bin = Math.round((freq / sampleRate) * numBins)
-      melPoints.push(bin)
-    }
-
-    // 构建滤波器组
-    const filterBank: Float32Array[] = []
-    for (let i = 0; i < numMelBands; i++) {
-      const start = melPoints[i]
-      const center = melPoints[i + 1]
-      const end = melPoints[i + 2]
-      const weights = new Float32Array(numBins)
-      for (let j = start; j < center; j++) {
-        weights[j] = (j - start) / (center - start)
-      }
-      for (let j = center; j < end; j++) {
-        weights[j] = (end - j) / (end - center)
-      }
-      filterBank.push(weights)
-    }
-    return filterBank
-  }
-
-  // 提取 Mel 能量（复用缓冲区，v3 修复原版每帧分配新 Float32Array 的问题）
-  private getMelEnergy(
-    analyser: AnalyserNode,
-    bufferData: Float32Array<ArrayBuffer>,
-    linearOut: Float32Array,
-    bandsOut: Float32Array
-  ): Float32Array {
-    analyser.getFloatFrequencyData(bufferData)
-
-    // 将 dB 转换为线性幅度 (0~1)
-    for (let i = 0; i < bufferData.length; i++) {
-      linearOut[i] = Math.pow(10, bufferData[i] / 20)
-    }
-
-    // 应用 Mel 滤波器组得到 64 个频带
-    for (let i = 0; i < 64; i++) {
-      let sum = 0
-      const weights = this._filterBank![i]
-      for (let j = 0; j < weights.length; j++) {
-        sum += linearOut[j] * weights[j]
-      }
-      bandsOut[i] = sum
-    }
-    return bandsOut
-  }
-
-  // 瞬态提取：按变化幅度返回（纯慢衰减版本）
-  private extractTransient(melBands: Float32Array, smoothState: Float32Array, peakState: Float32Array, result: Float32Array): Float32Array {
-    // 瞬态提取的核心参数
-    const smoothFactor = 0.92 // 能量基准更新速度，越大基准变化越慢
-    const decay = 0.6 // 慢衰减系数，越大掉得越慢
-    const noiseFloor = 0.01 // 背景噪声阈值，削掉微弱变化
-    const sensitivity = 3.0 // 输出强度缩放，越大冲击越猛
-
-    // 1. 计算当前帧全局最大值（用于动态钳制）
-    let maxVal = 0.001
-    for (let i = 0; i < 64; i++) {
-      if (melBands[i] > maxVal) maxVal = melBands[i]
-    }
-    if (maxVal < 0.001) maxVal = 0.001
-
-    // 2. 逐个频带处理
-    for (let i = 0; i < 64; i++) {
-      const current = melBands[i] / maxVal // 归一化到 0~1
-
-      // 计算"变化幅度"：当前值 - 上一帧平滑值
-      let diff = current - smoothState[i]
-
-      // 更新平滑状态
-      smoothState[i] = smoothState[i] * smoothFactor + current * (1 - smoothFactor)
-
-      // 只保留正向变化，应用阈值后放大，钳制到 0~1
-      diff = Math.max(0, diff) - noiseFloor
-      if (diff < 0) diff = 0
-      diff = Math.min(1, diff * sensitivity)
-
-      // 慢衰减峰值保持
-      if (diff > peakState[i]) {
-        peakState[i] = diff
-      } else {
-        peakState[i] = peakState[i] * decay
-      }
-
-      result[i] = peakState[i]
-    }
-
-    return result
-  }
-
-  /** 获取可视化数据（128 = 左声道 64 + 右声道 64），未开启/失败返回 null */
-  getVisualizationDataBands(): Float32Array | null {
+  /** 获取可视化数据：委托给 AudioVisualizer 处理，返回 { bands, peaks } 各 128(左 64 + 右 64)，未就绪返回 null */
+  getVisualizationDataBands(): VisualizationBands | null {
     const vis = this.ensureVisualization()
-    if (!vis) return null
-
+    if (!vis || !this._visualizer) return null
     // AudioContext 闲置可能被自动挂起
     if (vis.ctx.state === 'suspended') vis.ctx.resume().catch(() => {})
-
-    const melLeft = this.getMelEnergy(vis.leftAnalyser, this._dataBufferLeft, this._linearLeft, this._melBandsLeft)
-    const melRight = this.getMelEnergy(vis.rightAnalyser, this._dataBufferRight, this._linearRight, this._melBandsRight)
-
-    this.extractTransient(melLeft, this._smoothLeft, this._peakLeft, this._melBandsLeft)
-    this.extractTransient(melRight, this._smoothRight, this._peakRight, this._melBandsRight)
-
-    for (let i = 0; i < 64; i++) {
-      this._finalDataBuffer[i] = Math.min(1, this._melBandsLeft[i] * 0.5)
-      this._finalDataBuffer[64 + i] = Math.min(1, this._melBandsRight[i] * 0.5)
-    }
-
-    return this._finalDataBuffer
+    return this._visualizer.getBands()
   }
 
   // 时间追踪

@@ -67,6 +67,17 @@
   const showAlphaNav = computed(() => {
     return !searchQueryRef.value && filteredSongs.value.length > 20 && sortType.value !== 'addTime'
   })
+  const listTitle = computed(() => {
+    if (route.params.name && playerStore.currentArtistName === route.params.name) {
+      return playerStore.currentArtistName
+    } else if (route.params.name && playerStore.currentAlbumName === route.params.name) {
+      return playerStore.currentAlbumName
+    } else if (route.params.name && playerStore.currentFolderName === route.params.name) {
+      return playerStore.currentFolderName
+    } else {
+      return ''
+    }
+  })
 
   function onSearchChange(data: string) {
     searchQueryRef.value = data
@@ -221,6 +232,7 @@
       :listKey="listKey"
       :sortType="sortType"
       :isBatch="showBatchActionsRef"
+      :title="listTitle"
       @search-change="onSearchChange"
       @batch-change="onBatchChange"
       @add-to-playlist="onAddToPlayList"

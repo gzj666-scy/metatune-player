@@ -13,11 +13,13 @@
     listKey: string
     isBatch: boolean
     sortType: SortTypeItemsIds
+    title?: string
   }
 
   const props = withDefaults(defineProps<Props>(), {
     listKey: '',
     sortType: SortTypeItems[0].value,
+    title: '',
   })
 
   const emit = defineEmits<{
@@ -220,6 +222,7 @@
             <component :is="IconEnum.CircleCloseFilled" />
           </IconBase>
         </div>
+        <div v-if="title" class="tool-title">{{ title }}</div>
       </div>
       <div class="toolbar-right">
         <button v-if="listKey === DefaultKey.Local" class="btn" @click="handleLookSongs" title="查看歌单歌曲">
@@ -337,6 +340,11 @@
             color: var(--text-color-secondary);
           }
         }
+      }
+
+      .tool-title {
+        font-size: 14px;
+        color: var(--text-color-primary);
       }
 
       .btn-batch {
