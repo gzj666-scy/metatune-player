@@ -1,25 +1,25 @@
 {
   "name": "@metatune/desktop",
-  "version": "1.1.3",
+  "version": "1.1.5",
   "description": "元音本地音乐播放器-桌面版",
   "license": "MIT",
   "author": "gzj666-scy",
   "type": "commonjs",
   "main": "./dist-electron/main.js",
   "scripts": {
-    "build": "vite build",
-    "build:app": "vite build && electron-builder",
-    "build:mac": "vite build && electron-builder --mac",
-    "build:win": "vite build && electron-builder --win",
-    "copy:songs": "node scripts/copySongs.js",
     "dev": "cross-env NODE_ENV=development vite",
-    "dev:electron": "cross-env NODE_ENV=development electron .",
+    "dev:electron": "node scripts/devElectron.js",
+    "start": "concurrently -k \"pnpm dev\" \"pnpm dev:electron\"",
+    "build": "vite build",
+    "build:win": "vite build && electron-builder --win",
+    "build:mac": "vite build && electron-builder --mac",
+    "build:app": "vite build && electron-builder",
     "fix:electron": "electron-fix start",
     "rebuild:native": "electron-rebuild -f",
-    "start": "cross-env NODE_ENV=production electron .",
     "type-check": "vue-tsc --noEmit && vue-tsc --noEmit -p electron/tsconfig.json",
+    "type-check:web": "vue-tsc --noEmit",
     "type-check:electron": "vue-tsc --noEmit -p electron/tsconfig.json",
-    "type-check:web": "vue-tsc --noEmit"
+    "copy:songs": "node scripts/copySongs.js"
   },
   "dependencies": {
     "@metatune/common": "workspace:*",
@@ -29,6 +29,7 @@
     "howler": "^2.2.4",
     "js-md5": "^0.8.3",
     "lodash": "^4.18.1",
+    "lufs-web": "^0.1.1",
     "music-metadata": "^11.12.3",
     "pinia": "catalog:",
     "vue": "catalog:",
@@ -43,6 +44,7 @@
     "@types/lodash": "^4.17.24",
     "@vitejs/plugin-vue": "5.2.4",
     "@vitejs/plugin-vue-jsx": "4.2.0",
+    "concurrently": "^10.0.5",
     "cross-env": "^10.1.0",
     "electron": "41.1.1",
     "electron-builder": "^26.8.1",
@@ -113,6 +115,7 @@
       "createStartMenuShortcut": true,
       "shortcutName": "元音播放器",
       "runAfterFinish": true,
+      "include": "build/installer.nsh",
       "deleteAppDataOnUninstall": false,
       "perMachine": false,
       "installerIcon": "resources/icons/installer.ico",
@@ -161,7 +164,7 @@
         "repo": "metatune-player",
         "private": false,
         "releaseType": "release",
-        "updaterCacheDirName": "metatune-player-updater"
+        "updaterCacheDirName": "updater"
       }
     ],
     "afterPack": "./scripts/afterPack.js"

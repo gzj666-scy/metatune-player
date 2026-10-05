@@ -1,0 +1,264 @@
+import { defineStore } from 'pinia'
+import { ref, computed, readonly } from 'vue'
+import type {
+  ISong,
+  IPlaybackState,
+  IPlaylist,
+  IAppSettings,
+  IPanelProps,
+  IModalProps,
+  IArtist,
+  IAlbum,
+  IBusinessData,
+} from '@metatune/common/types'
+import { shallowToRaw, DefaultKey, DefaultVolume, PlayMode, sortArtist, sortSong } from '@metatune/common'
+
+export const defaultState = {
+  currentListId: DefaultKey.Local,
+  currentSongId: '',
+  currentTime: 0,
+  isPlaying: false,
+  volume: DefaultVolume,
+  playMode: PlayMode.REPEAT_ALL,
+  playbackRate: 1.0,
+  isMuted: false,
+}
+
+export const defaultSettings = {
+  setupResume: false,
+  closeQuit: true,
+  autoOpenPlayView: false,
+  openVisualization: false,
+  // 响度归一化：默认关闭，目标响度 -14 LUFS、true peak 上限 -1.0 dBTP（现代音乐归一化最优默认）
+  loudnessNormalization: false,
+  targetLoudness: -14,
+  truePeakCeiling: -1.0,
+}
+
+export const usePlayerStore = defineStore('player', () => {
+  /** 面板数据 */
+  const panel = ref<IPanelProps>({ type: '' })
+  /** 弹窗数据 */
+  const modal = ref<IModalProps>({ type: '' })
+  /** 本地列表 */
+  const songs = ref<ISong[]>([])
+  const songDirs = ref<string[]>([])
+  /** 自定义歌单数据 */
+  const playlists = ref<IPlaylist>({})
+  /** 播放状态 */
+  const currentState = ref<IPlaybackState>(defaultState)
+  /** 设置信息 */
+  const settings = ref<IAppSettings>(defaultSettings)
+  /** 当前正在查看的视图key */
+  const currentViewKey = ref<string>(DefaultKey.Local)
+  /** 默认当做歌单处理的列表key（local、favorite） */
+  const defaultPlaylistKey = readonly(ref<string[]>([DefaultKey.Local, DefaultKey.Favorite]))
+  /** 播放器读取到的音频时长，不一定准，部分歌曲媒体信息读取不到时长，以此兜底 */
+  const playerDuration = ref(0)
+
+  const business = ref<IBusinessData>({
+    isMaximized: false,
+  })
+
+  // v3 性能优化：uid → 歌曲的索引表，所有按 uid 查歌走 Map，消除 O(n²) 查找
+  const songMap = computed(() => {
+    const map = new Map<string, ISong>()
+    songs.value.forEach(v => map.set(v.uid, v))
+    return map
+  })
+
+  // 计算属性不会只要依赖变了就立即重算。它会在依赖变了并且下一次被读取时才重算。
+  /** 当前查看列表的歌曲数组(已排序) */
+  const currentViewPlaylistSongs = computed(() => {
+    console.log('当前查看列表：', currentViewKey.value)
+    const playlist = playlists.value[currentViewKey.value]
+    const playlistSongs = filterSongsByPlaylist(songs.value, playlist?.songIds)
+    return sortSong(shallowToRaw(playlistSongs), playlist?.sortType)
+  })
+
+  /** 按歌单 songIds 过滤歌曲（Set 索引，O(n+m)） */
+  function filterSongsByPlaylist(allSongs: ISong[], songIds?: string[]): ISong[] {
+    if (!songIds || songIds.length === 0) return []
+    const idSet = new Set(songIds)
+    return allSongs.filter(v => idSet.has(v.uid))
+  }
+
+  /** 当前创建的自定义歌单列表 */
+  const currentPlaylists = computed(() => {
+    const keys = Object.keys(playlists.value || {})
+    return keys.filter(v => !defaultPlaylistKey.value.includes(v)).map(v => playlists.value[v])
+  })
+
+  /** 当前正在查看的歌手 */
+  const currentArtistName = ref<string>('')
+  /** 歌手列表(已排序) */
+  const artistLists = computed(() => {
+    const obj: Record<string, IArtist> = {}
+    songs.value.forEach(v => {
+      const artistArr = v.artist ? v.artist.split('、') : ['<未知>']
+      artistArr.forEach(w => {
+        if (obj[w]) {
+          obj[w].songIds.push(v.uid)
+          if (!obj[w].coverArt) obj[w].coverArt = v.albumArt
+        } else {
+          obj[w] = { name: w, songIds: [v.uid], coverArt: v.albumArt }
+        }
+      })
+    })
+    return sortArtist(Object.keys(obj).map(v => obj[v]))
+  })
+  /** 当前正在查看的歌手的歌曲数组(已排序) */
+  const currentArtistSongs = computed(() => {
+    const songIds = artistLists.value.find(v => v.name === currentArtistName.value)?.songIds || []
+    console.log('当前查看歌手：', currentArtistName.value)
+    return getSongsByIds(songIds)
+  })
+
+  /** 当前正在查看的专辑 */
+  const currentAlbumName = ref<string>('')
+  /** 专辑列表(已排序) */
+  const albumLists = computed(() => {
+    const obj: Record<string, IAlbum> = {}
+    songs.value.forEach(v => {
+      const album = v.album || '<未知>',
+        albumArtist = v.albumArtist || '<未知>',
+        key = `${albumArtist} - ${album}`
+      // 防止不同歌手的同名专辑，以 歌手 - 专辑 作为key
+      if (obj[key]) {
+        obj[key].songIds.push(v.uid)
+        if (!obj[key].coverArt) obj[key].coverArt = v.albumArt
+      } else {
+        obj[key] = { key, name: album, songIds: [v.uid], coverArt: v.albumArt, artist: albumArtist }
+      }
+    })
+    return sortArtist(Object.keys(obj).map(v => obj[v]))
+  })
+  /** 当前正在查看的专辑的歌曲数组(已排序) */
+  const currentAlbumSongs = computed(() => {
+    const songIds = albumLists.value.find(v => v.key === currentAlbumName.value)?.songIds || []
+    console.log('当前查看专辑：', currentAlbumName.value)
+    return getSongsByIds(songIds)
+  })
+
+  /** 当前正在查看的文件夹 */
+  const currentFolderName = ref<string>('')
+  /** 文件夹列表(已排序) */
+  const folderLists = computed(() => {
+    const obj: Record<string, IArtist> = {}
+    songs.value.forEach(v => {
+      const path = v.folderPath
+      if (obj[path]) {
+        obj[path].songIds.push(v.uid)
+        if (!obj[path].coverArt) obj[path].coverArt = v.albumArt
+      } else {
+        obj[path] = { name: path, songIds: [v.uid], coverArt: v.albumArt }
+      }
+    })
+    return sortArtist(Object.keys(obj).map(v => obj[v]))
+  })
+  /** 当前正在查看的文件夹的歌曲数组(已排序) */
+  const currentFolderSongs = computed(() => {
+    const songIds = folderLists.value.find(v => v.name === currentFolderName.value)?.songIds || []
+    console.log('当前查看文件夹：', currentFolderName.value)
+    return getSongsByIds(songIds)
+  })
+
+  /**
+   * 按 uid 集合过滤歌曲（v3：Set 索引，O(n+m) 替代原版逐个 find 的 O(n²)）。
+   * 注意：这里必须直接依赖 songs（而非经 songMap computed 间接依赖）——
+   * 链式 computed 的失效传播在 songs 整体替换时不可靠，曾导致视图恒为空。
+   */
+  function getSongsByIds(songIds: string[]): ISong[] {
+    const idSet = new Set(songIds)
+    return sortSong(shallowToRaw(songs.value.filter(v => idSet.has(v.uid))))
+  }
+
+  /** 当前播放的歌曲 */
+  const currentSong = computed(() => {
+    return songMap.value.get(currentState.value.currentSongId) || null
+  })
+  /** 当前播放列表的歌曲数组(已排序) */
+  const currentPlaylistSongs = computed(() => {
+    if (currentState.value.currentListId === DefaultKey.Artist && currentArtistName.value) {
+      console.log('当前播放列表：', currentState.value.currentListId, currentArtistName.value)
+      return currentArtistSongs.value
+    }
+    if (currentState.value.currentListId === DefaultKey.Album && currentAlbumName.value) {
+      console.log('当前播放列表：', currentState.value.currentListId, currentAlbumName.value)
+      return currentAlbumSongs.value
+    }
+    if (currentState.value.currentListId === DefaultKey.Folder && currentFolderName.value) {
+      console.log('当前播放列表：', currentState.value.currentListId, currentFolderName.value)
+      return currentFolderSongs.value
+    }
+    console.log('当前播放列表：', currentState.value.currentListId)
+    const playlist = playlists.value[currentState.value.currentListId]
+    const playlistSongs = filterSongsByPlaylist(songs.value, playlist?.songIds)
+    return sortSong(shallowToRaw(playlistSongs), playlist?.sortType)
+  })
+  const currentPlaylistSongsValid = computed(() => {
+    return currentPlaylistSongs.value.filter(v => v.isValid)
+  })
+  const canGoPrev = computed(() => {
+    return currentPlaylistSongsValid.value.length > 1
+  })
+  const canGoNext = computed(() => {
+    return currentPlaylistSongsValid.value.length > 1
+  })
+
+  return {
+    /** 面板数据 */
+    panel,
+    /** 弹窗数据 */
+    modal,
+    /** 业务数据(无需缓存) */
+    business,
+    /** 本地列表 */
+    songs,
+    songDirs,
+    /** 自定义歌单数据 */
+    playlists,
+    /** 播放状态 */
+    currentState,
+    /** 设置信息 */
+    settings,
+    /** 当前正在查看的视图key */
+    currentViewKey,
+    /** 默认当做歌单处理的列表key（local、favorite） */
+    defaultPlaylistKey,
+    /** uid 歌曲索引表 */
+    songMap,
+    /** 当前播放的歌曲 */
+    currentSong,
+    /** 当前播放列表的歌曲数组(已排序有效的) */
+    currentPlaylistSongsValid,
+    /** 当前播放列表的歌曲数组(已排序) */
+    currentPlaylistSongs,
+    canGoPrev,
+    canGoNext,
+    /** 当前查看列表的歌曲数组(已排序) */
+    currentViewPlaylistSongs,
+    /** 当前创建的自定义歌单列表 */
+    currentPlaylists,
+    /** 歌手列表(已排序) */
+    artistLists,
+    /** 当前正在查看的歌手 */
+    currentArtistName,
+    /** 当前正在查看的歌手的歌曲数组(已排序) */
+    currentArtistSongs,
+    /** 专辑列表(已排序) */
+    albumLists,
+    /** 当前正在查看的专辑 */
+    currentAlbumName,
+    /** 当前正在查看的专辑的歌曲数组(已排序) */
+    currentAlbumSongs,
+    /** 文件夹列表(已排序) */
+    folderLists,
+    /** 当前正在查看的文件夹 */
+    currentFolderName,
+    /** 当前正在查看的文件夹的歌曲数组(已排序) */
+    currentFolderSongs,
+    /** 播放器读取到的音频时长 */
+    playerDuration,
+  }
+})

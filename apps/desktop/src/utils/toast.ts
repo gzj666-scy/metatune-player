@@ -45,6 +45,7 @@ class ToastManager {
             visible.value = value
             if (!value) {
               window.setTimeout(() => {
+                // eslint-disable-next-line @typescript-eslint/no-use-before-define -- toastManager 定义在文件尾部，回调触发时已完成初始化
                 toastManager.destroy(toastId)
               }, 300)
             }

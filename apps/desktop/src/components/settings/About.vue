@@ -4,25 +4,25 @@
   import { IconEnum } from '@metatune/common'
   import { Modal } from '@/utils/modal'
 
-  const appInfoRef = ref<{ name: string; version: string; platform: string }>()
+  const appInfoRef = ref<{ name: string; version: string; platform: string; isPortable?: boolean }>()
   const waitingRef = ref(false)
   let cancelCall: () => void
 
-  const onGit = () => {
+  function handleGit() {
     window.open('https://github.com/gzj666-scy/metatune-player', '_blank')
   }
 
-  const onUpdate = () => {
+  function handleUpdate() {
     try {
-      window.electronAPI.send('update:check', { auto: false })
+      window.electronAPI.checkUpdate(false)
       waitingRef.value = true
-    } catch (error) {
+    } catch {
       waitingRef.value = false
     }
   }
 
   onMounted(async () => {
-    cancelCall = window.electronAPI.on('update-status', (data: any) => {
+    cancelCall = window.electronAPI.onUpdateStatus(data => {
       if (data.status === 'not-available' && !data.auto) {
         waitingRef.value = false
         Modal.alert('当前已是最新版本')
@@ -36,7 +36,7 @@
   })
 
   onUnmounted(() => {
-    cancelCall && cancelCall()
+    cancelCall?.()
   })
 </script>
 
@@ -53,13 +53,13 @@
     </div>
 
     <div class="about-view-btns">
-      <div class="about-btn" @click="onGit">
+      <div class="about-btn" @click="handleGit">
         <IconBase>
           <component :is="IconEnum.GitHub" />
         </IconBase>
         GitHub 仓库
       </div>
-      <div class="about-btn update" @click="onUpdate">
+      <div v-if="!appInfoRef?.isPortable" class="about-btn update" @click="handleUpdate">
         <IconBase :class="{ rotate: waitingRef }">
           <component :is="waitingRef ? IconEnum.RefreshCw : IconEnum.ArrowBigUpDash" />
         </IconBase>

@@ -110,12 +110,7 @@ export default tseslint.config(
   // 交给 TypeScript 负责），所以这里主要是显式声明意图，防止规则组合变动后误报。
   {
     // Electron 主进程、构建脚本、配置文件运行在 Node
-    files: [
-      'apps/desktop/electron/**/*.{ts,js}',
-      'apps/desktop-v3/electron/**/*.{ts,js}',
-      '**/scripts/**/*.{js,ts,mjs,cjs}',
-      '**/*.config.{js,ts,mjs,cjs,mts,cts}',
-    ],
+    files: ['apps/desktop/electron/**/*.{ts,js}', '**/scripts/**/*.{js,ts,mjs,cjs}', '**/*.config.{js,ts,mjs,cjs,mts,cts}'],
     languageOptions: { globals: { ...globals.node } },
   },
   {

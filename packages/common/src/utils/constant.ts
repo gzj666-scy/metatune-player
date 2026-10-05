@@ -1,7 +1,7 @@
 import { IMainMenuItem } from '../types'
 import { IconEnum } from './svgIcons'
 
-export const AudioFormat = ['mp3', 'aac', 'm4a', 'flac', 'ape', 'alac', 'wav', 'wma', 'ogg']
+// export const AudioFormat = ['mp3', 'aac', 'm4a', 'flac', 'ape', 'alac', 'wav', 'wma', 'ogg']
 
 export const DefaultVolume = 50
 

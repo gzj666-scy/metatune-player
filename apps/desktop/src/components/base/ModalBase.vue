@@ -29,7 +29,7 @@
     showCancel: true,
     cancelText: '取消',
     confirmText: '确定',
-    maskClosable: true,
+    maskClosable: false,
     autoFocus: true,
     loading: false,
   })
@@ -40,19 +40,21 @@
     close: []
   }>()
 
-  const onClose = () => {
+  /** 关闭弹窗（命名避开同名 prop onClose） */
+  function handleClose() {
     if (props.loading) return
     props.onClose?.()
   }
 
-  const onOverlayClick = () => {
+  function onOverlayClick() {
     if (props.loading) return
     if (props.maskClosable) {
-      onClose()
+      handleClose()
     }
   }
 
-  const onCancel = () => {
+  /** 取消（命名避开同名 prop onCancel） */
+  function handleCancel() {
     if (props.loading) return
     if (props.onCancel) {
       props.onCancel()
@@ -61,11 +63,13 @@
     }
   }
 
-  const onConfirm = async () => {
+  /** 确认（命名避开同名 prop onConfirm） */
+  async function handleConfirm() {
     if (props.loading) return
     try {
       await props.onConfirm?.()
     } finally {
+      // 确认流程的异常由调用方自行处理
     }
   }
 
@@ -86,17 +90,17 @@
   )
 
   // 键盘事件监听
-  const handleKeydown = (event: KeyboardEvent) => {
+  function handleKeydown(event: KeyboardEvent) {
     if (!props.visible) return
 
     switch (event.key) {
       case 'Escape':
         event.preventDefault()
-        onClose()
+        handleClose()
         break
       case 'Enter':
         event.preventDefault()
-        onConfirm()
+        handleConfirm()
         break
     }
   }
@@ -115,7 +119,7 @@
       <div class="modal-container" :class="classNames?.root">
         <header v-if="title" class="modal-header">
           <div class="modal-title">{{ title }}</div>
-          <button v-if="showClose" :class="'modal-close'" @click="onClose">
+          <button v-if="showClose" :class="'modal-close'" @click="handleClose">
             <IconBase class="close-icon">
               <component :is="IconEnum.Close" />
             </IconBase>
@@ -127,10 +131,22 @@
         </section>
 
         <footer v-if="showFooter" class="modal-footer" :class="classNames?.footer">
-          <button v-if="showCancel" class="modal-btn modal-btn-cancel" :class="cancelButtonClass" @click="onCancel" :disabled="props.loading">
+          <button
+            v-if="showCancel"
+            class="modal-btn modal-btn-cancel"
+            :class="cancelButtonClass"
+            @click="handleCancel"
+            :disabled="props.loading"
+          >
             {{ cancelText }}
           </button>
-          <button class="modal-btn modal-btn-confirm" :class="confirmButtonClass" @click="onConfirm" :disabled="props.loading" ref="confirmButton">
+          <button
+            class="modal-btn modal-btn-confirm"
+            :class="confirmButtonClass"
+            @click="handleConfirm"
+            :disabled="props.loading"
+            ref="confirmButton"
+          >
             <IconBase v-if="props.loading" class="loading-spinner">
               <component :is="IconEnum.RefreshCw" />
             </IconBase>

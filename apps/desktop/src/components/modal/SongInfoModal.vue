@@ -1,20 +1,26 @@
 <script setup lang="ts">
   import { formatFileSize } from '@metatune/common'
-  import type { IModalProps, ISong } from '@metatune/common'
-  import { computed, Teleport } from 'vue'
+  import type { IModalProps } from '@metatune/common'
+  import { computed } from 'vue'
   import ModalBase from '../base/ModalBase.vue'
   import { getStoreManager } from '@/utils/storeManager'
 
-  const props = withDefaults(defineProps<IModalProps<{ song: ISong }>>(), {
+  const props = withDefaults(defineProps<IModalProps<{ songId: string }>>(), {
     type: '',
   })
 
   const storeManager = getStoreManager()
-  const playerStore = storeManager.playerStore
+  const { playerStore } = storeManager
 
-  const song = computed(() => props.data?.song)
+  const song = computed(() => {
+    if (!props.data?.songId) return undefined
+    return playerStore.songMap.get(props.data.songId) ?? undefined
+  })
 
-  const onClose = () => {
+  // 保留两位小数；缺失(undefined/NaN)显示 --
+  const fmt2 = (v: number | undefined): string => (v === undefined || Number.isNaN(v) ? '--' : v.toFixed(2))
+
+  function onClose() {
     props.closeCallBack?.()
     playerStore.modal = { type: '', data: null }
   }
@@ -42,6 +48,10 @@
       <div class="sim-item">
         <span class="sim-item-label">编码</span>
         <span>{{ song?.codec }}</span>
+      </div>
+      <div class="sim-item">
+        <span class="sim-item-label">响度归一化</span>
+        <span>{{ fmt2(song?.lufs) }} / {{ fmt2(song?.truePeak) }} / {{ fmt2(song?.gain) }}</span>
       </div>
       <div class="sim-item">
         <span class="sim-item-label">路径</span>

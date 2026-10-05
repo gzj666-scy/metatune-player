@@ -44,13 +44,14 @@ const copyFile = (sourcePath, targetPath) => {
 /**
  * 获取文件相对于基础目录的路径（始终使用正斜杠 '/' 作为分隔符）
  * @param {string} filePath - 文件的绝对路径
- * @param {string} baseDir  - 基础目录的绝对路径
+ * @param {string} filePath - 文件的绝对路径
+ * @param {string} baseDirPath  - 基础目录的绝对路径
  * @returns {string} 相对路径，如 '1/曲/Adrián Berenguer - Red Dress.flac'
  */
-const getRelativePath = (filePath, baseDir) => {
+const getRelativePath = (filePath, baseDirPath) => {
   // 1. 将路径规范化至当前系统的格式（Windows 下转为反斜杠）
   const normalizedFile = path.normalize(filePath)
-  const normalizedBase = path.normalize(baseDir)
+  const normalizedBase = path.normalize(baseDirPath)
 
   // 2. 计算相对路径（系统默认分隔符）
   const relativePath = path.relative(normalizedBase, normalizedFile)

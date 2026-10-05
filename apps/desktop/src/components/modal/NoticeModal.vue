@@ -29,7 +29,7 @@
     return `type-${props.type}`
   })
 
-  const handleConfirm = async () => {
+  async function handleConfirm() {
     await props.onConfirm?.(props.showInput ? inputValueRef.value : undefined)
   }
 </script>
@@ -67,7 +67,13 @@
 
     <!-- 输入框 -->
     <div v-if="showInput" class="modal-input">
-      <input v-model="inputValueRef" :type="inputType" :placeholder="inputPlaceholder" class="modal-input-field" @keyup.enter="handleConfirm" />
+      <input
+        v-model="inputValueRef"
+        :type="inputType"
+        :placeholder="inputPlaceholder"
+        class="modal-input-field"
+        @keyup.enter="handleConfirm"
+      />
     </div>
   </ModalBase>
 </template>
@@ -78,7 +84,7 @@
     flex-direction: column;
     align-items: center;
     gap: 20px;
-    width: 300px;
+    width: 350px;
 
     .modal-icon {
       // width: 60px;
@@ -95,9 +101,14 @@
 
     .modal-message {
       width: 100%;
+      max-height: 40vh;
+      overflow-y: auto;
       font-size: 15px;
       line-height: 1.5;
       color: var(--text-color-primary);
+      // 纯文本插值下，white-space: pre-line 才能把内容里的 \n 渲染成换行
+      white-space: pre-line;
+      text-align: left;
     }
 
     .modal-input {

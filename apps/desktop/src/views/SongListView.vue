@@ -13,7 +13,7 @@
   const route = useRoute()
 
   const storeManager = getStoreManager()
-  const playerStore = storeManager.playerStore
+  const { playerStore } = storeManager
 
   const searchQueryRef = ref('')
   const showBatchActionsRef = ref(false)
@@ -32,7 +32,7 @@
     return playerStore.playlists[listKey.value]?.sortType || SortTypeItems[0].value
   })
   const filteredSongs = computed(() => {
-    let songs: ISong[] = []
+    let songs: ISong[]
     if (route.params.name && playerStore.currentArtistName === route.params.name) {
       // 歌手歌曲列表
       songs = [...toRaw(playerStore.currentArtistSongs)]
@@ -67,12 +67,23 @@
   const showAlphaNav = computed(() => {
     return !searchQueryRef.value && filteredSongs.value.length > 20 && sortType.value !== 'addTime'
   })
+  const listTitle = computed(() => {
+    if (route.params.name && playerStore.currentArtistName === route.params.name) {
+      return playerStore.currentArtistName
+    } else if (route.params.name && playerStore.currentAlbumName === route.params.name) {
+      return playerStore.currentAlbumName
+    } else if (route.params.name && playerStore.currentFolderName === route.params.name) {
+      return playerStore.currentFolderName
+    } else {
+      return ''
+    }
+  })
 
-  const onSearchChange = (data: string) => {
+  function onSearchChange(data: string) {
     searchQueryRef.value = data
   }
 
-  const onBatchChange = (data: boolean) => {
+  function onBatchChange(data: boolean) {
     if (filteredSongs.value.length <= 0) return
     showBatchActionsRef.value = data
     if (!data) {
@@ -81,7 +92,7 @@
     }
   }
 
-  const onSelectAll = () => {
+  function onSelectAll() {
     if (isAllSelected.value) {
       selectedSongsRef.value = []
     } else {
@@ -89,7 +100,7 @@
     }
   }
 
-  const onToggleSelectSong = (songId: string) => {
+  function onToggleSelectSong(songId: string) {
     const index = selectedSongsRef.value.indexOf(songId)
     if (index > -1) {
       selectedSongsRef.value.splice(index, 1)
@@ -98,7 +109,7 @@
     }
   }
 
-  const onAddToPlayList = () => {
+  function onAddToPlayList() {
     if (selectedSongsRef.value && selectedSongsRef.value.length > 0) {
       playerStore.modal = {
         type: ModalType.AddToPlaylist,
@@ -112,7 +123,7 @@
     }
   }
 
-  const onRemoveSongs = async () => {
+  async function onRemoveSongs() {
     if (selectedSongsRef.value && selectedSongsRef.value.length > 0) {
       const result = await Modal.confirm(`确定要移除选中的 ${selectedSongsRef.value.length} 首歌曲吗？`, '确认移除')
       if (result) {
@@ -124,7 +135,7 @@
     }
   }
 
-  const onLookPlaylistSongs = async () => {
+  async function onLookPlaylistSongs() {
     const name = await Modal.prompt('输入查看歌单')
     const playlist = storeManager.getPlaylistByName(name || '')
     const songIds = playlist?.songIds || []
@@ -135,15 +146,15 @@
     }
   }
 
-  const onScrollToCurrentSong = () => {
-    const currentSongId = playerStore.currentState.currentSongId
+  function onScrollToCurrentSong() {
+    const { currentSongId } = playerStore.currentState
     if (currentSongId) {
       const element = document.querySelector(`[data-song-id="${currentSongId}"]`)
       element?.scrollIntoView({ behavior: 'auto', block: 'center' })
     }
   }
 
-  const onScrollToAlpha = (letter: string) => {
+  function onScrollToAlpha(letter: string) {
     clearTimeout(delayClickAlphaMarkRef.value)
     currentAlphaRef.value = letter
     if (songListContainerRef.value) {
@@ -163,9 +174,9 @@
     }
   }
 
-  const updateActiveAlpha = () => {
+  function updateActiveAlpha() {
     if (clickAlphaRef.value) return
-    if (!showAlphaNav) return
+    if (!showAlphaNav.value) return
     const container = songListContainerRef.value
     if (!container) return
     if (itemRefs.length === 0) return
@@ -174,10 +185,8 @@
     const containerTop = rect.top
     const containerBottom = rect.bottom
 
-    // 1. 收集当前可见区域内的所有字母
-    // let visibleLetters = new Set()
-    let minDistance = Infinity
-    let topMostUid = null
+    // 1. 找出最顶部的可见元素（首个可见项即为目标）
+    let topMostUid: string | undefined
 
     // /@ts-expect-error 不需要检测
     for (const item of itemRefs) {
@@ -185,23 +194,10 @@
       if (el) {
         const elRect = el.getBoundingClientRect()
         // 检查元素是否与容器相交（可见）
-        // const isVisible = !(elRect.bottom < containerTop || elRect.top > containerBottom)
         const isVisible = elRect.top >= containerTop && elRect.bottom <= containerBottom
         if (isVisible) {
-          // 收集字母
-          const uid = el.dataset.songId
-          // const song = filteredSongs.value.find(s => s.uid === uid)
-          // if (song) {
-          //   const letter = getFirstLetter(song[sortType.value as 'title' | 'artist' | 'fileName'])
-          //   visibleLetters.add(letter)
-          // }
-          // 找出最顶部的 visible element
-          const distance = Math.abs(elRect.top - containerTop)
-          if (distance < minDistance) {
-            minDistance = distance
-            topMostUid = uid
-            break
-          }
+          topMostUid = el.dataset.songId
+          break
         }
       }
     }
@@ -236,6 +232,7 @@
       :listKey="listKey"
       :sortType="sortType"
       :isBatch="showBatchActionsRef"
+      :title="listTitle"
       @search-change="onSearchChange"
       @batch-change="onBatchChange"
       @add-to-playlist="onAddToPlayList"
@@ -254,6 +251,15 @@
             <SongItem
               v-for="(item, index) in filteredSongs"
               :key="item.uid"
+              v-memo="[
+                item,
+                index,
+                showBatchActionsRef,
+                selectedSongsRef.includes(item.uid),
+                listKey,
+                playerStore.currentState.currentSongId === item.uid,
+                playerStore.currentState.isPlaying,
+              ]"
               :index="index"
               :song="item"
               :list-key="listKey"

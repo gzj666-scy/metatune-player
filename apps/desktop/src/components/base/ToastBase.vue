@@ -1,32 +1,3 @@
-<template>
-  <Transition :name="transitionName">
-    <div v-if="visible" class="toast-container" :class="toastClass" :style="toastStyle" @mouseenter="pauseTimer" @mouseleave="resumeTimer">
-      <div class="toast-content">
-        <!-- 图标 -->
-        <div v-if="icon" class="toast-icon">
-          <span class="icon-text">{{ icon }}</span>
-        </div>
-
-        <!-- 消息内容 -->
-        <div class="toast-message">
-          <div v-if="title" class="toast-title">{{ title }}</div>
-          <div v-if="message" class="toast-text">{{ message }}</div>
-        </div>
-
-        <!-- 关闭按钮 -->
-        <button v-if="showClose" class="toast-close" @click="close">
-          <svg class="close-icon" viewBox="0 0 24 24">
-            <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" />
-          </svg>
-        </button>
-      </div>
-
-      <!-- 进度条 -->
-      <div v-if="duration > 0 && showProgress" class="toast-progress" :style="progressStyle"></div>
-    </div>
-  </Transition>
-</template>
-
 <script setup lang="ts">
   import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 
@@ -105,8 +76,20 @@
     }
   })
 
+  // 方法
+  function handleClose() {
+    emit('update:visible', false)
+    emit('close')
+    props.onClose?.()
+
+    if (timer.value) {
+      clearInterval(timer.value)
+      timer.value = null
+    }
+  }
+
   // 自动关闭定时器
-  const startTimer = () => {
+  function startTimer() {
     if (props.duration <= 0) return
 
     startTime.value = Date.now()
@@ -123,30 +106,18 @@
       remainingTime.value = props.duration - elapsed
 
       if (remainingTime.value <= 0) {
-        close()
+        handleClose()
       }
     }, 100)
   }
 
-  const pauseTimer = () => {
+  function pauseTimer() {
     isHovered.value = true
   }
 
-  const resumeTimer = () => {
+  function resumeTimer() {
     isHovered.value = false
     startTime.value = Date.now() - (props.duration - remainingTime.value)
-  }
-
-  // 方法
-  const close = () => {
-    emit('update:visible', false)
-    emit('close')
-    props.onClose?.()
-
-    if (timer.value) {
-      clearInterval(timer.value)
-      timer.value = null
-    }
   }
 
   // 监听可见性变化
@@ -195,6 +166,35 @@
     }
   })
 </script>
+
+<template>
+  <Transition :name="transitionName">
+    <div v-if="visible" class="toast-container" :class="toastClass" :style="toastStyle" @mouseenter="pauseTimer" @mouseleave="resumeTimer">
+      <div class="toast-content">
+        <!-- 图标 -->
+        <div v-if="icon" class="toast-icon">
+          <span class="icon-text">{{ icon }}</span>
+        </div>
+
+        <!-- 消息内容 -->
+        <div class="toast-message">
+          <div v-if="title" class="toast-title">{{ title }}</div>
+          <div v-if="message" class="toast-text">{{ message }}</div>
+        </div>
+
+        <!-- 关闭按钮 -->
+        <button v-if="showClose" class="toast-close" @click="handleClose">
+          <svg class="close-icon" viewBox="0 0 24 24">
+            <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" />
+          </svg>
+        </button>
+      </div>
+
+      <!-- 进度条 -->
+      <div v-if="duration > 0 && showProgress" class="toast-progress" :style="progressStyle"></div>
+    </div>
+  </Transition>
+</template>
 
 <style lang="scss" scoped>
   .toast-container {

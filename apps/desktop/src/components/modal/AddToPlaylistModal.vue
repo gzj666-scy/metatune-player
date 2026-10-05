@@ -1,6 +1,6 @@
 <script setup lang="ts">
   import { getStoreManager } from '@/utils/storeManager'
-  import { computed, ref, Teleport } from 'vue'
+  import { computed, ref } from 'vue'
   import ModalBase from '../base/ModalBase.vue'
   import { IModalProps } from '@metatune/common'
 
@@ -9,7 +9,7 @@
   })
 
   const storeManager = getStoreManager()
-  const playerStore = storeManager.playerStore
+  const { playerStore } = storeManager
 
   const selectedListsRef = ref<string[]>([])
 
@@ -17,12 +17,12 @@
     return playerStore.currentPlaylists.filter(v => v.createTime !== playerStore.currentViewKey)
   })
 
-  const onClose = () => {
+  function onClose() {
     props.closeCallBack?.()
     playerStore.modal = { type: '', data: null }
   }
 
-  const onSelect = (id: string) => {
+  function onSelect(id: string) {
     const index = selectedListsRef.value.indexOf(id)
     if (index > -1) {
       selectedListsRef.value.splice(index, 1)
@@ -31,9 +31,11 @@
     }
   }
 
-  const onAdd = () => {
+  function onAdd() {
     if (selectedListsRef.value.length > 0 && props.data?.songIds && props.data.songIds?.length > 0) {
-      storeManager.addToPlaylist(selectedListsRef.value.map(v => ({ id: v, songIds: props.data?.songIds || [], cover: props.data?.cover || false })))
+      storeManager.addToPlaylist(
+        selectedListsRef.value.map(v => ({ id: v, songIds: props.data?.songIds || [], cover: props.data?.cover || false }))
+      )
     }
     onClose()
   }

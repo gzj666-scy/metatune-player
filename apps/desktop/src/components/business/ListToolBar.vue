@@ -1,10 +1,11 @@
 <script setup lang="ts">
   import { DefaultKey, IconEnum, PanelType, SortTypeItems } from '@metatune/common'
-  import type { ISong, SortTypeItemsIds } from '@metatune/common'
+  import type { ISong, IImportResult, SortTypeItemsIds } from '@metatune/common'
   import { ref, toRaw, watch } from 'vue'
   import { getStoreManager } from '@/utils/storeManager'
   import IconBase from '@/components/base/IconBase.vue'
   import { Loading } from '@/utils/loading'
+  import { Modal } from '@/utils/modal'
   import { useRouter } from 'vue-router'
   import { getPlayManager } from '@/utils/playManager'
 
@@ -12,11 +13,13 @@
     listKey: string
     isBatch: boolean
     sortType: SortTypeItemsIds
+    title?: string
   }
 
   const props = withDefaults(defineProps<Props>(), {
     listKey: '',
     sortType: SortTypeItems[0].value,
+    title: '',
   })
 
   const emit = defineEmits<{
@@ -31,69 +34,118 @@
 
   const playManager = getPlayManager()
   const storeManager = getStoreManager()
-  const playerStore = storeManager.playerStore
+  const { playerStore } = storeManager
 
   const searchQueryRef = ref('')
 
-  const handleSearchChange = () => {
+  function handleSearchChange() {
     emit('search-change', searchQueryRef.value)
   }
 
   watch(searchQueryRef, handleSearchChange)
 
-  const onClearSearch = () => {
+  function handleClearSearch() {
     searchQueryRef.value = ''
   }
 
-  const onBack = () => {
+  function handleBack() {
     router.back()
   }
 
-  const onLookSongs = async () => {
+  function handleLookSongs() {
     emit('look-playlist-songs')
   }
 
-  const onImportLocalSongs = async () => {
-    if (window.electronAPI) {
-      const file = await window.electronAPI.openFileDialog()
-      if (file.filePaths.length > 0) {
-        Loading.show()
-        const results: ISong[] = await window.electronAPI.parseAudioMetadata(file.filePaths)
-        storeManager.addSongs(results)
-        Loading.hide()
-      }
+  /** 构造导入结果弹窗内容（成功/失败/跳过 + 失败原因明细） */
+  function buildImportReport(result: IImportResult): string {
+    const lines: string[] = []
+    const total = result.songs.length + result.errors.length + result.skipped.length
+    lines.push(`共 ${total} 个文件：成功 ${result.songs.length}，失败 ${result.errors.length}，跳过 ${result.skipped.length}`)
+    if (result.errors.length > 0) {
+      lines.push('')
+      lines.push('失败原因：')
+      result.errors.forEach(err => {
+        const name = err.filePath.split(/[\\/]/).pop() || err.filePath
+        lines.push(`· ${name}：${err.reason}`)
+      })
+    }
+    return lines.join('\n')
+  }
+
+  /** 导入并展示结果弹窗（v3：主进程并发解析 + 进度上报） */
+  async function importAndReport(paths: string[]) {
+    Loading.show()
+    try {
+      const result = await window.electronAPI.importAudio(paths, (done, total, fileName) => {
+        console.log(`导入进度 ${done}/${total}: ${fileName}`)
+      })
+      storeManager.addSongs(result.songs)
+      await Modal.alert(buildImportReport(result), '导入结果')
+    } finally {
+      Loading.hide()
     }
   }
 
-  const onImportLocalFolder = async () => {
-    if (window.electronAPI) {
-      const file = await window.electronAPI.openDirectoryDialog()
-      if (file.filePaths.length > 0) {
-        Loading.show()
-        storeManager.addSongDirs(file.filePaths)
-        const results: ISong[] = await window.electronAPI.parseAudioMetadata(file.filePaths)
-        storeManager.addSongs(results)
-        Loading.hide()
-      }
+  async function onImportLocalSongs() {
+    if (!window.electronAPI) return
+    const file = await window.electronAPI.openFileDialog()
+    if (file.filePaths.length > 0) {
+      await importAndReport(file.filePaths)
     }
   }
 
-  const onRefreshList = async () => {
-    if (window.electronAPI) {
-      const filePaths = toRaw(playerStore.songDirs)
-      if (filePaths?.length > 0) {
-        Loading.show()
-        const results: ISong[] = await window.electronAPI.parseAudioMetadata(filePaths)
-        const res = storeManager.refreshSongs(results)
-        if (res) {
-          playManager.seekTo(0)
+  async function onImportLocalFolder() {
+    if (!window.electronAPI) return
+    const file = await window.electronAPI.openDirectoryDialog()
+    if (file.filePaths.length > 0) {
+      storeManager.addSongDirs(file.filePaths)
+      await importAndReport(file.filePaths)
+    }
+  }
+
+  /**
+   * v3 刷新列表：先增量扫描监视目录，只解析新增/变更的文件，不再全量重扫。
+   */
+  async function onRefreshList() {
+    if (!window.electronAPI) return
+    const dirs = toRaw(playerStore.songDirs)
+    if (!dirs || dirs.length === 0) return
+
+    Loading.show()
+    try {
+      const scan = await window.electronAPI.scanAudioDirs(dirs, toRaw(playerStore.songs))
+      const needParse = [...scan.newFiles, ...scan.changedFiles]
+      console.log(`增量扫描：新增 ${scan.newFiles.length}，变更 ${scan.changedFiles.length}，移除 ${scan.removedPaths.length}`)
+
+      if (needParse.length === 0 && scan.removedPaths.length === 0) {
+        await Modal.alert('曲库无变化', '刷新结果')
+        return
+      }
+
+      let newSongs: ISong[] = []
+      let changedSongs: ISong[] = []
+      if (needParse.length > 0) {
+        const result = await window.electronAPI.importAudio(needParse)
+        const newSet = new Set(scan.newFiles)
+        newSongs = result.songs.filter(s => newSet.has(s.filePath))
+        changedSongs = result.songs.filter(s => !newSet.has(s.filePath))
+        if (result.errors.length > 0) {
+          console.warn('增量刷新部分文件解析失败:', result.errors)
         }
-        Loading.hide()
       }
+
+      const summary = storeManager.applyScanResult(newSongs, changedSongs, scan.removedPaths)
+      await Modal.alert(`新增 ${summary.added} 首，更新 ${summary.updated} 首，移除失效 ${summary.removed} 首`, '刷新结果')
+
+      // 正在播放的歌曲被移除时重置进度
+      const { currentSongId } = playerStore.currentState
+      if (!currentSongId) playManager.seekTo(0)
+    } finally {
+      Loading.hide()
     }
   }
 
-  const onOpenSortPanel = (e: MouseEvent) => {
+  function onOpenSortPanel(e: MouseEvent) {
     const rect = (e.currentTarget as HTMLElement).getBoundingClientRect()
     const windowWidth = window.innerWidth
     let style
@@ -111,15 +163,15 @@
     playerStore.panel = { type: PanelType.SortMode, data: { value: props.sortType, listKey: props.listKey, style } }
   }
 
-  const onToggleBatch = (data: boolean) => {
+  function onToggleBatch(data: boolean) {
     emit('batch-change', data)
   }
 
-  const onAddToPlayList = () => {
+  function onAddToPlayList() {
     emit('add-to-playlist')
   }
 
-  const onRemoveLocalSongs = () => {
+  function onRemoveLocalSongs() {
     emit('remove-songs')
   }
 </script>
@@ -151,7 +203,12 @@
     </div>
     <div v-else class="tool-box">
       <div class="toolbar-left">
-        <button v-if="[DefaultKey.Artist, DefaultKey.Album, DefaultKey.Folder].includes(listKey)" class="btn" @click="onBack" title="返回">
+        <button
+          v-if="[DefaultKey.Artist, DefaultKey.Album, DefaultKey.Folder].includes(listKey)"
+          class="btn"
+          @click="handleBack"
+          title="返回"
+        >
           <IconBase>
             <component :is="IconEnum.Back" />
           </IconBase>
@@ -161,13 +218,14 @@
             <component :is="IconEnum.Search" />
           </IconBase>
           <input v-model="searchQueryRef" type="text" placeholder="搜索歌曲..." class="search-input" />
-          <IconBase v-if="searchQueryRef.length > 0" class="search-box-icon clear" @click="onClearSearch">
+          <IconBase v-if="searchQueryRef.length > 0" class="search-box-icon clear" @click="handleClearSearch">
             <component :is="IconEnum.CircleCloseFilled" />
           </IconBase>
         </div>
+        <div v-if="title" class="tool-title">{{ title }}</div>
       </div>
       <div class="toolbar-right">
-        <button v-if="listKey === DefaultKey.Local" class="btn" @click="onLookSongs" title="查看歌单歌曲">
+        <button v-if="listKey === DefaultKey.Local" class="btn" @click="handleLookSongs" title="查看歌单歌曲">
           <IconBase>
             <component :is="IconEnum.Eye" />
           </IconBase>
@@ -250,7 +308,6 @@
         }
 
         &:hover {
-          // filter: brightness(0.5);
           color: var(--btn-primary-hover-bg);
         }
       }
@@ -285,6 +342,11 @@
         }
       }
 
+      .tool-title {
+        font-size: 14px;
+        color: var(--text-color-primary);
+      }
+
       .btn-batch {
         height: 30px;
         padding: 0 10px;
@@ -298,7 +360,6 @@
         color: var(--btn-primary-bg);
 
         &:hover {
-          // filter: brightness(2);
           color: var(--btn-primary-hover-bg);
         }
       }

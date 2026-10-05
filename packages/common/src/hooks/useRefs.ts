@@ -1,6 +1,6 @@
-import { shallowReadonly } from '@vue/reactivity'
+import { shallowReadonly } from 'vue'
 
-export const useRefs = <T>(): [readonly T[], (index: number) => (el: any) => void, () => void] => {
+export function useRefs<T>(): [readonly T[], (index: number) => (el: any) => void, () => void] {
   // 使用普通数组存储 DOM 引用（不依赖 Vue 的 ref，避免不必要的响应式开销）
   const refs: T[] = []
 

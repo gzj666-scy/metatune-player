@@ -1,5 +1,5 @@
 <script setup lang="ts">
-  import { computed, ref } from 'vue'
+  import { computed } from 'vue'
   import IconBase from '../base/IconBase.vue'
   import { DefaultKey, IconEnum } from '@metatune/common'
   import { useRouter } from 'vue-router'
@@ -19,30 +19,30 @@
 
   const router = useRouter()
   const storeManager = getStoreManager()
-  const playerStore = storeManager.playerStore
+  const { playerStore } = storeManager
 
   const settings = computed(() => playerStore.settings)
   const isMaximized = computed(() => playerStore.business.isMaximized)
 
-  const onSettings = () => {
+  function onSettings() {
     router.replace('/settings')
     playerStore.currentViewKey = DefaultKey.Settings
   }
 
-  const onMinimize = () => {
+  function onMinimize() {
     if (window.electronAPI) {
       window.electronAPI.minimizeWindow()
     }
   }
 
-  const onMaximize = () => {
+  function onMaximize() {
     if (window.electronAPI) {
       window.electronAPI.maximizeWindow()
       playerStore.business.isMaximized = !playerStore.business.isMaximized
     }
   }
 
-  const onClose = () => {
+  function onClose() {
     if (window.electronAPI) {
       window.electronAPI.closeWindow(settings.value.closeQuit)
     }
@@ -69,27 +69,16 @@
         </IconBase>
       </button>
       <button class="titlebar-button" @click="onMinimize" title="最小化">
-        <!-- <svg width="12" height="1">
-          <line x1="0" y1="0.5" x2="12" y2="0.5" stroke="currentColor" />
-        </svg> -->
         <IconBase>
           <component :is="IconEnum.Minus" />
         </IconBase>
       </button>
       <button class="titlebar-button" @click="onMaximize" :title="isMaximized ? '还原' : '最大化'">
-        <!-- <svg width="10" height="10">
-          <rect v-if="!isMaximized" width="9" height="9" fill="none" stroke="currentColor" />
-          <rect v-else width="8" height="8" x="1" y="1" fill="none" stroke="currentColor" />
-        </svg> -->
         <IconBase>
           <component :is="isMaximized ? IconEnum.Minimize : IconEnum.Maximize" />
         </IconBase>
       </button>
       <button class="titlebar-button close" @click="onClose" title="关闭">
-        <!-- <svg width="12" height="12">
-          <line x1="1" y1="1" x2="11" y2="11" stroke="currentColor" />
-          <line x1="11" y1="1" x2="1" y2="11" stroke="currentColor" />
-        </svg> -->
         <IconBase>
           <component :is="IconEnum.Close" />
         </IconBase>

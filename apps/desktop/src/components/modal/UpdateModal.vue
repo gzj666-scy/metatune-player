@@ -8,8 +8,8 @@
   const releaseNotesRef = ref('')
   const isAutoRef = ref(true)
   const waitingRef = ref(false)
-  let cancelCall1: () => void
-  let cancelCall2: () => void
+  let cancelStatus: (() => void) | undefined
+  let cancelProgress: (() => void) | undefined
 
   const show = computed(() => {
     if (isAutoRef.value && updateStatusRef.value === 'error') return false
@@ -22,50 +22,48 @@
     return '立即下载'
   })
 
-  const onClose = () => {
+  function handleClose() {
     updateStatusRef.value = 'idle'
   }
 
-  const onUpdate = () => {
+  function handleUpdate() {
     if (updateStatusRef.value === 'downloading' || updateStatusRef.value === 'checking') return
     if (updateStatusRef.value === 'downloaded') {
       waitingRef.value = true
-      window.electronAPI.send('update:install')
+      window.electronAPI.installUpdate()
       return
     }
     if (updateStatusRef.value === 'error') {
-      // window.electronAPI.send('update:check', { auto: false })
-      onClose()
+      handleClose()
       return
     }
     waitingRef.value = true
-    window.electronAPI.send('update:download')
+    window.electronAPI.downloadUpdate()
   }
 
   onMounted(() => {
-    // 监听主进程事件
-    cancelCall1 = window.electronAPI.on('update-status', (data: any) => {
-      updateStatusRef.value = data.status
+    // v3：更新事件改用类型化订阅（移除原版通用 send/on 通道）
+    cancelStatus = window.electronAPI.onUpdateStatus(data => {
+      updateStatusRef.value = data.status as typeof updateStatusRef.value
       isAutoRef.value = data.auto
       if (data.version) newVersionRef.value = data.version
-      if (data.releaseNotesRef) releaseNotesRef.value = data.releaseNotesRef
       if (data.status === 'downloaded') {
         waitingRef.value = false
       }
     })
 
-    cancelCall2 = window.electronAPI.on('update-progress', (data: any) => {
+    cancelProgress = window.electronAPI.onUpdateProgress(data => {
       progressRef.value = Math.round(data.percent)
       updateStatusRef.value = 'downloading'
     })
 
     // 启动时自动检查
-    window.electronAPI.send('update:check', { auto: true })
+    window.electronAPI.checkUpdate(true)
   })
 
   onUnmounted(() => {
-    cancelCall1 && cancelCall1()
-    cancelCall2 && cancelCall2()
+    cancelStatus?.()
+    cancelProgress?.()
   })
 </script>
 
@@ -75,8 +73,8 @@
       :visible="show"
       :classNames="{ content: 'udm-content' }"
       title="更新检查"
-      :onClose="onClose"
-      :onConfirm="onUpdate"
+      :onClose="handleClose"
+      :onConfirm="handleUpdate"
       :showCancel="false"
       :confirmText="confirmText"
       :loading="waitingRef"

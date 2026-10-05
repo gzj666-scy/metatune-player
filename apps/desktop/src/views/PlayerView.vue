@@ -1,26 +1,20 @@
 <script setup lang="ts">
-  import { ref, computed, watch, StyleValue, onUnmounted, onMounted, watchEffect } from 'vue'
-  import {
-    PlayMode,
-    DynamicColorAdjuster,
-    DefaultVolume,
-    IconEnum,
-    DefaultKey,
-    PanelType,
-    addRoundedTopSubpath,
-    downsampleHalf,
-  } from '@metatune/common'
+  import { ref, computed, watch, onUnmounted, onMounted } from 'vue'
+  import { DynamicColorAdjuster, IconEnum, PanelType, formatTime } from '@metatune/common'
   import IconBase from '@/components/base/IconBase.vue'
-  import { getStoreManager } from '@/utils/storeManager'
+  import VolumeControl from '@/components/business/VolumeControl.vue'
   import { getPlayManager } from '@/utils/playManager'
+  import { getStoreManager } from '@/utils/storeManager'
   import PlayerLyric from '@/components/business/PlayerLyric.vue'
   import TitleBar from '@/components/layout/TitleBar.vue'
+  import { useSpectrum } from '@/composables/useSpectrum'
+  import { usePlayerControls } from '@/composables/usePlayerControls'
 
   interface Props {
     show?: boolean
   }
 
-  const props = withDefaults(defineProps<Props>(), {
+  withDefaults(defineProps<Props>(), {
     show: false,
   })
 
@@ -30,97 +24,53 @@
   }>()
 
   const playManager = getPlayManager()
-  const storeManager = getStoreManager()
-  const playerStore = storeManager.playerStore
+
+  const progressContainerRef = ref<HTMLDivElement>()
+
+  // 进度/音量/播放模式/收藏等共享逻辑见 usePlayerControls
+  const {
+    isDraggingRef,
+    song,
+    isPlaying,
+    currentTime,
+    duration,
+    volume,
+    progressPercent,
+    playModeTitle,
+    playModeIcon,
+    volumeIcon,
+    isMuted,
+    isFavorite,
+    canGoPrev,
+    canGoNext,
+    progressDrag,
+    onProgressClick,
+    onPlayMode,
+    onToggleMute,
+    onToggleFavorite,
+  } = usePlayerControls(progressContainerRef)
+
+  const playerStore = getStoreManager().playerStore
 
   const themeVarsRef = ref<Record<string, string>>({})
 
-  const progressContainerRef = ref<HTMLDivElement>()
-  const isDraggingRef = ref(false)
-  const dragTimeRef = ref(0)
-
-  const isVolumeDraggingRef = ref(false)
+  // 音量弹层显隐（hover 按钮 300ms 延迟隐藏）
   const showVolumeControlRef = ref(false)
-  const volumeControlStyleRef = ref<StyleValue>()
-  const volumeSliderRef = ref<HTMLDivElement>()
+  const volumeControlStyleRef = ref<Record<string, string>>()
   const delayHideVolumeRef = ref<number>()
 
+  /** 频谱可视化（逻辑见 useSpectrum） */
   const canvasRef = ref<HTMLCanvasElement>()
-  const visualizationIdRef = ref<number>()
-  const visualizationTimeRef = ref(1000 / 15)
-  const resizeObserverRef = ref<ResizeObserver>()
-
-  const song = computed(() => playerStore.currentSong)
-  const sampleRate = computed(() => song.value?.sampleRate || 44100)
-  const isPlaying = computed(() => playerStore.currentState.isPlaying)
-  const currentTime = computed(() => {
-    if (isDraggingRef.value) return dragTimeRef.value
-    return playerStore.currentState.currentTime
-  })
-  const duration = computed(() => {
-    if (song.value) return song.value.duration || 0
-    return 0
-  })
-  const playMode = computed(() => playerStore.currentState.playMode)
-  const isMuted = computed(() => playerStore.currentState.isMuted)
-  const volume = computed(() => playerStore.currentState.volume)
-  const progressPercent = computed(() => {
-    if (!duration.value || duration.value <= 0) return 0
-    return Math.min((currentTime.value / duration.value) * 100, 100)
-  })
-  const volumeIcon = computed(() => {
-    if (isMuted.value) return IconEnum.VolumeX
-    if (volume.value <= 0) return IconEnum.Volume
-    if (volume.value <= DefaultVolume) return IconEnum.Volume1
-    return IconEnum.Volume2
-    // if (isMuted.value) return '🔇'
-    // if (localVolume.value < 30) return '🔈'
-    // if (localVolume.value < 70) return '🔉'
-    // return '🔊'
-  })
-  const playModeIcon = computed(() => {
-    switch (playMode.value) {
-      case PlayMode.SHUFFLE:
-        return IconEnum.Shuffle
-      case PlayMode.REPEAT_ONE:
-        return IconEnum.Repeat1
-      // case PlayMode.SEQUENCE:
-      //   return IconEnum.Repeat
-      default:
-        return IconEnum.Repeat
-    }
-
-    // case "list-loop":
-    //     return "🔁";
-    // case "single-loop":
-    //     return "🔂";
-    // case "random":
-    //     return "🔀";
-    // default:
-    //     return "▶";
-  })
-  const playModeTitle = computed(() => {
-    switch (playMode.value) {
-      case PlayMode.SHUFFLE:
-        return '随机播放'
-      case PlayMode.REPEAT_ONE:
-        return '单曲循环'
-      // case PlayMode.SEQUENCE:
-      //   return '顺序播放'
-      default:
-        return '列表循环'
-    }
-  })
-  const canGoPrev = computed(() => playerStore.canGoPrev)
-  const canGoNext = computed(() => playerStore.canGoNext)
-  const isFavorite = computed(() => {
-    const playlist = playerStore.playlists[DefaultKey.Favorite]
-    if (playlist?.songIds) return playlist.songIds.includes(song.value?.uid || '')
-    return false
-  })
   const settings = computed(() => playerStore.settings)
+  const spectrum = useSpectrum({
+    canvasRef,
+    getData: () => playManager.getVisualizationData(),
+    enabledRef: computed(() => settings.value.openVisualization),
+    isPlayingRef: isPlaying,
+    themeVarsRef: themeVarsRef,
+  })
 
-  const onShowMoreActions = (e: MouseEvent) => {
+  function onShowMoreActions(e: MouseEvent) {
     if (!song.value) return
     const rect = (e.currentTarget as HTMLElement).getBoundingClientRect()
     const windowHeight = window.innerHeight
@@ -140,318 +90,64 @@
     playerStore.panel = { type: PanelType.SongAction, data: { song: song.value, listKey: playerStore.currentState.currentListId, style } }
   }
 
-  const onLoadExternalLyrics = () => {
+  function onLoadExternalLyrics() {
     emit('load-lyrics')
   }
 
-  const onSeekToLyric = (time: number) => {
+  function onSeekToLyric(time: number) {
     playManager.seekTo(time)
   }
 
-  const onProgressClick = (event: MouseEvent) => {
-    if (!duration.value || duration.value <= 0) return
-    if (isDraggingRef.value) return
-    const progressBar = event.currentTarget as HTMLElement
-    const rect = progressBar.getBoundingClientRect()
-    const x = Math.max(0, Math.min(event.clientX - rect.left, rect.width))
-    const percentage = (x / rect.width) * 100
-    const time = (percentage / 100) * duration.value
-    playManager.seekTo(time)
-  }
-  const onProgressDrag = (event: MouseEvent | TouchEvent) => {
-    if (!duration.value || duration.value <= 0) return
-    const progressBar = progressContainerRef.value
-    if (!progressBar) return
-    dragTimeRef.value = currentTime.value
-    isDraggingRef.value = true
-
-    const rect = progressBar.getBoundingClientRect()
-    const handleMove = (moveEvent: MouseEvent | TouchEvent) => {
-      if (!isDraggingRef.value) return
-
-      let clientX: number
-
-      if ('touches' in moveEvent) {
-        clientX = moveEvent.touches[0].clientX
-      } else {
-        clientX = moveEvent.clientX
-      }
-
-      const x = Math.max(0, Math.min(clientX - rect.left, rect.width))
-      const percentage = (x / rect.width) * 100
-      dragTimeRef.value = (percentage / 100) * duration.value
-    }
-
-    const handleEnd = () => {
-      document.removeEventListener('mousemove', handleMove)
-      document.removeEventListener('mouseup', handleEnd)
-      document.removeEventListener('touchmove', handleMove)
-      document.removeEventListener('touchend', handleEnd)
-      if (dragTimeRef.value >= 0) playManager.seekTo(dragTimeRef.value)
-      isDraggingRef.value = false
-      dragTimeRef.value = 0
-    }
-
-    document.addEventListener('mousemove', handleMove)
-    document.addEventListener('mouseup', handleEnd)
-    document.addEventListener('touchmove', handleMove)
-    document.addEventListener('touchend', handleEnd)
-
-    event.preventDefault()
-  }
-  const formatTime = (seconds: number) => {
-    if (!seconds || seconds <= 0) return '00:00'
-    const mins = Math.floor(seconds / 60)
-    const secs = Math.floor(seconds % 60)
-    return `${mins}:${secs.toString().padStart(2, '0')}`
-  }
-
-  const onPlayMode = () => {
-    const modes: Array<PlayMode> = [PlayMode.REPEAT_ALL, PlayMode.SHUFFLE, PlayMode.REPEAT_ONE]
-    const currentIndex = modes.indexOf(playMode.value)
-    const nextIndex = (currentIndex + 1) % modes.length
-    playManager.setPlayMode(modes[nextIndex])
-  }
-
-  const onToggleMute = () => {
-    playManager.toggleMute(!isMuted.value)
-  }
-
-  const onVolumeMouseEnter = (event: MouseEvent) => {
+  function onVolumeMouseEnter(event: MouseEvent) {
     clearTimeout(delayHideVolumeRef.value)
     const rect = (event.currentTarget as HTMLElement).getBoundingClientRect()
     volumeControlStyleRef.value = { left: rect.left + 'px', bottom: window.innerHeight - rect.top + 'px' }
     showVolumeControlRef.value = true
   }
-  const onVolumeMouseLeave = () => {
+
+  function onVolumeMouseLeave() {
     delayHideVolumeRef.value = window.setTimeout(() => {
       showVolumeControlRef.value = false
     }, 300)
   }
-  const onVolumeControlMouseEnter = () => {
+
+  function onVolumeControlMouseEnter() {
     clearTimeout(delayHideVolumeRef.value)
   }
-  const onVolumeControlMouseLeave = () => {
-    delayHideVolumeRef.value = window.setTimeout(() => {
-      showVolumeControlRef.value = false
-    }, 300)
-  }
-  const onVolumeClick = (event: MouseEvent) => {
-    if (isVolumeDraggingRef.value) return
-    const volumeSlider = event.currentTarget as HTMLElement
-    const rect = volumeSlider.getBoundingClientRect()
-    const y = Math.max(0, Math.min(rect.bottom - event.clientY, rect.height))
-    const percentage = Math.round((y / rect.height) * 100)
-    const volume = Math.max(0, Math.min(percentage, 100))
-    playManager.setVolume(volume)
-  }
-  const onVolumeDrag = (event: MouseEvent | TouchEvent) => {
-    const volumeSlider = volumeSliderRef.value
-    if (!volumeSlider) return
-    isVolumeDraggingRef.value = true
 
-    const rect = volumeSlider.getBoundingClientRect()
-    const handleMove = (moveEvent: MouseEvent | TouchEvent) => {
-      if (!isVolumeDraggingRef.value) return
-
-      let clientY: number
-
-      if ('touches' in moveEvent) {
-        clientY = moveEvent.touches[0].clientY
-      } else {
-        clientY = moveEvent.clientY
-      }
-
-      const y = Math.max(0, Math.min(rect.bottom - clientY, rect.height))
-      const percentage = Math.round((y / rect.height) * 100)
-      const volume = Math.max(0, Math.min(percentage, 100))
-      playManager.setVolume(volume)
-    }
-
-    const handleEnd = () => {
-      document.removeEventListener('mousemove', handleMove)
-      document.removeEventListener('mouseup', handleEnd)
-      document.removeEventListener('touchmove', handleMove)
-      document.removeEventListener('touchend', handleEnd)
-      isVolumeDraggingRef.value = false
-    }
-
-    document.addEventListener('mousemove', handleMove)
-    document.addEventListener('mouseup', handleEnd)
-    document.addEventListener('touchmove', handleMove)
-    document.addEventListener('touchend', handleEnd)
-
-    event.preventDefault()
+  function onVolumeControlMouseLeave() {
+    onVolumeMouseLeave()
   }
 
-  const onToggleFavorite = () => {
-    if (song.value?.uid) {
-      storeManager.updateFavorite([song.value.uid], !isFavorite.value)
-    }
+  function onVolumeChange(value: number) {
+    playManager.setVolume(value)
   }
 
-  /** 绘制频谱图的函数 */
-  const drawSpectrum = () => {
-    clearTimeout(visualizationIdRef.value)
-    if (!settings.value.openVisualization) return
-    if (!canvasRef.value) return
-    const canvas = canvasRef.value
-    const ctx = canvas.getContext('2d')
-    if (!ctx) return
-    if (!isPlaying.value) return
-    const visualizationData = playManager.getVisualizationData()
-    if (!visualizationData) return
-
-    // 由于 ctx.scale(dpr)，绘图时要转回 CSS 像素坐标
-    const dpr = window.devicePixelRatio || 1
-    const width = canvas.width / dpr
-    const height = canvas.height / dpr
-    // 清空画布
-    ctx.clearRect(0, 0, width, height)
-    let dataArray = visualizationData
-    // console.log('111 ', dataArray)
-    // dataArray = downsampleHalf(dataArray)
-
-    // // 获取优化后的频域数据（过滤无效高频）
-    // const maxFreq = Math.min(12000, sampleRate.value / 2)
-    // // const maxIndex = Math.floor((maxFreq / (sampleRate.value / 2)) * dataArray.length)
-    // const maxIndex = Math.min(128, Math.floor((maxFreq / (sampleRate.value / 2)) * dataArray.length))
-    // // const maxIndex = Math.floor((2 * dataArray.length) / 3)
-    // dataArray = dataArray.slice(0, maxIndex)
-
-    const margin = 8 // 左右留白
-    const usableWidth = width - margin * 2
-    const barCount = dataArray.length
-    const barGap = usableWidth / (barCount * 2 - 1)
-    const barWidth = barGap
-
-    // 定义渐变（从右到左）
-    const gradient = ctx.createLinearGradient(width, 0, 0, 0)
-    gradient.addColorStop(0, themeVarsRef.value['--player-canvas-r']) // (右)
-    gradient.addColorStop(0.5, themeVarsRef.value['--player-canvas-m']) // (中)
-    gradient.addColorStop(1, themeVarsRef.value['--player-canvas-l']) // (左)
-    // 线性频率映射
-    // for (let i = 0; i < barCount; i++) {
-    //   // 归一化：将 0-255 的值映射到 0 - maxHeight
-    //   const value = dataArray[i] / 255
-    //   const barHeight = value * height
-
-    //   const x = margin + i * (barWidth + barGap)
-    //   const y = height - barHeight - 0
-
-    //   // 绘制竖线
-    //   ctx.fillStyle = gradient
-    //   ctx.beginPath()
-    //   // ctx.roundRect(x, y, barWidth, barHeight, 10) // 设为0则直角
-    //   roundRectTopOnly(ctx, x, y, barWidth, barHeight, 10)
-    //   ctx.fill()
-    // }
-
-    // 绘制竖线（性能优化版）
-    ctx.fillStyle = gradient
-    ctx.beginPath()
-    for (let i = 0; i < barCount; i++) {
-      // const value = dataArray[i] / 255
-      // const barHeight = Math.min(3 + value * height, height)
-      // const x = margin + i * (barWidth + barGap)
-      // const y = height - barHeight - 0
-
-      // const value = Math.abs(dataArray[i] - 128) / 128
-      // const barHeight = 3 + value * 4 * height
-      // const x = margin + i * (barWidth + barGap)
-      // const y = height - barHeight - 0
-
-      const value = dataArray[i]
-      const barHeight = 3 + value * height
-      const x = margin + i * (barWidth + barGap)
-      const y = height - barHeight - 0
-
-      // 为每个柱添加子路径（不 close，最后统一 close）
-      addRoundedTopSubpath(ctx, x, y, barWidth, barHeight, 10)
-    }
-    ctx.closePath()
-    ctx.fill() // 一次性填充所有柱
-
-    visualizationIdRef.value = window.setTimeout(drawSpectrum, visualizationTimeRef.value)
-  }
-
-  const initPlayerEvent = () => {
+  // 播放状态驱动频谱启停
+  function initPlayerEvent() {
     const player = playManager.getPlayer()
     if (!player) return
-    player.on('play', () => {
-      clearTimeout(visualizationIdRef.value)
-      visualizationIdRef.value = window.setTimeout(drawSpectrum, visualizationTimeRef.value)
-    })
-    player.on('pause', () => {
-      clearTimeout(visualizationIdRef.value)
-    })
-    player.on('stop', () => {
-      clearTimeout(visualizationIdRef.value)
-    })
+    player.on('play', () => spectrum.start())
+    player.on('pause', () => spectrum.stop())
+    player.on('stop', () => spectrum.stop())
   }
 
-  const setupCanvas = () => {
-    clearTimeout(visualizationIdRef.value)
-    const canvas = canvasRef.value
-    if (!canvas) return
-    const ctx = canvas.getContext('2d')
-    if (!ctx) return
-    const parent = canvas.parentElement
-    const rect = parent!.getBoundingClientRect()
-    canvas.style.width = `${rect.width}px`
-    canvas.style.height = `${rect.height}px`
-    // 防模糊
-    const dpr = window.devicePixelRatio || 1
-    canvas.width = rect.width * dpr
-    canvas.height = rect.height * dpr
-    ctx.scale(dpr, dpr)
-    ctx.imageSmoothingEnabled = false // 频谱图不需要抗锯齿，提升性能
-    visualizationIdRef.value = window.setTimeout(drawSpectrum, visualizationTimeRef.value)
-  }
-
-  const clearCanvas = () => {
-    clearTimeout(visualizationIdRef.value)
-    const canvas = canvasRef.value
-    canvas?.getContext('2d')?.clearRect(0, 0, canvas.width, canvas.height)
-  }
-
-  watchEffect(
-    () => {
-      if (canvasRef.value) {
-        if (resizeObserverRef.value) {
-          resizeObserverRef.value.disconnect()
-          resizeObserverRef.value = undefined
-        }
-        resizeObserverRef.value = new ResizeObserver(() => {
-          setupCanvas()
-        })
-        resizeObserverRef.value.observe(canvasRef.value.parentElement!)
-      }
-    },
-    { flush: 'post' }
-  )
-
+  // 开关可视化设置
   watch(
     () => settings.value.openVisualization,
     newVal => {
-      if (newVal) {
-        clearTimeout(visualizationIdRef.value)
-        visualizationIdRef.value = window.setTimeout(drawSpectrum, visualizationTimeRef.value)
-      } else {
-        clearCanvas()
-      }
+      if (newVal) spectrum.start()
+      else spectrum.clearCanvas()
     }
   )
 
-  // 监听歌曲变化
+  // 歌曲变化：清空频谱、更新主题色与窗口标题
   watch(
     () => song.value,
     async newSong => {
       if (newSong) {
-        clearCanvas()
+        spectrum.clearCanvas()
         const cssObject = await DynamicColorAdjuster.getThemeCSSFromDominantColor(newSong.albumArt)
-
-        // const cssObject = await DynamicColorAdjuster.getThemeCSSFromPalette(newSong.albumArt)
         themeVarsRef.value = cssObject
 
         window.electronAPI?.setWindowTitle(`${newSong.artist} - ${newSong.title}`)
@@ -465,8 +161,6 @@
 
   onUnmounted(() => {
     clearTimeout(delayHideVolumeRef.value)
-    clearTimeout(visualizationIdRef.value)
-    resizeObserverRef.value?.disconnect()
   })
 </script>
 
@@ -499,11 +193,6 @@
             <div class="album-art-wrapper">
               <div v-if="song?.albumArt" class="album-art-container">
                 <img :src="song.albumArt" :alt="song.album" class="album-art-large" />
-                <!-- <div v-if="isPlaying" class="playing-overlay">
-                  <div class="equalizer">
-                    <div class="eq-bar" v-for="n in 5" :key="n"></div>
-                  </div>
-                </div> -->
               </div>
               <div v-else class="album-art-placeholder-large">
                 <IconBase class="icon-music-large">
@@ -514,7 +203,6 @@
 
             <!-- 歌曲信息 -->
             <div class="song-info-expanded">
-              <!-- <div v-if="song?.album" class="song-album-expanded">{{ song.album }}</div> -->
               <div class="song-album-expanded">{{ song ? song.album || '<未知>' : '--' }}</div>
 
               <!-- 音质信息 -->
@@ -532,7 +220,13 @@
 
           <!-- 歌词区域 -->
           <div class="lyrics-section">
-            <PlayerLyric :song="song" :currentTime="currentTime" :isDragging="isDraggingRef" @seek="onSeekToLyric" @load="onLoadExternalLyrics" />
+            <PlayerLyric
+              :song="song"
+              :currentTime="currentTime"
+              :isDragging="isDraggingRef"
+              @seek="onSeekToLyric"
+              @load="onLoadExternalLyrics"
+            />
           </div>
         </div>
 
@@ -547,11 +241,8 @@
               <!-- 进度控制 -->
               <div class="progress-bar-large" ref="progressContainerRef" @click="onProgressClick">
                 <div class="progress-track-large" :style="{ width: progressPercent + '%' }">
-                  <div class="progress-thumb-large" @mousedown="onProgressDrag" @touchstart="onProgressDrag"></div>
+                  <div class="progress-thumb-large" @mousedown="progressDrag.startDrag" @touchstart="progressDrag.startDrag"></div>
                 </div>
-
-                <!-- 缓冲进度 -->
-                <!-- <div v-if="bufferedPercent > 0" class="buffered-track" :style="{ width: bufferedPercent + '%' }"></div> -->
               </div>
             </div>
             <div class="time-display">{{ formatTime(duration) }}</div>
@@ -600,7 +291,12 @@
             </div>
             <!-- 歌曲操作 -->
             <div class="song-actions">
-              <button class="header-btn" :class="{ favorited: isFavorite }" @click="onToggleFavorite" :title="isFavorite ? '取消收藏' : '收藏'">
+              <button
+                class="header-btn"
+                :class="{ favorited: isFavorite }"
+                @click="onToggleFavorite"
+                :title="isFavorite ? '取消收藏' : '收藏'"
+              >
                 <IconBase>
                   <component :is="isFavorite ? IconEnum.HeartFilled : IconEnum.Heart" />
                 </IconBase>
@@ -615,19 +311,14 @@
           </div>
 
           <!-- 音量控制（桌面端） -->
-          <div
+          <VolumeControl
             v-if="showVolumeControlRef"
-            class="volume-control"
+            :volume="volume"
             :style="volumeControlStyleRef"
+            @change="onVolumeChange"
             @mouseenter="onVolumeControlMouseEnter"
             @mouseleave="onVolumeControlMouseLeave"
-          >
-            <div class="volume-slider" ref="volumeSliderRef" @click="onVolumeClick">
-              <div class="volume-track" :style="{ height: volume + '%' }"></div>
-              <div class="volume-thumb" :style="{ bottom: volume + '%' }" @mousedown="onVolumeDrag" @touchstart="onVolumeDrag"></div>
-            </div>
-            <div class="volume-label">{{ volume }}</div>
-          </div>
+          />
         </div>
       </div>
     </section>
@@ -672,7 +363,7 @@
         left: 0;
         right: 0;
         bottom: 0;
-        background: rgba(0, 0, 0, 0.5);
+        background: rgb(0 0 0 / 50%);
         backdrop-filter: blur(40px);
       }
     }
@@ -701,9 +392,6 @@
           line-height: 150%;
           font-weight: 500;
           text-align: center;
-          // white-space: nowrap;
-          // overflow: hidden;
-          // text-overflow: ellipsis;
         }
 
         .song-artist-header {
@@ -712,9 +400,6 @@
           line-height: 150%;
           color: var(--player-text-secondary);
           text-align: center;
-          // white-space: nowrap;
-          // overflow: hidden;
-          // text-overflow: ellipsis;
         }
       }
 
@@ -738,7 +423,7 @@
             height: 300px;
             border-radius: 10px;
             overflow: hidden;
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+            box-shadow: 0 20px 40px rgb(0 0 0 / 30%);
             cursor: pointer;
             transition: transform 0.3s;
             margin-bottom: 25px;
@@ -757,49 +442,6 @@
                 height: 100%;
                 object-fit: cover;
               }
-
-              // .playing-overlay {
-              //   position: absolute;
-              //   top: 0;
-              //   left: 0;
-              //   right: 0;
-              //   bottom: 0;
-              //   background: rgba(0, 0, 0, 0.5);
-              //   display: flex;
-              //   align-items: center;
-              //   justify-content: center;
-
-              //   .equalizer {
-              //     display: flex;
-              //     align-items: flex-end;
-              //     height: 40px;
-              //     gap: 4px;
-
-              //     .eq-bar {
-              //       width: 4px;
-              //       height: 20px;
-              //       background: currentColor;
-              //       border-radius: 2px;
-              //       animation: eqAnimation 1s infinite ease-in-out;
-
-              //       &:nth-child(1) {
-              //         animation-delay: 0s;
-              //       }
-              //       &:nth-child(2) {
-              //         animation-delay: 0.1s;
-              //       }
-              //       &:nth-child(3) {
-              //         animation-delay: 0.2s;
-              //       }
-              //       &:nth-child(4) {
-              //         animation-delay: 0.3s;
-              //       }
-              //       &:nth-child(5) {
-              //         animation-delay: 0.4s;
-              //       }
-              //     }
-              //   }
-              // }
             }
 
             .album-art-placeholder-large {
@@ -880,7 +522,7 @@
             .progress-bar-large {
               width: 100%;
               height: 4px;
-              background: rgba(255, 255, 255, 0.2);
+              background: rgb(255 255 255 / 20%);
               border-radius: 3px;
               cursor: pointer;
               position: relative;
@@ -906,16 +548,6 @@
                     cursor: grabbing;
                   }
                 }
-              }
-
-              .buffered-track {
-                position: absolute;
-                top: 0;
-                left: 0;
-                height: 100%;
-                background: rgba(255, 255, 255, 0.1);
-                border-radius: 3px;
-                transition: width 0.2s;
               }
             }
           }
@@ -1012,54 +644,6 @@
             }
           }
         }
-
-        .volume-control {
-          position: fixed;
-          width: 36px;
-          height: 120px;
-          padding: 10px 6px 4px;
-          border-radius: 4px;
-          background: var(--modal-bg);
-          box-shadow: var(--modal-shadow);
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          justify-content: space-between;
-          z-index: 3;
-
-          .volume-slider {
-            width: 4px;
-            height: 80px;
-            background: var(--progress-track-bg);
-            border-radius: 2px;
-            cursor: pointer;
-            position: relative;
-
-            .volume-track {
-              background: var(--progress-track-fill);
-              position: absolute;
-              bottom: 0;
-              left: 0;
-              width: 100%;
-              border-radius: 2px;
-            }
-
-            .volume-thumb {
-              background: var(--progress-thumb-color);
-              position: absolute;
-              left: 50%;
-              transform: translate(-50%, 50%);
-              width: 12px;
-              height: 12px;
-              border-radius: 50%;
-            }
-          }
-
-          .volume-label {
-            font-size: 14px;
-            color: var(--text-color-primary);
-          }
-        }
       }
     }
   }
@@ -1078,14 +662,4 @@
     opacity: 0;
     transform: translateY(100%);
   }
-
-  // @keyframes eqAnimation {
-  //   0%,
-  //   100% {
-  //     height: 10px;
-  //   }
-  //   50% {
-  //     height: 30px;
-  //   }
-  // }
 </style>

@@ -92,6 +92,12 @@ export interface ISong extends ISongBase {
   lyricsFilePath?: string
   /** 添加时间戳 */
   addTime?: number
+  /** LUFS 统一化补偿增益(dB)：测量得到，播放时线性应用；缺省/0 = 不补偿 */
+  gain?: number
+  /** 实测集成响度(LUFS)，可选；便于调整目标响度后免重测直接重算 gain */
+  lufs?: number
+  /** 实测 true peak(dBTP)，可选；用于计算防削波增益上限 */
+  truePeak?: number
 }
 
 /** 播放状态 */
@@ -147,6 +153,14 @@ export interface IAppSettings {
   autoOpenPlayView: boolean
   /** 开启播放页频谱动效 */
   openVisualization: boolean
+
+  // 响度归一化（LUFS 统一化）
+  /** 响度归一化总开关：开启后播放未测量的歌曲会后台测量并套用补偿增益 */
+  loudnessNormalization: boolean
+  /** 目标响度 LUFS（EBU R128 / 流媒体通用 -14） */
+  targetLoudness: number
+  /** true peak 上限 dBTP（EBU 分发规范 -1.0，卡增益防削波） */
+  truePeakCeiling: number
 }
 
 /** 歌手信息 */
@@ -181,3 +195,28 @@ export interface ICoverCache {
   get(hash: string): Promise<string | null>
   clear(): Promise<void>
 }
+
+/** 批量导入结果（v3：带失败明细与跳过清单） */
+export interface IImportResult {
+  songs: ISong[]
+  errors: { filePath: string; reason: string }[]
+  skipped: string[]
+}
+
+/** 已知歌曲的最小比对信息（增量扫描用） */
+export interface IKnownSong {
+  filePath: string
+  size: number
+  mtime: number
+  isValid: boolean
+}
+
+/** 增量扫描结果（v3：只返回需要解析/移除的文件） */
+export interface IScanResult {
+  newFiles: string[]
+  changedFiles: string[]
+  removedPaths: string[]
+}
+
+/** 导入进度回调 */
+export type OnProgress = (done: number, total: number, fileName: string) => void

@@ -1,52 +1,47 @@
 <script setup lang="ts">
-  import { ref, onMounted, onUnmounted, provide, computed } from 'vue'
+  import { ref, onMounted, provide, computed } from 'vue'
   import { getPlayManager } from '@/utils/playManager'
   import { getStoreManager } from '@/utils/storeManager'
   import TitleBar from '@/components/layout/TitleBar.vue'
   import Sidebar from '@/components/layout/Sidebar.vue'
   import PlayerStatusBar from '@/components/business/PlayerStatusBar.vue'
   import PlayerView from '@/views/PlayerView.vue'
-  import Panel from '@/components/panel/Panel.vue'
-  import Modal from '@/components/modal/Modal.vue'
+  import PanelCollection from '@/components/panel/PanelCollection.vue'
+  import ModalCollection from '@/components/modal/ModalCollection.vue'
   import UpdateModal from '@/components/modal/UpdateModal.vue'
 
   const playManager = getPlayManager()
   const storeManager = getStoreManager()
-  const playerStore = storeManager.playerStore
+  const { playerStore } = storeManager
 
   const showPlayerViewRef = ref(false)
 
   const song = computed(() => playerStore.currentSong)
   const settings = computed(() => playerStore.settings)
 
-  const onTogglePlayerView = (data: boolean) => {
+  function onTogglePlayerView(data: boolean) {
     if (!song.value) return
     showPlayerViewRef.value = data
   }
 
   // 播放控制方法
-  const handlePlaySong = (songId: string, listKey: string) => {
+  function handlePlaySong(songId: string, listKey: string) {
     playManager.playSong(songId, 0, listKey)
     if (settings.value.autoOpenPlayView) {
       onTogglePlayerView(true)
     }
   }
-  const togglePlayPause = (listKey: string) => {
+  function togglePlayPause(listKey: string) {
     playManager.togglePlayPause(listKey)
   }
-  const seekTo = (time: number) => {
+  function seekTo(time: number) {
     playManager.seekTo(time)
   }
   provide('play-song', handlePlaySong)
   provide('toggle-play', togglePlayPause)
 
-  const handleBeforeUnload = () => {
-    playManager.destroy()
-    storeManager.savePlayCache()
-  }
-
   onMounted(async () => {
-    const [meta, player] = await Promise.all([window.electronAPI.getLocalListCache(), window.electronAPI.getPlayerCache()])
+    const [meta, player] = await Promise.all([window.electronAPI.getSongsCache(), window.electronAPI.getPlayerCache()])
     console.log('加载持久化数据', meta, player)
     storeManager.initData(meta, player)
 
@@ -57,12 +52,16 @@
       if (player?.state?.isMuted) playManager.toggleMute(player.state.isMuted)
     }
 
-    window.addEventListener('beforeunload', handleBeforeUnload)
-  })
-
-  // 应用卸载时保存数据
-  onUnmounted(() => {
-    window.removeEventListener('beforeunload', handleBeforeUnload)
+    // v3：退出保存改由主进程 before-quit 主动通知（原版依赖 beforeunload 在 app.quit 时不可靠）
+    // 必须是 async + await：保存是异步 IPC 写盘，未 await 完 before-quit 就 app.quit() 会把写盘一起中断
+    window.electronAPI.onFlushRequest(async () => {
+      try {
+        await storeManager.savePlayCacheNow()
+        playManager.destroy()
+      } catch (error) {
+        console.error('退出保存失败:', error)
+      }
+    })
   })
 </script>
 
@@ -92,8 +91,8 @@
     <PlayerStatusBar @toggle-player="onTogglePlayerView" />
     <!-- 播放器界面 -->
     <PlayerView :show="showPlayerViewRef" @toggle-player="onTogglePlayerView" />
-    <Panel />
-    <Modal />
+    <PanelCollection />
+    <ModalCollection />
     <UpdateModal />
   </div>
 </template>

@@ -1,7 +1,7 @@
 <script setup lang="ts">
   import { IconEnum, SortTypeItems } from '@metatune/common'
   import type { IPanelProps, SortTypeItemsIds } from '@metatune/common'
-  import { computed, StyleValue, Teleport } from 'vue'
+  import { computed, StyleValue } from 'vue'
   import IconBase from '@/components/base/IconBase.vue'
   import { getStoreManager } from '@/utils/storeManager'
 
@@ -11,31 +11,31 @@
   })
 
   const storeManager = getStoreManager()
-  const playerStore = storeManager.playerStore
+  const { playerStore } = storeManager
 
   const actionStyle = computed(() => props.data?.style)
   const value = computed(() => props.data?.value)
 
-  const onClose = () => {
+  function handleClose() {
     props.closeCallBack?.()
     playerStore.panel = { type: '', data: null }
   }
 
-  const onSelectSortMode = (mode: SortTypeItemsIds) => {
+  function handleSelectSortMode(mode: SortTypeItemsIds) {
     if (props.data?.listKey) {
       storeManager.updatePlayList(props.data.listKey, 'sortType', mode)
-      onClose()
+      handleClose()
     }
   }
 </script>
 
 <template>
   <Teleport to="body">
-    <div class="sort-panel" :style="actionStyle" v-click-outside="onClose">
+    <div class="sort-panel" :style="actionStyle" v-click-outside="handleClose">
       <div
         v-for="item in SortTypeItems"
         :key="item.value"
-        @click="onSelectSortMode(item.value)"
+        @click="handleSelectSortMode(item.value)"
         :class="`sort-panel-item${value === item.value ? ' active' : ''}`"
       >
         {{ item.label }}

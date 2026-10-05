@@ -2,6 +2,7 @@
   import { ref, computed, markRaw } from 'vue'
   // import { getStoreManager } from '@/utils/storeManager'
   import General from '@/components/settings/General.vue'
+  import Advanced from '@/components/settings/Advanced.vue'
   import About from '@/components/settings/About.vue'
 
   // const storeManager = getStoreManager()
@@ -9,6 +10,7 @@
 
   const tabs = [
     { id: 'general', name: '常规' },
+    { id: 'advanced', name: '高级' },
     // { id: 'theme', name: '外观' },
     // { id: 'toolbox', name: '工具箱' },
     // { id: 'library', name: '音乐库' }, // Added tab
@@ -21,12 +23,13 @@
   const currentTabComponent = computed(() => {
     const components = {
       general: markRaw(General),
+      advanced: markRaw(Advanced),
       about: markRaw(About),
     }
     return components[activeTabRef.value as keyof typeof components] || null
   })
 
-  const onTabs = (data: (typeof tabs)[number]['id']) => {
+  function onTabs(data: (typeof tabs)[number]['id']) {
     activeTabRef.value = data
   }
 </script>

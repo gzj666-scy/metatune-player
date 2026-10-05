@@ -1,5 +1,5 @@
 <script setup lang="ts">
-  import { computed } from 'vue'
+  import { computed, onMounted, ref } from 'vue'
   import Switch from '../base/Switch.vue'
   import { getStoreManager } from '@/utils/storeManager'
   import { Modal } from '@/utils/modal'
@@ -7,27 +7,34 @@
 
   const playManager = getPlayManager()
   const storeManager = getStoreManager()
-  const playerStore = storeManager.playerStore
+  const { playerStore } = storeManager
 
   const settings = computed(() => playerStore.settings)
 
-  const onSetupResume = (data: boolean) => {
+  // 当前缓存路径（主进程按运行形态解析：开发/便携/安装版各不相同）
+  const cachePath = ref('')
+  onMounted(async () => {
+    const path = await window.electronAPI?.getCachePath()
+    if (path) cachePath.value = path
+  })
+
+  function handleSetupResume(data: boolean) {
     playerStore.settings.setupResume = data
   }
 
-  const onCloseExist = (data: boolean) => {
+  function handleCloseExist(data: boolean) {
     playerStore.settings.closeQuit = !data
   }
 
-  const onAutoOpenPlayView = (data: boolean) => {
+  function handleAutoOpenPlayView(data: boolean) {
     playerStore.settings.autoOpenPlayView = data
   }
 
-  const onOpenVisualization = (data: boolean) => {
+  function handleOpenVisualization(data: boolean) {
     playerStore.settings.openVisualization = data
   }
 
-  const onClear = async () => {
+  async function handleClear() {
     const result = await Modal.confirm('清理数据（未使用的专辑图、无效的歌曲等）', '确认清理')
     if (result) {
       storeManager.clearInvalidSongs()
@@ -35,7 +42,7 @@
     }
   }
 
-  const onReset = async () => {
+  async function handleReset() {
     const result = await Modal.confirm('清理所有数据（导入的歌曲、收藏、歌单、设置等），将播放器重置到初始状态', '确认重置')
     if (result) {
       const player = playManager.getPlayer()
@@ -56,13 +63,13 @@
           <div class="general-item-info">
             <div class="general-item-title">启动时恢复上次播放</div>
           </div>
-          <Switch :checked="settings.setupResume" @change="onSetupResume" />
+          <Switch :checked="settings.setupResume" @change="handleSetupResume" />
         </div>
         <div class="general-item">
           <div class="general-item-info">
             <div class="general-item-title">关闭主窗口时最小化到托盘，不退出程序</div>
           </div>
-          <Switch :checked="!settings.closeQuit" @change="onCloseExist" />
+          <Switch :checked="!settings.closeQuit" @change="handleCloseExist" />
         </div>
       </div>
     </div>
@@ -74,31 +81,32 @@
           <div class="general-item-info">
             <div class="general-item-title">播放时自动拉起播放页</div>
           </div>
-          <Switch :checked="settings.autoOpenPlayView" @change="onAutoOpenPlayView" />
+          <Switch :checked="settings.autoOpenPlayView" @change="handleAutoOpenPlayView" />
         </div>
         <div class="general-item">
           <div class="general-item-info">
             <div class="general-item-title">开启播放页频谱动效</div>
           </div>
-          <Switch :checked="settings.openVisualization" @change="onOpenVisualization" />
+          <Switch :checked="settings.openVisualization" @change="handleOpenVisualization" />
         </div>
       </div>
     </div>
 
     <div class="general-group">
       <h2 class="general-group-title">缓存：</h2>
+      <p v-if="cachePath" class="general-group-desc" :title="cachePath">当前缓存路径：{{ cachePath }}</p>
       <div class="general-item-group">
         <div class="general-item">
           <div class="general-item-info">
             <div class="general-item-title">清理缓存</div>
           </div>
-          <button class="general-item-btn" @click="onClear">清理</button>
+          <button class="general-item-btn" @click="handleClear">清理</button>
         </div>
         <div class="general-item">
           <div class="general-item-info">
             <div class="general-item-title">重置数据</div>
           </div>
-          <button class="general-item-btn" @click="onReset">重置</button>
+          <button class="general-item-btn" @click="handleReset">重置</button>
         </div>
       </div>
     </div>
@@ -118,6 +126,15 @@
         font-size: 16px;
         line-height: 200%;
         font-weight: 600;
+      }
+
+      .general-group-desc {
+        margin: 0 0 8px;
+        font-size: 12px;
+        line-height: 1.5;
+        color: var(--text-color-secondary, rgb(0 0 0 / 60%));
+        word-break: break-all;
+        user-select: text;
       }
 
       .general-item-group {
@@ -144,6 +161,30 @@
             }
           }
 
+          .general-item-desc {
+            margin-top: 4px;
+            font-size: 12px;
+            line-height: 1.4;
+            color: var(--text-color-secondary, rgb(0 0 0 / 60%));
+          }
+
+          .general-item-input {
+            width: 72px;
+            height: 28px;
+            padding: 0 8px;
+            border-radius: 6px;
+            border: 1px solid var(--border-color, rgb(0 0 0 / 15%));
+            background: var(--input-bg, rgb(0 0 0 / 4%));
+            color: var(--text-color-primary);
+            font-size: 13px;
+            text-align: center;
+
+            &:focus {
+              outline: none;
+              border-color: var(--btn-primary-bg);
+            }
+          }
+
           .general-item-btn {
             width: 70px;
             height: 30px;
@@ -153,6 +194,11 @@
 
             &:hover {
               color: var(--btn-primary-hover-bg);
+            }
+
+            &:disabled {
+              opacity: 0.5;
+              cursor: not-allowed;
             }
           }
         }

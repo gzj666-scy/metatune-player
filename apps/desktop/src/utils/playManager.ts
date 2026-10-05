@@ -1,10 +1,16 @@
-import { usePlayerStore, PlayMode } from '@metatune/common'
+import { toRaw } from 'vue'
+import { usePlayerStore } from '@/store'
+import { PlayMode, type ISong } from '@metatune/common'
 import { HowlerPlayer } from './howlerPlayer'
+import { getStoreManager } from '@/utils/storeManager'
+import { loudnessService } from '@/utils/loudnessService'
 
 export class PlayManager {
   private player: HowlerPlayer
   private playerStore: ReturnType<typeof usePlayerStore>
   private isAutoPlayNext = true
+  /** v3：连续播放失败计数（防止坏曲错误风暴瞬间跳完整列表） */
+  private consecutiveErrors = 0
 
   constructor() {
     this.player = new HowlerPlayer()
@@ -16,6 +22,7 @@ export class PlayManager {
   private setupEventListeners() {
     // 监听播放结束事件
     this.player.on('end', () => {
+      this.consecutiveErrors = 0
       this.handlePlayEnd()
     })
 
@@ -24,6 +31,7 @@ export class PlayManager {
       if (detail?.time !== undefined) {
         this.playerStore.currentState.currentTime = detail.time
       }
+      this.playerStore.playerDuration = detail?.duration || 0
     })
 
     // 监听播放事件
@@ -51,16 +59,20 @@ export class PlayManager {
     const { playMode, currentSongId } = this.playerStore.currentState
     const currentPlaylist = this.playerStore.currentPlaylistSongsValid
     if (currentPlaylist.length === 0) return
+
+    // v3：连续错误超过列表长度时停止自动跳曲，避免错误风暴
+    if (this.consecutiveErrors >= currentPlaylist.length) {
+      console.warn('连续播放失败过多，已停止自动跳曲')
+      this.consecutiveErrors = 0
+      return
+    }
+
     const currentIndex = currentPlaylist.findIndex(v => v.uid === currentSongId)
-    let nextSongId: string | null = null
+    let nextSongId: string | null
     switch (playMode) {
       case PlayMode.REPEAT_ONE:
         // 单曲循环：重新播放当前歌曲
-        if (currentSongId) {
-          nextSongId = currentSongId
-        } else {
-          nextSongId = currentPlaylist[0]?.uid
-        }
+        nextSongId = currentSongId || currentPlaylist[0]?.uid
         break
       case PlayMode.SHUFFLE:
         // 随机播放：从播放列表中随机选择
@@ -72,11 +84,7 @@ export class PlayManager {
           nextSongId = currentPlaylist[randomIndex].uid
         } else {
           // 只有一首歌时循环播放
-          if (currentSongId) {
-            nextSongId = currentSongId
-          } else {
-            nextSongId = currentPlaylist[0]?.uid
-          }
+          nextSongId = currentSongId || currentPlaylist[0]?.uid
         }
         break
       default:
@@ -97,13 +105,15 @@ export class PlayManager {
 
   /** 播放错误处理 */
   private handlePlayError() {
-    console.log('播放出错，尝试下一首')
+    this.consecutiveErrors++
+    console.log(`播放出错（连续第 ${this.consecutiveErrors} 次），尝试下一首`)
     this.handlePlayEnd()
   }
 
   /** 播放指定歌曲 */
-  public playSong(songId: string, startTime: number = 0, listKey?: string) {
-    const song = this.playerStore.songs.find(s => s.uid === songId)
+  public playSong(songId: string, startTime = 0, listKey?: string) {
+    // v3：通过 uid 索引表查找，替代全列表 find
+    const song = this.playerStore.songMap.get(songId)
     if (!song) {
       console.error('ISong not found:', songId)
       return
@@ -118,7 +128,90 @@ export class PlayManager {
     }
 
     // 播放歌曲
+    this.player.loudnessEnabled = this.playerStore.settings.loudnessNormalization
     this.player.play(song, startTime)
+    // 响度归一化：开关开启且尚未测量时，后台测量并套用补偿增益（不阻塞播放启动）
+    this.maybeMeasureLoudness(song)
+  }
+
+  /**
+   * 懒测量：仅在「响度归一化开关开启」且「该歌曲尚未测量」时触发。
+   * 测量在 Worker 后台完成，播放已以当前音量正常开始；测完回写 song 并平滑套用补偿。
+   */
+  private maybeMeasureLoudness(song: ISong) {
+    const s = this.playerStore.settings
+    if (!s.loudnessNormalization) return
+    // lufs 已测即视为测量完成（gain 一并写入），跳过
+    if (song.lufs !== undefined && song.gain !== undefined) return
+    console.log('开始响度测量:', song.fileName)
+    loudnessService
+      .measure(song.filePath, s.targetLoudness, s.truePeakCeiling)
+      .then(result => {
+        console.log('响度测量完成:', song.fileName, result)
+        // 先回写持久化（即便歌曲已切走也保留测量结果）
+        getStoreManager().updateSongLoudness(song, result.gain, result.lufs, result.truePeak)
+        // 仍是当前播放歌曲才套用到播放器
+        if (this.player.currentSong?.uid === song.uid) {
+          this.player.applyLoudness()
+        }
+      })
+      .catch(err => {
+        console.warn('响度测量跳过:', song.fileName, err instanceof Error ? err.message : err)
+      })
+  }
+
+  /** 设置开关切换时同步播放器并立即生效（开启时对当前未测歌曲触发测量） */
+  public setLoudnessNormalization(enabled: boolean) {
+    this.player.loudnessEnabled = enabled
+    this.player.applyLoudness()
+    if (enabled) {
+      const cur = this.player.currentSong
+      if (cur && (cur.lufs === undefined || cur.gain === undefined)) {
+        this.maybeMeasureLoudness(cur)
+      }
+    }
+  }
+
+  /**
+   * 调整目标响度 / true peak 上限后，免重测直接重算全库增益（依赖已存的 lufs / truePeak）。
+   */
+  public recomputeLoudnessGains() {
+    const s = this.playerStore.settings
+    if (!s.loudnessNormalization) return
+    // 直接遍历响应式 songs，改动即触发视图更新（含当前播放歌曲的 _currentSong）
+    const all = this.playerStore.songs
+    let changed = false
+    for (const song of all) {
+      if (song.lufs === undefined || song.truePeak === undefined) continue
+      const gain = Math.min(s.targetLoudness - song.lufs, s.truePeakCeiling - song.truePeak)
+      if (song.gain !== gain) {
+        song.gain = gain
+        changed = true
+      }
+    }
+    if (changed) getStoreManager().persistSongsCache()
+    // 重新套用到当前播放
+    this.player.applyLoudness()
+  }
+
+  /** 全库后台扫描：为尚未测量的歌曲计算补偿增益（Worker 串行，UI 不阻塞） */
+  public async scanLibraryLoudness(onProgress?: (done: number, total: number) => void): Promise<{ scanned: number; total: number }> {
+    const s = this.playerStore.settings
+    if (!s.loudnessNormalization) return { scanned: 0, total: 0 }
+    const songs = toRaw(this.playerStore.songs).filter(v => v.isValid && (v.lufs === undefined || v.gain === undefined))
+    const total = songs.length
+    let done = 0
+    for (const song of songs) {
+      try {
+        const r = await loudnessService.measure(song.filePath, s.targetLoudness, s.truePeakCeiling)
+        getStoreManager().updateSongLoudness(song, r.gain, r.lufs, r.truePeak)
+      } catch (err) {
+        console.warn('响度扫描跳过:', song.fileName, err instanceof Error ? err.message : err)
+      }
+      done++
+      onProgress?.(done, total)
+    }
+    return { scanned: done, total }
   }
 
   /** 播放切换 */
@@ -210,7 +303,6 @@ export class PlayManager {
   }
 
   public getVisualizationData() {
-    // return this.player.getVisualizationData()
     return this.player.getVisualizationDataBands()
   }
 

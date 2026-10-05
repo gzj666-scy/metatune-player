@@ -175,10 +175,10 @@ export class DynamicColorAdjuster {
    * @returns HSL数组
    */
   static hslToHex(color: [h: number, s: number, l: number]) {
-    let [h, s, l] = color
+    const h = color[0]
     // 1. 将饱和度、亮度 从 0-100 归一化到 0-1
-    s /= 100
-    l /= 100
+    const s = color[1] / 100
+    const l = color[2] / 100
 
     // 2. 计算中间变量 c, x, m
     const c = (1 - Math.abs(2 * l - 1)) * s
@@ -276,14 +276,28 @@ export class DynamicColorAdjuster {
   }
 
   static async getThemeCSSFromDominantColor(imageUrl?: string) {
+    // 同一封面只计算一次（切歌来回切换时避免重复取图与像素遍历）
+    const cacheKey = imageUrl || ''
+    const cached = DynamicColorAdjuster.themeCssCache.get(cacheKey)
+    if (cached) return cached
+
+    const css = await DynamicColorAdjuster.computeThemeCSSFromDominantColor(imageUrl)
+    DynamicColorAdjuster.themeCssCache.set(cacheKey, css)
+    return css
+  }
+
+  /** 主题 CSS 缓存（key 为封面地址，无封面的用空串） */
+  static themeCssCache = new Map<string, Record<string, string>>()
+
+  private static async computeThemeCSSFromDominantColor(imageUrl?: string) {
     const result = await this.getDominantColorFromImage(imageUrl)
     const [r, g, b] = result.color
     const [h, s, l] = this.rgbToHsl([r, g, b])
     // const luminance = this.getLuminance([r, g, b])
     // console.log('main ', h, s, l)
-    let hlH = (h - 20) % 360
-    let hlS = Math.min(s + 10, 90)
-    let hlL = Math.min(l + 10, 90)
+    const hlH = (h - 20) % 360
+    let hlS: number
+    let hlL: number
 
     if (s > 70) {
       hlS = Math.min(s - 20, 90)

@@ -10,7 +10,7 @@
   const router = useRouter()
 
   const storeManager = getStoreManager()
-  const playerStore = storeManager.playerStore
+  const { playerStore } = storeManager
 
   const expandPlaylistRef = ref(false)
 
@@ -30,26 +30,19 @@
   const isPlaying = computed(() => playerStore.currentState.isPlaying)
   const activePlayListId = computed(() => {
     const id = playerStore.currentState.currentListId
-    // return playerStore.defaultPlaylistKey.includes(id) ? '' : id
     return id
   })
 
-  // const onChangeView = (view: Props['activeView']) => {
-  //   emit('change-view', view)
-  // }
-
-  const onChangeView = (item: IMainMenuItem) => {
+  function onChangeView(item: IMainMenuItem) {
     router.replace(item.path)
     playerStore.currentViewKey = item.id
-    // if (!([DefaultKey.Artist] as string[]).includes(item.id)) {
-    // }
   }
 
-  const onExpandPlaylist = () => {
+  function onExpandPlaylist() {
     expandPlaylistRef.value = !expandPlaylistRef.value
   }
 
-  const onAddPlaylist = async () => {
+  async function onAddPlaylist() {
     const name = await Modal.prompt('新建歌单')
     if (name && name.trim()) {
       storeManager.addPlayList({
@@ -61,12 +54,12 @@
     }
   }
 
-  const onOpenPlaylist = (item: IPlaylistItem) => {
+  function onOpenPlaylist(item: IPlaylistItem) {
     router.replace('/playlist/' + item.createTime)
     playerStore.currentViewKey = item.createTime
   }
 
-  const onPlaylistRightClick = (id: string, e: MouseEvent) => {
+  function onPlaylistRightClick(id: string, e: MouseEvent) {
     const rect = (e.currentTarget as HTMLElement).getBoundingClientRect()
     const windowHeight = window.innerHeight
     let style
@@ -94,7 +87,12 @@
           <div class="section-label">音乐库</div>
         </div>
         <ul class="menu-list">
-          <li v-for="item in mainMenuItems" :key="item.id" :class="clsx('menu-item', { active: activeView === item.id })" @click="onChangeView(item)">
+          <li
+            v-for="item in mainMenuItems"
+            :key="item.id"
+            :class="clsx('menu-item', { active: activeView === item.id })"
+            @click="onChangeView(item)"
+          >
             <IconBase class="menu-icon">
               <component :is="activePlayListId === item.id && isPlaying ? IconEnum.Playing : item.iconNode" />
             </IconBase>

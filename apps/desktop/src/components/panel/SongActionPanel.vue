@@ -1,7 +1,7 @@
 <script setup lang="ts">
   import { IconEnum, ModalType } from '@metatune/common'
   import type { IPanelProps, ISong } from '@metatune/common'
-  import { computed, StyleValue, Teleport } from 'vue'
+  import { computed, StyleValue } from 'vue'
   import IconBase from '@/components/base/IconBase.vue'
   import { getStoreManager } from '@/utils/storeManager'
   import { Modal } from '@/utils/modal'
@@ -11,32 +11,32 @@
   })
 
   const storeManager = getStoreManager()
-  const playerStore = storeManager.playerStore
+  const { playerStore } = storeManager
 
   const actionStyle = computed(() => props.data?.style)
 
-  const onClose = () => {
+  function handleClose() {
     props.closeCallBack?.()
     playerStore.panel = { type: '', data: null }
   }
 
-  const onAddToPlayList = () => {
+  function handleAddToPlayList() {
     if (props.data?.song) {
-      onClose()
+      handleClose()
       playerStore.modal = { type: ModalType.AddToPlaylist, data: { songIds: [props.data.song.uid] } }
     }
   }
 
-  const onLookSongInfo = () => {
+  function handleLookSongInfo() {
     if (props.data?.song) {
-      onClose()
-      playerStore.modal = { type: ModalType.SongInfo, data: { song: props.data.song } }
+      handleClose()
+      playerStore.modal = { type: ModalType.SongInfo, data: { songId: props.data.song.uid } }
     }
   }
 
-  const onRemoveSong = async () => {
+  async function handleRemoveSong() {
     if (props.data?.song) {
-      onClose()
+      handleClose()
       const result = await Modal.confirm(`确定要移除歌曲"${props.data.song.title}"吗？`, '确认移除')
       if (result) {
         storeManager.removeSongs([props.data.song.uid], props.data.listKey)
@@ -47,20 +47,20 @@
 
 <template>
   <Teleport to="body">
-    <div class="action-menu" :style="actionStyle" v-click-outside="onClose">
-      <div class="action-menu-item" :class="{ invalid: !data?.song?.isValid }" @click.stop="onAddToPlayList()">
+    <div class="action-menu" :style="actionStyle" v-click-outside="handleClose">
+      <div class="action-menu-item" :class="{ invalid: !data?.song?.isValid }" @click.stop="handleAddToPlayList()">
         <IconBase>
           <component :is="IconEnum.Plus" />
         </IconBase>
         添加到歌单
       </div>
-      <div class="action-menu-item" :class="{ invalid: !data?.song?.isValid }" @click.stop="onLookSongInfo()">
+      <div class="action-menu-item" :class="{ invalid: !data?.song?.isValid }" @click.stop="handleLookSongInfo()">
         <IconBase>
           <component :is="IconEnum.Info" />
         </IconBase>
         详细信息
       </div>
-      <div class="action-menu-item" @click.stop="onRemoveSong()">
+      <div class="action-menu-item" @click.stop="handleRemoveSong()">
         <IconBase>
           <component :is="IconEnum.Delete" />
         </IconBase>

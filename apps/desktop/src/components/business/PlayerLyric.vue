@@ -22,43 +22,25 @@
   const lyricsContainerStyleRef = ref<StyleValue>()
   const lyricsLinesRef = ref<ILyricLine[]>([])
   const currentLyricIndexRef = ref(-1)
-  // const targetPositionRef = ref(0)
   const [itemRefs, setRefs] = useRefs<HTMLDivElement>()
   const resizeObserverRef = ref<ResizeObserver>()
 
-  const onLoadExternalLyrics = () => {
+  function onLoadExternalLyrics() {
     emit('load', props.song)
   }
 
-  const onSeekToLyric = (time: number) => {
+  function onSeekToLyric(time: number) {
     emit('seek', time)
   }
 
-  const calcLyricsContainer = () => {
+  function calcLyricsContainer() {
     const box = lyricsContainerRef.value
     if (!box) return
-    // const currentIndex = currentLyricIndexRef.value
-    // if (currentIndex < 0) {
-    //   targetPositionRef.value = 0
-    //   return
-    // } else {
-    //   let targetPosition = 0
-    //   for (let index = 0; index < itemRefs.length; index++) {
-    //     if (currentIndex > index) {
-    //       const item = itemRefs[index]
-    //       const itemRect = item.getBoundingClientRect()
-    //       targetPosition += itemRect.height
-    //     } else {
-    //       break
-    //     }
-    //   }
-    //   targetPositionRef.value = targetPosition
-    // }
     const rect = box.getBoundingClientRect()
     lyricsContainerRectRef.value = rect
   }
 
-  const parseLyrics = () => {
+  function parseLyrics() {
     if (props.song?.lyrics) {
       lyricsLinesRef.value = LyricParser.parseLRC(props.song.lyrics)
     } else {
@@ -66,13 +48,13 @@
     }
   }
 
-  const getLyricOpacity = (index: number) => {
+  function getLyricOpacity(index: number) {
     if (index === currentLyricIndexRef.value) return 1
     if (Math.abs(index - currentLyricIndexRef.value) <= 1) return 1
     return 0.6
   }
 
-  const scrollToCurrentLyric = () => {
+  function scrollToCurrentLyric() {
     if (lyricsLinesRef.value.length === 0) return
     if (!lyricsContainerRectRef.value) return
     if (itemRefs?.length === 0) return
@@ -94,7 +76,6 @@
     const currentItemRect = itemRefs[currentIndex].getBoundingClientRect()
     const scrollY = lyricsContainerRectRef.value.height / 2 - targetPosition - currentItemRect.height / 2
     lyricsContainerStyleRef.value = { transition: 'transform .3s ease', transform: `translateY(${scrollY}px)` }
-    // targetPositionRef.value += currentItemRect.height
   }
 
   watchEffect(
@@ -131,7 +112,6 @@
         parseLyrics()
         // 重置歌词位置
         currentLyricIndexRef.value = -1
-        // targetPositionRef.value = 0
         const scrollY = (lyricsContainerRectRef.value?.height || 0) / 2 || 240
         lyricsContainerStyleRef.value = { transform: `translateY(${scrollY}px)` }
       }

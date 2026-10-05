@@ -17,7 +17,7 @@
   const props = defineProps<Props>()
 
   const storeManager = getStoreManager()
-  const playerStore = storeManager.playerStore
+  const { playerStore } = storeManager
 
   const rootRef = ref<HTMLElement>()
   defineExpose({
@@ -35,7 +35,7 @@
   const playSong = inject('play-song') as (id: string, listKey: string) => void
   const togglePlay = inject('toggle-play') as (listKey: string) => void
 
-  const onOpenActionMenu = (e: MouseEvent) => {
+  function onOpenActionMenu(e: MouseEvent) {
     const rect = (e.currentTarget as HTMLElement).getBoundingClientRect()
     const windowHeight = window.innerHeight
     const windowWidth = window.innerWidth
@@ -54,7 +54,7 @@
     playerStore.panel = { type: PanelType.SongAction, data: { song: props.song, listKey: props.listKey, style } }
   }
 
-  const onPlay = () => {
+  function onPlay() {
     if (!props.song?.isValid) return
     if (isCurPlaying.value) {
       togglePlay(props.listKey)
@@ -63,7 +63,7 @@
     }
   }
 
-  const formatDuration = (seconds: number) => {
+  function formatDuration(seconds: number) {
     if (!seconds || seconds <= 0) return '--:--'
     const mins = Math.floor(seconds / 60)
     const secs = Math.floor(seconds % 60)
@@ -132,6 +132,9 @@
     cursor: pointer;
     transition: background-color 0.2s;
     border-radius: 6px;
+    // v3 性能优化：视口外条目跳过渲染，大曲库下滚动不掉帧
+    content-visibility: auto;
+    contain-intrinsic-size: auto 61px;
 
     &:hover {
       background: var(--item-hover-bg);

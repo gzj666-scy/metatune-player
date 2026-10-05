@@ -1,9 +1,13 @@
-import { usePlayerStore, SortTypeItems, mergeSong, DefaultKey, DefaultVolume, PlayMode, defaultState, defaultSettings } from '@metatune/common'
+import { SortTypeItems, mergeSong, DefaultKey } from '@metatune/common'
+import { defaultState, defaultSettings, usePlayerStore } from '@/store'
 import type { ISong, IPlaylist, IAppSettings, IPlaylistItem, IPlaybackState } from '@metatune/common'
 import { toRaw } from 'vue'
 
 export class StoreManager {
   private _playerStore: ReturnType<typeof usePlayerStore>
+  /** v3：保存防抖句柄（500ms 合并高频写盘） */
+  private _saveTimer: number | undefined = undefined
+  private _saveDebounceMs = 500
 
   constructor() {
     this._playerStore = usePlayerStore()
@@ -13,7 +17,10 @@ export class StoreManager {
     return this._playerStore
   }
 
-  public initData(songs: ISong[], player: { playlists: IPlaylist; settings: IAppSettings; state: IPlaybackState; songDirs: string[] } | null) {
+  public initData(
+    songs: ISong[],
+    player: { songDirs: string[]; playlists: IPlaylist; settings: IAppSettings; state: IPlaybackState } | null
+  ) {
     if (songs?.length > 0) this._playerStore.songs = songs
     if (player?.playlists) this._playerStore.playlists = player.playlists
     if (player?.settings) this._playerStore.settings = { ...this._playerStore.settings, ...player.settings }
@@ -21,7 +28,13 @@ export class StoreManager {
       if (player?.settings?.setupResume) {
         this._playerStore.currentState = { ...player.state, isPlaying: false }
       } else {
-        this._playerStore.currentState = { ...player.state, currentListId: DefaultKey.Local, currentSongId: '', currentTime: 0, isPlaying: false }
+        this._playerStore.currentState = {
+          ...defaultState,
+          currentListId: DefaultKey.Local,
+          currentSongId: '',
+          currentTime: 0,
+          isPlaying: false,
+        }
       }
     }
     if (player?.songDirs && player.songDirs.length > 0) this._playerStore.songDirs = player.songDirs
@@ -37,16 +50,7 @@ export class StoreManager {
     this._playerStore.songs = [...newSongs]
 
     // 本地列表也当做一种特殊歌单处理
-    if (this._playerStore.playlists[DefaultKey.Local]) {
-      this._playerStore.playlists[DefaultKey.Local].songIds = newSongIds
-    } else {
-      this._playerStore.playlists[DefaultKey.Local] = {
-        name: '本地列表',
-        songIds: newSongIds,
-        createTime: Date.now() + '',
-        sortType: SortTypeItems[0].value,
-      }
-    }
+    this.ensureDefaultPlaylists(newSongIds)
 
     // 处理歌单里一些id变了，但路径没变的
     if (Object.keys(idMap).length > 0 && this._playerStore.currentPlaylists.length > 0) {
@@ -62,17 +66,30 @@ export class StoreManager {
       }
     }
 
-    const currentSongId = this._playerStore.currentState.currentSongId
-    if (currentSongId) {
-      if (idMap[currentSongId]) {
-        this._playerStore.currentState.currentSongId = idMap[currentSongId]
-      }
+    const { currentSongId } = this._playerStore.currentState
+    if (currentSongId && idMap[currentSongId]) {
+      this._playerStore.currentState.currentSongId = idMap[currentSongId]
     }
 
-    window.electronAPI.setLocalListCache(newSongs)
+    window.electronAPI.setSongsCache(newSongs)
     this.savePlayCache()
   }
 
+  /** 确保 local / favorite 默认歌单存在（v3 抽取，消除三处重复初始化） */
+  private ensureDefaultPlaylists(localSongIds: string[]) {
+    if (this._playerStore.playlists[DefaultKey.Local]) {
+      this._playerStore.playlists[DefaultKey.Local].songIds = localSongIds
+    } else {
+      this._playerStore.playlists[DefaultKey.Local] = {
+        name: '本地列表',
+        songIds: localSongIds,
+        createTime: Date.now() + '',
+        sortType: SortTypeItems[0].value,
+      }
+    }
+  }
+
+  /** 全量重建歌曲列表（保留无效歌曲标记） */
   public refreshSongs(songs: ISong[]) {
     if (songs.length <= 0) return false
     const newSongs = songs
@@ -82,29 +99,62 @@ export class StoreManager {
     newSongs.push(...invalids)
     const newSongIds = newSongs.map(v => v.uid)
     this._playerStore.songs = [...newSongs]
-    // 本地列表也当做一种特殊歌单处理
-    if (this._playerStore.playlists[DefaultKey.Local]) {
-      this._playerStore.playlists[DefaultKey.Local].songIds = newSongIds
-    } else {
-      this._playerStore.playlists[DefaultKey.Local] = {
-        name: '本地列表',
-        songIds: newSongIds,
-        createTime: Date.now() + '',
-        sortType: SortTypeItems[0].value,
-      }
-    }
+    this.ensureDefaultPlaylists(newSongIds)
 
     let reset = false
-    const currentSongId = this._playerStore.currentState.currentSongId
+    const { currentSongId } = this._playerStore.currentState
     if (!songs.find(w => currentSongId === w.uid)) {
       this._playerStore.currentState.currentSongId = ''
       this._playerStore.currentState.currentTime = 0
       reset = true
     }
 
-    window.electronAPI.setLocalListCache(newSongs)
+    window.electronAPI.setSongsCache(newSongs)
     this.savePlayCache()
     return reset
+  }
+
+  /** v3 增量刷新：合并"新增 + 变更重解析 + 移除失效"三种结果 */
+  public applyScanResult(newSongs: ISong[], changedSongs: ISong[], removedPaths: string[]) {
+    let allSongs = toRaw(this._playerStore.songs)
+
+    // 1. 移除磁盘上已不存在的路径对应歌曲
+    if (removedPaths.length > 0) {
+      const removedSet = new Set(removedPaths)
+      const removedCurrent = allSongs.find(v => removedSet.has(v.filePath) && v.uid === this._playerStore.currentState.currentSongId)
+      allSongs = allSongs.filter(v => !removedSet.has(v.filePath))
+      if (removedCurrent) {
+        this._playerStore.currentState.currentSongId = ''
+        this._playerStore.currentState.currentTime = 0
+      }
+    }
+
+    // 2. 合并新增与变更（mergeSong 内部处理 uid 变更的 idMap）
+    const parsed = [...newSongs, ...changedSongs]
+    if (parsed.length > 0) {
+      const { target, idMap } = mergeSong(allSongs, parsed)
+      allSongs = target
+      const { currentSongId } = this._playerStore.currentState
+      if (currentSongId && idMap[currentSongId]) {
+        this._playerStore.currentState.currentSongId = idMap[currentSongId]
+      }
+    }
+
+    // 3. 写回
+    this._playerStore.songs = [...allSongs]
+    const localPlaylist = this._playerStore.playlists[DefaultKey.Local]
+    if (localPlaylist) {
+      localPlaylist.songIds = allSongs.map(v => v.uid)
+    }
+
+    window.electronAPI.setSongsCache(allSongs)
+    this.savePlayCache()
+
+    return {
+      added: newSongs.length,
+      updated: changedSongs.length,
+      removed: removedPaths.length,
+    }
   }
 
   public addSongDirs(dirs: string[]) {
@@ -119,7 +169,7 @@ export class StoreManager {
     if ([DefaultKey.Local, DefaultKey.Artist].includes(listKey)) {
       const newSongs = toRaw(this._playerStore.songs).filter(v => !songs.includes(v.uid))
       this._playerStore.songs = newSongs
-      window.electronAPI.setLocalListCache(newSongs)
+      window.electronAPI.setSongsCache(newSongs)
 
       for (const key in this._playerStore.playlists) {
         const playlist = this._playerStore.playlists[key]
@@ -212,7 +262,7 @@ export class StoreManager {
       }
     }
 
-    window.electronAPI.setLocalListCache(newSongs)
+    window.electronAPI.setSongsCache(newSongs)
     this.savePlayCache()
   }
 
@@ -223,13 +273,57 @@ export class StoreManager {
     window.electronAPI.clearInvalidAlbumArt(set)
   }
 
+  /** 防抖保存（v3：高频操作如批量导入、拖动进度时合并写盘） */
   public savePlayCache() {
-    window.electronAPI.setPlayerCache({
-      songDirs: toRaw(this._playerStore.songDirs),
-      playlists: toRaw(this._playerStore.playlists),
-      settings: toRaw(this._playerStore.settings),
-      state: toRaw(this._playerStore.currentState),
-    })
+    if (this._saveTimer) clearTimeout(this._saveTimer)
+    this._saveTimer = window.setTimeout(() => {
+      this._saveTimer = undefined
+      this.savePlayCacheNow()
+    }, this._saveDebounceMs)
+  }
+
+  /** 写回单首歌的响度测量结果（增益 / 实测 LUFS / true peak）并防抖持久化 */
+  public updateSongLoudness(song: ISong, gain: number, lufs: number, truePeak: number) {
+    // 直接改响应式 store 元素：_currentSong / 弹窗 / 列表都引用同一对象，改动即触发视图更新
+    const target = this._playerStore.songs.find(v => v.uid === song.uid)
+    if (target) {
+      target.gain = gain
+      target.lufs = lufs
+      target.truePeak = truePeak
+    }
+    this.persistSongsCache()
+  }
+
+  private _songsSaveTimer: number | undefined = undefined
+  /** 防抖持久化歌曲列表（批量测量 / 扫描时合并写盘，避免高频 IPC） */
+  public persistSongsCache() {
+    if (this._songsSaveTimer) clearTimeout(this._songsSaveTimer)
+    this._songsSaveTimer = window.setTimeout(() => {
+      this._songsSaveTimer = undefined
+      window.electronAPI.setSongsCache(toRaw(this._playerStore.songs))
+    }, 400)
+  }
+
+  /** 立即保存（退出前 flush 用）。必须 await：写盘是异步 IPC，未 await 会在 app.quit() 前被中断 */
+  public async savePlayCacheNow() {
+    if (this._saveTimer) {
+      clearTimeout(this._saveTimer)
+      this._saveTimer = undefined
+    }
+    if (this._songsSaveTimer) {
+      clearTimeout(this._songsSaveTimer)
+      this._songsSaveTimer = undefined
+    }
+    // 播放器状态（歌单/设置/播放进度等）与歌曲列表（含响度增益）一并落盘，再回发 APP_FLUSHED
+    await Promise.all([
+      window.electronAPI.setPlayerCache({
+        songDirs: toRaw(this._playerStore.songDirs),
+        playlists: toRaw(this._playerStore.playlists),
+        settings: toRaw(this._playerStore.settings),
+        state: toRaw(this._playerStore.currentState),
+      }),
+      window.electronAPI.setSongsCache(toRaw(this._playerStore.songs)),
+    ])
   }
 
   public resetStore() {
@@ -237,6 +331,7 @@ export class StoreManager {
     this._playerStore.playlists = {}
     this._playerStore.currentState = defaultState
     this._playerStore.settings = defaultSettings
+    this._playerStore.songDirs = []
   }
 
   public getPlaylistByName(name: string): IPlaylistItem | null {

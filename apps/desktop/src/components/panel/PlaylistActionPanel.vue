@@ -1,7 +1,7 @@
 <script setup lang="ts">
   import { IconEnum } from '@metatune/common'
   import type { IPanelProps } from '@metatune/common'
-  import { computed, StyleValue, Teleport } from 'vue'
+  import { computed, StyleValue } from 'vue'
   import IconBase from '@/components/base/IconBase.vue'
   import { getStoreManager } from '@/utils/storeManager'
   import { Modal } from '@/utils/modal'
@@ -13,25 +13,25 @@
 
   const playManager = getPlayManager()
   const storeManager = getStoreManager()
-  const playerStore = storeManager.playerStore
+  const { playerStore } = storeManager
 
   const actionStyle = computed(() => props.data?.style)
 
-  const onClose = () => {
+  function handleClose() {
     props.closeCallBack?.()
     playerStore.panel = { type: '', data: null }
   }
 
-  const onPlay = () => {
+  function handlePlay() {
     if (props.data?.id) {
-      onClose()
+      handleClose()
       playManager.playPlaylist(props.data.id)
     }
   }
 
-  const onRename = async () => {
+  async function handleRename() {
     if (props.data?.id) {
-      onClose()
+      handleClose()
       const playlist = playerStore.playlists[props.data.id]
       const name = await Modal.prompt('重命名歌单', '', playlist.name)
       if (name && name.trim()) {
@@ -40,9 +40,9 @@
     }
   }
 
-  const onDelete = async () => {
+  async function handleDelete() {
     if (props.data?.id) {
-      onClose()
+      handleClose()
       const playlist = playerStore.playlists[props.data.id]
       const result = await Modal.confirm(`确定要删除歌单"${playlist.name}"吗？`, '确认删除')
       if (result) {
@@ -54,20 +54,20 @@
 
 <template>
   <Teleport to="body">
-    <div class="action-menu" :style="actionStyle" v-click-outside="onClose">
-      <div class="action-menu-item" @click.stop="onPlay()">
+    <div class="action-menu" :style="actionStyle" v-click-outside="handleClose">
+      <div class="action-menu-item" @click.stop="handlePlay()">
         <IconBase>
           <component :is="IconEnum.Play" />
         </IconBase>
         播放
       </div>
-      <div class="action-menu-item" @click.stop="onRename()">
+      <div class="action-menu-item" @click.stop="handleRename()">
         <IconBase>
           <component :is="IconEnum.PencilLine" />
         </IconBase>
         重命名
       </div>
-      <div class="action-menu-item" @click.stop="onDelete()">
+      <div class="action-menu-item" @click.stop="handleDelete()">
         <IconBase>
           <component :is="IconEnum.Delete" />
         </IconBase>

@@ -24,13 +24,13 @@
   const boxRef = ref<HTMLDivElement>()
   const ballRef = ref<HTMLDivElement>()
 
-  const onClick = (e: PointerEvent) => {
+  function handleClick(e: PointerEvent) {
     valueRef.value = !valueRef.value
     emit('change', valueRef.value, e)
     emit('click', valueRef.value, e)
   }
 
-  const calcStyle = (checked: boolean) => {
+  function calcStyle(checked: boolean) {
     const box = boxRef.value
     const ball = ballRef.value
     if (!box || !ball) return
@@ -75,7 +75,7 @@
 </script>
 
 <template>
-  <div class="scy-switch" :class="clsx(valueRef ? 'checked' : 'unchecked', { disabled: props.disabled })" @click="onClick" ref="boxRef">
+  <div class="scy-switch" :class="clsx(valueRef ? 'checked' : 'unchecked', { disabled: props.disabled })" @click="handleClick" ref="boxRef">
     <div class="scy-switch-bar" :style="styleRef" ref="ballRef"></div>
   </div>
 </template>

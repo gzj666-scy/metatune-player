@@ -178,11 +178,11 @@ importers:
         specifier: ^0.29.1
         version: 0.29.1
 
-  apps/desktop-v3:
+  apps/desktop:
     dependencies:
-      '@metatune/common-v3':
+      '@metatune/common':
         specifier: workspace:*
-        version: link:../../packages/common-v3
+        version: link:../../packages/common
       cors:
         specifier: ^2.8.6
         version: 2.8.6
@@ -275,7 +275,7 @@ importers:
         specifier: 'catalog:'
         version: 3.5.32(typescript@6.0.2)
 
-  packages/common-v3:
+  packages/common:
     dependencies:
       '@vue/reactivity':
         specifier: 'catalog:'

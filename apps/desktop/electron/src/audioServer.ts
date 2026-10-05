@@ -1,161 +1,127 @@
+import { createServer, type IncomingMessage, type ServerResponse } from 'http'
+import { createReadStream, statSync } from 'fs'
+import { randomUUID } from 'crypto'
+import { extname, isAbsolute } from 'path'
+import { AudioFormat } from './parseMetadata'
+import { getMimeType } from './utils'
 
-import express from 'express';
-import { createServer } from 'http';
-import { statSync, createReadStream } from 'fs';
-import { extname } from 'path';
-import cors from 'cors';
-
+/**
+ * 音频流服务：本地 HTTP 服务 + Range 支持，供渲染层 <audio> 播放。
+ * 安全策略（v3）：
+ *  - 启动时生成随机 token，所有请求必须携带 ?t=<token>，防止本机其他进程/网页枚举读取
+ *  - 扩展名白名单校验，仅允许音频格式
+ *  - 仅监听 127.0.0.1
+ */
 export class AudioStreamServer {
-    private app = express();
-    private server: ReturnType<typeof createServer> | null = null;
-    private port = 1688;
-    private baseUrl: string;
-    // private cache = new Map<string, { buffer: Buffer; mime: string }>();
+  private server: ReturnType<typeof createServer> | null = null
+  private port = 1688
+  private token = randomUUID().replace(/-/g, '')
 
-    constructor() {
-        this.baseUrl = `http://localhost:${this.port}`;
-        this.setupServer();
+  get baseUrl(): string {
+    return `http://127.0.0.1:${this.port}`
+  }
+
+  /** 生成带鉴权 token 的流地址 */
+  getStreamUrl(filePath: string): string {
+    return `${this.baseUrl}/stream?t=${this.token}&p=${encodeURIComponent(filePath)}`
+  }
+
+  async start(): Promise<void> {
+    return new Promise((resolve, reject) => {
+      const tryListen = (port: number): void => {
+        const server = createServer((req, res) => this.handle(req, res))
+        server.once('error', (err: NodeJS.ErrnoException) => {
+          if (err.code === 'EADDRINUSE') {
+            // 端口被占则递增重试，成功后同步实际端口到 baseUrl
+            tryListen(port + 1)
+          } else {
+            reject(err)
+          }
+        })
+        server.listen(port, '127.0.0.1', () => {
+          this.port = port
+          this.server = server
+          console.log('音频流服务已启动:', this.baseUrl)
+          resolve()
+        })
+      }
+      tryListen(this.port)
+    })
+  }
+
+  stop(): void {
+    this.server?.close()
+    this.server = null
+  }
+
+  private handle(req: IncomingMessage, res: ServerResponse): void {
+    try {
+      // Private Network Access（PNA）预检：渲染进程以 http(s):// 源跨到 127.0.0.1 时，
+      // Chromium 会先发 OPTIONS 带 Access-Control-Request-Private-Network。
+      // Web Audio 模式（html5:false）下 Howler 用 XHR 加载流，XHR 受 PNA 约束；
+      // 而 <audio> 媒体加载豁免 PNA。必须应答预检，否则 XHR 永久挂起（既不 load 也不 error）。
+      if (req.method === 'OPTIONS') {
+        res.writeHead(204, {
+          'Access-Control-Allow-Origin': '*',
+          'Access-Control-Allow-Methods': 'GET, OPTIONS',
+          'Access-Control-Allow-Headers': '*',
+          'Access-Control-Allow-Private-Network': 'true',
+        })
+        res.end()
+        return
+      }
+
+      const url = new URL(req.url || '/', this.baseUrl)
+      if (url.pathname !== '/stream') {
+        res.writeHead(404).end()
+        return
+      }
+      if (url.searchParams.get('t') !== this.token) {
+        res.writeHead(403).end('Forbidden')
+        return
+      }
+      const filePath = decodeURIComponent(url.searchParams.get('p') || '')
+      if (!isAbsolute(filePath) || !AudioFormat.includes(extname(filePath).slice(1).toLowerCase())) {
+        res.writeHead(400).end('Bad Request')
+        return
+      }
+
+      const stats = statSync(filePath)
+      if (!stats.isFile()) {
+        res.writeHead(403).end('Forbidden')
+        return
+      }
+
+      const headers: Record<string, string | number> = {
+        'Content-Type': getMimeType(filePath),
+        'Accept-Ranges': 'bytes',
+        // 已有 token 鉴权，此处放开 CORS 以便 <audio crossorigin> 取流用于可视化分析
+        'Access-Control-Allow-Origin': '*',
+        // PNA 实际请求也必须带此头，Chromium 才放行跨到私有地址的 XHR
+        'Access-Control-Allow-Private-Network': 'true',
+      }
+
+      const { range } = req.headers
+      if (range) {
+        const match = /bytes=(\d*)-(\d*)/.exec(range)
+        let start = match?.[1] ? parseInt(match[1], 10) : 0
+        let end = match?.[2] ? parseInt(match[2], 10) : stats.size - 1
+        start = Math.max(0, Math.min(start, stats.size - 1))
+        end = Math.max(start, Math.min(end, stats.size - 1))
+        res.writeHead(206, {
+          ...headers,
+          'Content-Range': `bytes ${start}-${end}/${stats.size}`,
+          'Content-Length': end - start + 1,
+        })
+        createReadStream(filePath, { start, end }).pipe(res)
+      } else {
+        res.writeHead(200, { ...headers, 'Content-Length': stats.size })
+        createReadStream(filePath).pipe(res)
+      }
+    } catch (error) {
+      console.error('音频流出错:', error)
+      if (!res.headersSent) res.writeHead(500).end('Internal Server Error')
+      else res.end()
     }
-
-    private setupServer() {
-        this.app.use(cors());
-
-        // 音频流端点
-        this.app.get('/stream/:id', async (req, res) => {
-            try {
-                const filePath = decodeURIComponent(req.params.id);
-                const range = req.headers.range;
-
-                if (!filePath) {
-                    res.status(400).send('No file path provided');
-                    return;
-                }
-
-                const stats = statSync(filePath);
-                const fileSize = stats.size;
-                const mimeType = this.getMimeType(filePath);
-
-                if (range) {
-                    // 支持范围请求（进度控制）
-                    const parts = range.replace(/bytes=/, '').split('-');
-                    const start = parseInt(parts[0], 10);
-                    const end = parts[1] ? parseInt(parts[1], 10) : fileSize - 1;
-                    const chunksize = (end - start) + 1;
-
-                    res.writeHead(206, {
-                        'Content-Range': `bytes ${start}-${end}/${fileSize}`,
-                        'Accept-Ranges': 'bytes',
-                        'Content-Length': chunksize,
-                        'Content-Type': mimeType,
-                        'Cache-Control': 'no-cache',
-                    });
-
-                    const stream = createReadStream(filePath, { start, end });
-                    stream.pipe(res);
-                } else {
-                    // 完整文件请求
-                    res.writeHead(200, {
-                        'Content-Length': fileSize,
-                        'Content-Type': mimeType,
-                        'Cache-Control': 'no-cache',
-                    });
-
-                    createReadStream(filePath).pipe(res);
-                }
-            } catch (error) {
-                console.error('Stream error:', error);
-                res.status(500).send('Internal server error');
-            }
-        });
-    }
-
-    private getMimeType(filePath: string): string {
-        const ext = extname(filePath).toLowerCase();
-        const mimeMap: Record<string, string> = {
-            // 音频类
-            '.mp3': 'audio/mpeg',
-            '.m4a': 'audio/mp4',
-            '.flac': 'audio/flac',
-            '.aac': 'audio/aac',
-            '.wav': 'audio/wav',
-            '.ape': 'audio/x-ape',
-            '.ogg': 'audio/ogg',
-            '.opus': 'audio/opus',
-            '.webm': 'audio/webm',
-            '.wma': 'audio/x-ms-wma',
-            // 图片类
-            '.jpg': 'image/jpeg',
-            '.jpeg': 'image/jpeg',
-            '.png': 'image/png',
-            '.webp': 'image/webp',
-            '.gif': 'image/gif',
-            '.svg': 'image/svg+xml'
-        };
-        return mimeMap[ext] || 'application/octet-stream';
-    }
-
-    public getStreamUrl(filePath: string): string {
-        return `${this.baseUrl}/stream/${encodeURIComponent(filePath)}`;
-    }
-
-    public start(): Promise<void> {
-        return new Promise((resolve) => {
-            this.server = createServer(this.app);
-
-            const startServer = (port: number) => {
-                return new Promise((resolve, reject) => {
-                    if (this.server) {
-                        this.server.close()
-                    }
-
-                    this.server!.on('error', (err: any) => {
-                        if (err.code === 'EADDRINUSE') {
-                            console.log(`Port ${port} is busy, trying another port...`)
-                            resolve(null)
-                        } else {
-                            reject(err)
-                        }
-                    })
-
-                    this.server!.listen(port, () => {
-                        console.log(`Audio server running at ${this.baseUrl}`);
-                        resolve(port);
-                    })
-                })
-            }
-
-            const checkServer = () => {
-                return new Promise((resolve, reject) => {
-                    const fun = (port: number) => {
-                        startServer(port).then(usedPort => {
-                            if (usedPort) {
-                                resolve(usedPort)
-                            } else {
-                                // 如果指定端口被占用，尝试新端口
-                                fun(port + 1)
-                            }
-                        }).catch(reject)
-                    }
-                    fun(this.port)
-                })
-            }
-
-            const tryStartServer = async () => {
-                try {
-                    await checkServer()
-                } catch (err) {
-                    console.error('Failed to start server:', err)
-                    process.exit(1)
-                }
-            }
-
-            tryStartServer()
-        });
-    }
-
-    public stop() {
-        if (this.server) {
-            this.server.close();
-        }
-    }
+  }
 }

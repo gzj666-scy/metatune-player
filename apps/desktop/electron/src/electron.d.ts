@@ -1,32 +1,45 @@
-import type { ISong, IPlaylist, IAppSettings, IPlaybackState } from '@metatune/common/types'
 import type Electron from 'electron'
+import type { ISong, IPlaylist, IAppSettings, IPlaybackState, IImportResult, IScanResult, OnProgress } from '@metatune/common/types'
+import type { IPlayerData } from './appCache'
+import type { IImportProgress, IUpdateStatus, IUpdateProgress } from './preload'
+
+type Unsubscribe = () => void
+
 export {}
 
 declare global {
   interface Window {
     electronAPI: {
-      getAppInfo: () => Promise<any>
+      getAppInfo: () => Promise<{ name: string; version: string; platform: string; isPortable: boolean }>
+      setWindowTitle: (title: string) => Promise<void>
 
-      minimizeWindow: () => void
-      maximizeWindow: () => void
-      closeWindow: (quit: boolean) => void
+      minimizeWindow: () => Promise<void>
+      maximizeWindow: () => Promise<void>
+      closeWindow: (quit: boolean) => Promise<void>
+
       openFileDialog: (options?: Omit<Electron.OpenDialogOptions, 'properties' | 'filters'>) => Promise<Electron.OpenDialogReturnValue>
       openDirectoryDialog: () => Promise<Electron.OpenDialogReturnValue>
-      parseAudioMetadata: (filePaths: string[]) => Promise<ISong[]>
+
+      importAudio: (paths: string[], onProgress?: OnProgress) => Promise<IImportResult>
+      scanAudioDirs: (dirs: string[], knownSongs: ISong[]) => Promise<IScanResult>
       getAudioStreamUrl: (filePath: string) => Promise<string>
-      // getStore: (key?: string) => Promise<any>;
-      // setStore: (data: { key: string, data: any }) => Promise<boolean>;
+      readAudioBuffer: (filePath: string) => Promise<Uint8Array | null>
 
-      getLocalListCache: () => Promise<ISong[]>
-      setLocalListCache: (data: ISong[]) => Promise<boolean>
-      getPlayerCache: () => Promise<{ songDirs: string[]; playlists: IPlaylist; settings: IAppSettings; state: IPlaybackState } | null>
-      setPlayerCache: (data: { songDirs: string[]; playlists: IPlaylist; settings: IAppSettings; state: IPlaybackState }) => Promise<boolean>
+      getSongsCache: () => Promise<ISong[]>
+      setSongsCache: (data: ISong[]) => Promise<void>
+      getPlayerCache: () => Promise<IPlayerData | null>
+      setPlayerCache: (data: { songDirs: string[]; playlists: IPlaylist; settings: IAppSettings; state: IPlaybackState }) => Promise<void>
       resetAllCache: () => Promise<boolean>
-      setWindowTitle: (title: string) => void
-      clearInvalidAlbumArt: (albumArts: Set<string | undefined>) => Promise<boolean>
+      getCachePath: () => Promise<string>
+      clearInvalidAlbumArt: (albumArts: Set<string | undefined>) => Promise<void>
 
-      send: (channel: string, data?: any) => void
-      on: (channel: string, func: (...args: any[]) => void) => () => void
+      checkUpdate: (auto: boolean) => void
+      downloadUpdate: () => void
+      installUpdate: () => void
+      onUpdateStatus: (callback: (data: IUpdateStatus) => void) => Unsubscribe
+      onUpdateProgress: (callback: (data: IUpdateProgress) => void) => Unsubscribe
+
+      onFlushRequest: (callback: () => void | Promise<void>) => Unsubscribe
     }
   }
 }

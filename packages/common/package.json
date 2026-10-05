@@ -10,7 +10,6 @@
   },
   "dependencies": {
     "@vue/reactivity": "catalog:",
-    "pinia": "catalog:",
     "vue": "catalog:"
   },
   "devDependencies": {}

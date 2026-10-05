@@ -2,12 +2,11 @@ import { IArtist, ISong } from '../types'
 import { SortTypeItems, SortTypeItemsIds } from './constant'
 import { isReactive, isRef, toRaw } from 'vue'
 
-export * from './constant'
-// export * from './audioParser';
+export * from './clsx'
 export * from './colorUtils'
+export * from './constant'
 export * from './lyricParser'
 export * from './svgIcons'
-export * from './clsx'
 
 // 点击外部关闭菜单的指令
 export const vClickOutside = {
@@ -32,7 +31,7 @@ export const vClickOutside = {
  * @param source 原始响应式数据
  * @returns 纯 JS 对象/数组
  */
-export const deepToRaw = <T>(source: T): T => {
+export function deepToRaw<T>(source: T): T {
   if (source === null || typeof source !== 'object') return source
 
   // 1️⃣ 剥离当前层的 ref/reactive 包装
@@ -68,13 +67,26 @@ export const deepToRaw = <T>(source: T): T => {
 }
 
 /**
+ * 列表渲染专用：浅层去响应 + 复制（只拷贝顶层 key，不递归嵌套对象）。
+ * 对比 deepToRaw：
+ *  - 给 sortSong 提供「可原地排序、但绝不碰 store 响应式源」的独立副本；
+ *  - 每次重算产出「新对象新身份」，让 v-memo 能按身份刷新行；
+ *  - 不递归深拷嵌套字段，省去大曲库重算时的递归/分配开销。
+ * 注意：直接展开响应式 Proxy（{...s}）会经 Proxy 的 get 陷阱读全部顶层属性，
+ * 因此仍会订阅每首歌的全部顶层字段 —— 任一字段变化都触发列表重算刷新，行为不变。
+ */
+export function shallowToRaw<T extends object>(source: T[]): T[] {
+  return source.map(s => ({ ...s }))
+}
+
+/**
  * 获取字符的排序优先级（数字越小越靠前，按首字符）
  * 1: 英文字母 (A-Z)
  * 2: 中文（简体+繁体）
  * 3: 数字 (0-9)
  * 4: 其他所有字符（特殊符号/其他语言）
  */
-export const getCharPriority = (char: string): number => {
+export function getCharPriority(char: string): number {
   if (!char) return 4
 
   const firstChar = char.charAt(0)
@@ -108,7 +120,7 @@ export const getCharPriority = (char: string): number => {
  * @param char 单个字符
  * @returns boolean
  */
-export const isChineseChar = (char: string): boolean => {
+export function isChineseChar(char: string): boolean {
   if (!char) return false
 
   const code = char.charCodeAt(0)
@@ -170,9 +182,36 @@ const anchorChars = [
   '帀', // Z
 ]
 // 2. 对应的字母标签数组（确保索引一一对应）
-const alphabet = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z']
+const alphabet = [
+  'A',
+  'B',
+  'C',
+  'D',
+  'E',
+  'F',
+  'G',
+  'H',
+  'I',
+  'J',
+  'K',
+  'L',
+  'M',
+  'N',
+  'O',
+  'P',
+  'Q',
+  'R',
+  'S',
+  'T',
+  'U',
+  'V',
+  'W',
+  'X',
+  'Y',
+  'Z',
+]
 /** 获取字符串的首字母（支持中文、英文、数字、特殊字符） */
-export const getFirstLetter = (str: string, isValid: boolean): string => {
+export function getFirstLetter(str: string, isValid: boolean): string {
   if (!str || !isValid) return '#'
   const firstChar = str.charAt(0)
   if (/[a-zA-Z]/.test(firstChar)) return firstChar.toUpperCase()
@@ -197,38 +236,6 @@ export const getFirstLetter = (str: string, isValid: boolean): string => {
   return '#'
 }
 
-/**
- * 获取字符串的拼音首字母排序键
- * 英文：转小写
- * 中文：取首字符拼音首字母大写 + 原字符串
- * 其他：保留原样
- */
-const getPinyinSortKey = (str: string): string => {
-  if (!str) return str
-
-  const text = str.trim()
-  if (!text) return text
-
-  const first = text.charAt(0)
-
-  // 英文：直接小写
-  if (/[a-zA-Z]/.test(first)) {
-    return text.toLowerCase()
-  }
-
-  // 中文：取首字符拼音首字母 + 原字符串
-  if (isChineseChar(first)) {
-    const pinyin = getFirstLetter(first, true)
-    if (alphabet.includes(pinyin)) {
-      // 用拼音 + 原字符串，保证同拼音时按原序
-      return pinyin + text
-    }
-  }
-
-  // 其他用原字符
-  return text
-}
-
 const zhCollator = new Intl.Collator('zh-CN', {
   collation: 'pinyin',
   sensitivity: 'case', // 严格区分大小写
@@ -236,10 +243,10 @@ const zhCollator = new Intl.Collator('zh-CN', {
   numeric: true, // 数字按数值大小排序（'2' < '10'）
   ignorePunctuation: false, // 严格比较标点符号（按需改为 true）
 })
-export const sortSong = (songs: ISong[], type: SortTypeItemsIds = SortTypeItems[0].value) => {
+export function sortSong(songs: ISong[], type: SortTypeItemsIds = SortTypeItems[0].value) {
   if (type === 'addTime') {
     songs.sort((a, b) => {
-      let aValue = a.addTime || 0,
+      const aValue = a.addTime || 0,
         bValue = b.addTime || 0
       // 数字比较
       // return sortOrder.value === 'asc' ? aValue - bValue : bValue - aValue
@@ -295,7 +302,7 @@ export const sortSong = (songs: ISong[], type: SortTypeItemsIds = SortTypeItems[
     u.forEach(v => {
       v.sort((a, b) => {
         // @ts-expect-error 不需要检测
-        let aValue: string = a[type]?.trim(),
+        const aValue: string = a[type]?.trim(),
           // @ts-expect-error 不需要检测
           bValue: string = b[type]?.trim()
         // return sortOrder.value === 'asc' ? aValue.localeCompare(bValue, 'zh-CN') : bValue.localeCompare(aValue, 'zh-CN')
@@ -306,7 +313,7 @@ export const sortSong = (songs: ISong[], type: SortTypeItemsIds = SortTypeItems[
   ;[num_list, symbol_list].forEach(v => {
     v.sort((a, b) => {
       // @ts-expect-error 不需要检测
-      let aValue: string = a[type]?.trim(),
+      const aValue: string = a[type]?.trim(),
         // @ts-expect-error 不需要检测
         bValue: string = b[type]?.trim()
       // return sortOrder.value === 'asc' ? aValue.localeCompare(bValue, 'zh-CN') : bValue.localeCompare(aValue, 'zh-CN')
@@ -315,40 +322,71 @@ export const sortSong = (songs: ISong[], type: SortTypeItemsIds = SortTypeItems[
   })
   // 4️⃣ 合并排序后的各组
   let newArr: ISong[] = []
-  alphabet.forEach((v, i) => {
+  alphabet.forEach((_v, i) => {
     newArr = newArr.concat(en_list_letter[i], cn_list_letter[i])
   })
   newArr = newArr.concat(num_list, symbol_list)
 
+  // v3 修复：字母匹配阶段被遗漏的歌曲（如 isValid=false 的中文歌，getFirstLetter 返回 '#'，
+  // 落不进任何字母组）统一追加，避免从视图里消失；末尾排序会把无效歌曲排到后面
+  const kept = new Set(newArr)
+  const missed = songs.filter(v => !kept.has(v))
+  if (missed.length > 0) {
+    console.log('[sortSong] 追加被字母分组遗漏的歌曲:', missed.length)
+    newArr = newArr.concat(missed)
+  }
+
   return newArr.sort((a, b) => Number(b.isValid) - Number(a.isValid))
 }
 
-export const mergeSong = (target: ISong[], source: ISong[]) => {
-  // 若有文件路径未变，但md5变了，记录下来 {旧md5: 新md5}
+export function mergeSong(target: ISong[], source: ISong[]) {
+  // 若有文件路径未变，但uid变了，记录下来 {旧uid: 新uid}
   const idMap: Record<string, string> = {}
+  // v3 优化：用 Map 索引替代每首 findIndex，导入大曲库时 O(n²) → O(n)
+  const uidIndex = new Map<string, number>()
+  const pathIndex = new Map<string, number>()
+  target.forEach((s, i) => {
+    uidIndex.set(s.uid, i)
+    pathIndex.set(s.filePath, i)
+  })
+
   source.forEach(v => {
-    // md5 未改变，但是路径可能改变了
-    const indexMD5 = target.findIndex(s => s.uid === v.uid)
-    if (indexMD5 > -1 && v.filePath !== target[indexMD5].filePath) {
-      target[indexMD5] = v
+    // uid 未变但路径变了（文件被移动）
+    const uidIdx = uidIndex.get(v.uid)
+    if (uidIdx !== undefined && v.filePath !== target[uidIdx].filePath) {
+      pathIndex.delete(target[uidIdx].filePath)
+      target[uidIdx] = v
+      pathIndex.set(v.filePath, uidIdx)
       return
     }
 
-    // 路径未改变，但是文件 md5 可能变了
-    const indexPath = target.findIndex(s => s.filePath === v.filePath)
-    if (indexPath > -1 && v.uid !== target[indexPath].uid) {
-      idMap[target[indexPath].uid] = v.uid
-      target[indexPath] = v
+    // 路径未变但 uid 变了（文件内容更新）
+    const pathIdx = pathIndex.get(v.filePath)
+    if (pathIdx !== undefined && v.uid !== target[pathIdx].uid) {
+      idMap[target[pathIdx].uid] = v.uid
+      uidIndex.delete(target[pathIdx].uid)
+      target[pathIdx] = v
+      uidIndex.set(v.uid, pathIdx)
       return
     }
 
-    // 新增加的
-    if (indexMD5 < 0 && indexPath < 0) {
+    // 新增的
+    if (uidIdx === undefined && pathIdx === undefined) {
+      uidIndex.set(v.uid, target.length)
+      pathIndex.set(v.filePath, target.length)
       target.push(v)
     }
   })
 
   return { target, idMap }
+}
+
+/** 秒数格式化为 m:ss */
+export function formatTime(seconds: number): string {
+  if (!seconds || seconds <= 0) return '00:00'
+  const mins = Math.floor(seconds / 60)
+  const secs = Math.floor(seconds % 60)
+  return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`
 }
 
 /**
@@ -357,7 +395,7 @@ export const mergeSong = (target: ISong[], source: ISong[]) => {
  * @param decimals - 小数位数，默认 2
  * @returns 格式化后的字符串，如 "1.25 MB"
  */
-export const formatFileSize = (bytes: number, decimals = 2) => {
+export function formatFileSize(bytes: number, decimals = 2) {
   if (bytes === 0) return '0 B'
   if (!bytes || bytes < 0) return 'Invalid size'
 
@@ -390,7 +428,7 @@ export const sortArtist = <T = IArtist>(arr: T[]) => {
  * @param height 高度
  * @param radius 圆角半径（仅作用于顶部两角）
  */
-export const roundRectTopOnly = (ctx: CanvasRenderingContext2D, x: number, y: number, width: number, height: number, radius: number) => {
+export function roundRectTopOnly(ctx: CanvasRenderingContext2D, x: number, y: number, width: number, height: number, radius: number) {
   // 边界处理：半径不能超过宽度一半
   const r = Math.min(radius, width / 2)
 
@@ -426,7 +464,7 @@ export const roundRectTopOnly = (ctx: CanvasRenderingContext2D, x: number, y: nu
  * @param height 矩形高度
  * @param radius 顶部圆角半径
  */
-export const addRoundedTopSubpath = (ctx: CanvasRenderingContext2D, x: number, y: number, width: number, height: number, radius: number) => {
+export function addRoundedTopSubpath(ctx: CanvasRenderingContext2D, x: number, y: number, width: number, height: number, radius: number) {
   if (width <= 0 || height <= 0) return
 
   // 边界处理：半径不能超过宽度一半，也不能超过高度
@@ -459,7 +497,7 @@ export const addRoundedTopSubpath = (ctx: CanvasRenderingContext2D, x: number, y
 /**
  * 将 TypedArray 按隔一留一降采样为一半长度
  */
-export const downsampleHalf = <T extends Float32Array | Uint8Array>(typedArray: T, odd = false) => {
+export function downsampleHalf<T extends Float32Array | Uint8Array>(typedArray: T, odd = false) {
   const olen = typedArray.length
   const nlen = Math.floor(typedArray.length / 2)
   const st = odd ? 1 : 0
