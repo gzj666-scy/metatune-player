@@ -8,7 +8,7 @@ const { existsSync } = require('fs')
 const { join } = require('path')
 
 const mainEntry = join(__dirname, '../dist-electron/main.js')
-const devServerUrl = 'http://localhost:3000'
+const devServerUrl = 'http://127.0.0.1:5173'
 const MAX_WAIT_MS = 30000
 const started = Date.now()
 

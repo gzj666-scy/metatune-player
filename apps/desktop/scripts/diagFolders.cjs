@@ -19,7 +19,7 @@ function getJson(url) {
 
 async function main() {
   const targets = await getJson('http://127.0.0.1:9222/json')
-  const page = targets.find(t => t.type === 'page' && t.url.includes('localhost:3000'))
+  const page = targets.find(t => t.type === 'page' && t.url.includes('127.0.0.1:5173'))
   if (!page) {
     console.log(
       '未找到渲染进程页面 target，targets:',

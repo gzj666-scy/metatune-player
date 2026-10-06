@@ -64,7 +64,7 @@ export async function createWindow(onReadyToShow?: () => void): Promise<void> {
 
 /** 等待 vite dev server 就绪后再加载（concurrently 并行启动时 Electron 可能先于 server 就绪） */
 async function loadDevServer(win: BrowserWindow): Promise<void> {
-  const url = 'http://localhost:3000'
+  const url = 'http://127.0.0.1:5173'
   for (let i = 0; i < 20; i++) {
     try {
       const res = await fetch(url)

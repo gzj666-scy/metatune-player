@@ -154,7 +154,8 @@ export default defineConfig({
     },
   },
   server: {
-    port: 3000,
+    host: '127.0.0.1', // 强制 IPv4，且避开被 Windows 预留的 3000 端口（listen EACCES）
+    port: 5173,
     strictPort: true,
   },
 })
