@@ -1,6 +1,6 @@
 <script setup lang="ts">
-  import { DefaultKey, IconEnum, PanelType, SortTypeItems } from '@metatune/common'
-  import type { ISong, IImportResult, SortTypeItemsIds } from '@metatune/common'
+  import { DefaultKey, IconEnum, PanelEnum, SortTypeItems, SortTypeItemsIds } from '@metatune/common/utils'
+  import type { ISong, IImportResult } from '@metatune/common/types'
   import { ref, toRaw, watch } from 'vue'
   import { getStoreManager } from '@/utils/storeManager'
   import IconBase from '@/components/base/IconBase.vue'
@@ -160,7 +160,7 @@
         left: `${rect.left}px`,
       }
     }
-    playerStore.panel = { type: PanelType.SortMode, data: { value: props.sortType, listKey: props.listKey, style } }
+    playerStore.panel = { type: PanelEnum.SortMode, data: { value: props.sortType, listKey: props.listKey, style } }
   }
 
   function onToggleBatch(data: boolean) {

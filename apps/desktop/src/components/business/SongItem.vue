@@ -1,7 +1,7 @@
 <script setup lang="ts">
   import { computed, inject, ref } from 'vue'
-  import { IconEnum, PanelType } from '@metatune/common'
-  import type { ISong } from '@metatune/common'
+  import { IconEnum, PanelEnum } from '@metatune/common/utils'
+  import type { ISong } from '@metatune/common/types'
   import IconBase from '@/components/base/IconBase.vue'
   import { getStoreManager } from '@/utils/storeManager'
 
@@ -51,7 +51,7 @@
         right: `${windowWidth - rect.left}px`,
       }
     }
-    playerStore.panel = { type: PanelType.SongAction, data: { song: props.song, listKey: props.listKey, style } }
+    playerStore.panel = { type: PanelEnum.SongAction, data: { song: props.song, listKey: props.listKey, style } }
   }
 
   function onPlay() {

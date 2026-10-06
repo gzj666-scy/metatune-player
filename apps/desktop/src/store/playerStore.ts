@@ -11,7 +11,7 @@ import type {
   IAlbum,
   IBusinessData,
 } from '@metatune/common/types'
-import { shallowToRaw, DefaultKey, DefaultVolume, PlayMode, sortArtist, sortSong } from '@metatune/common'
+import { shallowToRaw, DefaultKey, DefaultVolume, PlayMode, sortArtist, sortSong } from '@metatune/common/utils'
 
 export const defaultState = {
   currentListId: DefaultKey.Local,

@@ -1,13 +1,14 @@
 import { app, BrowserWindow, dialog, ipcMain } from 'electron'
 import { IPC } from './channels'
 import { cache, resetAllCache, CACHE_DIR, type IPlayerData } from '../appCache'
-import { AudioFormat, parsePaths } from '../parseMetadata'
+import { parsePaths } from '../parseMetadata'
 import { scanDirs } from '../audioScanner'
 import type { AudioStreamServer } from '../audioServer'
 import type { IKnownSong, ISong } from '@metatune/common/types'
 import { checkForUpdates, downloadUpdate, installUpdate } from '../updater'
 import { closeWindow, getWindow } from '../window'
 import { setTrayToolTip } from '../tray'
+import { SupportedAudioFormat } from '@metatune/common/utils'
 
 function registerAppHandlers() {
   ipcMain.handle(IPC.APP_INFO, () => ({
@@ -39,7 +40,7 @@ function registerDialogHandlers() {
   ipcMain.handle(IPC.DIALOG_OPEN_FILE, async (_, options: Record<string, unknown> = {}) => {
     return dialog.showOpenDialog(getWindow() as BrowserWindow, {
       properties: ['openFile', 'multiSelections'],
-      filters: [{ name: '音频文件', extensions: AudioFormat }],
+      filters: [{ name: '音频文件', extensions: SupportedAudioFormat }],
       ...options,
     })
   })

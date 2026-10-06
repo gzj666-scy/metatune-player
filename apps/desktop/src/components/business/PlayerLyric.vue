@@ -1,7 +1,8 @@
 <script setup lang="ts">
   import { onUnmounted, ref, StyleValue, watch, watchEffect } from 'vue'
-  import { LyricParser, useRefs } from '@metatune/common'
-  import type { ILyricLine, ISong } from '@metatune/common'
+  import { LyricParser } from '@metatune/common/utils'
+  import { useRefs } from '@metatune/common/hooks'
+  import type { ILyricLine, ISong } from '@metatune/common/types'
 
   interface Props {
     song: ISong | null

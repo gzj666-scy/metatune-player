@@ -1,9 +1,9 @@
-import { ModalType, PanelType, PlayMode, SortTypeItemsIds } from '../utils/constant'
+import { ModalEnum, PanelEnum, PlayMode, SortTypeItemsIds } from '../utils/constant'
 import { Component } from 'vue'
 
 export interface IPanelProps<T = any> {
   /** 面板类型 */
-  type: PanelType | ''
+  type: PanelEnum | ''
   /** 关闭回调 */
   closeCallBack?: () => void
   /** 向面板传递的数据 */
@@ -12,7 +12,7 @@ export interface IPanelProps<T = any> {
 
 export interface IModalProps<T = any> {
   /** 弹窗类型 */
-  type: ModalType | ''
+  type: ModalEnum | ''
   /** 关闭回调 */
   closeCallBack?: () => void
   /** 向弹窗传递的数据 */

@@ -4,7 +4,7 @@ import App from './App.vue'
 import router from './router'
 
 import './styles/main.css'
-import { vClickOutside } from '@metatune/common'
+import { vClickOutside } from '@metatune/common/utils'
 
 const app = createApp(App)
 

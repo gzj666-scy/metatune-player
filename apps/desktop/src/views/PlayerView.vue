@@ -1,6 +1,6 @@
 <script setup lang="ts">
   import { ref, computed, watch, onUnmounted, onMounted } from 'vue'
-  import { DynamicColorAdjuster, IconEnum, PanelType, formatTime } from '@metatune/common'
+  import { DynamicColorAdjuster, IconEnum, PanelEnum, formatTime } from '@metatune/common/utils'
   import IconBase from '@/components/base/IconBase.vue'
   import VolumeControl from '@/components/business/VolumeControl.vue'
   import { getPlayManager } from '@/utils/playManager'
@@ -87,7 +87,7 @@
         right: `${windowWidth - rect.left}px`,
       }
     }
-    playerStore.panel = { type: PanelType.SongAction, data: { song: song.value, listKey: playerStore.currentState.currentListId, style } }
+    playerStore.panel = { type: PanelEnum.SongAction, data: { song: song.value, listKey: playerStore.currentState.currentListId, style } }
   }
 
   function onLoadExternalLyrics() {

@@ -1,4 +1,5 @@
-import { DefaultVolume, type ISong } from '@metatune/common'
+import { DefaultVolume } from '@metatune/common/utils'
+import type { ISong } from '@metatune/common/types'
 import { Howl, Howler } from 'howler'
 import { AudioVisualizer, type VisualizationBands } from './audioVisualizer'
 

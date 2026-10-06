@@ -1,30 +1,11 @@
-import { ILyricsText, ISong } from '@metatune/common/types'
-import type { IImportResult, OnProgress } from '@metatune/common/types'
+import type { IImportResult, OnProgress, ILyricsText, ISong } from '@metatune/common/types'
+import { AudioCodecs, AudioFormat, LOSSLESS_CODECS, SupportedAudioFormat } from '@metatune/common/utils'
 import { readdirSync, statSync } from 'fs'
 import { parseFile } from 'music-metadata'
 import type { IFormat } from 'music-metadata'
 import { basename, dirname, extname, join } from 'path'
 import { calculateMD5, calculateTextMD5, getExtname } from './utils'
 import { cache } from './appCache'
-
-// 支持的音频格式
-export const AudioFormat = [
-  'mp3', //codec: "MPEG 1 Layer 3"; container: "MPEG"
-  'm4a', //codec: "MPEG-4/AAC"; container: "M4A/isom/iso2"
-  'flac', //codec: "FLAC"; container: "FLAC"
-  'wav', //codec: "PCM"; container: "WAVE"
-  // 'aac', //codec: "AAC"; container: "ADTS/MPEG-4"   疑似无法解析出时长、比特率信息，不予支持
-  // 'ape', //codec: ""; container: "Monkey's Audio"   疑似需 FFmpeg / JS 软解，不予支持
-  // 'alac',
-  // 'ogg', //codec: "Opus"; container: "Ogg"   疑似无法解析出时长、比特率信息，不予支持
-  // 'opus',
-  // 'webm', //codec: "OPUS"; container: "EBML/webm"   疑似无法解析出比特率信息，不予支持
-  // 'wma', //codec: "Windows Media Audio 9"; container: "ASF/audio"   浏览器不支持，需软解，不予支持
-]
-const AudioCodecs = ['MPEG 1 Layer 3', 'MPEG-4/AAC', 'FLAC', 'PCM']
-
-/** 无损编码白名单（大小写不敏感） */
-const LOSSLESS_CODECS = ['flac', 'wav', 'wave', 'alac', 'ape', 'aiff', 'aif', 'dsd', 'dff', 'dsf']
 
 /** 根据音频参数判定音质等级 */
 export function judgeAudioQuality(format: IFormat) {
@@ -139,9 +120,14 @@ export async function parsePaths(paths: string[], onProgress?: OnProgress, concu
       if (stats.isDirectory()) {
         for (const name of readdirSync(p)) stack.push(join(p, name))
       } else if (AudioFormat.includes(extname(p).slice(1).toLowerCase())) {
-        audioFiles.push(p)
+        if (SupportedAudioFormat.includes(extname(p).slice(1).toLowerCase())) {
+          audioFiles.push(p)
+        } else {
+          // result.skipped.push(p)
+          result.errors.push({ filePath: p, reason: '不支持的文件格式' })
+        }
       } else {
-        result.errors.push({ filePath: p, reason: '不支持的文件格式' })
+        // 非音频文件直接忽略，避免误导用户
       }
     } catch (error: any) {
       result.skipped.push(p)

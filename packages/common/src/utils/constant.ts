@@ -1,7 +1,43 @@
 import { IMainMenuItem } from '../types'
 import { IconEnum } from './svgIcons'
 
-// export const AudioFormat = ['mp3', 'aac', 'm4a', 'flac', 'ape', 'alac', 'wav', 'wma', 'ogg']
+/** 支持的音频格式 */
+export const SupportedAudioFormat = [
+  'mp3', //codec: "MPEG 1 Layer 3"; container: "MPEG"
+  'm4a', //codec: "MPEG-4/AAC"; container: "M4A/isom/iso2"
+  'flac', //codec: "FLAC"; container: "FLAC"
+  'wav', //codec: "PCM"; container: "WAVE"
+  // 'aac', //codec: "AAC"; container: "ADTS/MPEG-4"   疑似无法解析出时长、比特率信息，不予支持
+  // 'ape', //codec: ""; container: "Monkey's Audio"   疑似需 FFmpeg / JS 软解，不予支持
+  // 'alac',
+  // 'ogg', //codec: "Opus"; container: "Ogg"   疑似无法解析出时长、比特率信息，不予支持
+  // 'opus',
+  // 'webm', //codec: "OPUS"; container: "EBML/webm"   疑似无法解析出比特率信息，不予支持
+  // 'wma', //codec: "Windows Media Audio 9"; container: "ASF/audio"   浏览器不支持，需软解，不予支持
+]
+export const AudioFormat = [
+  'mp3',
+  'aac',
+  'm4a',
+  'flac',
+  'ape',
+  'alac',
+  'wav',
+  'wma',
+  'ogg',
+  'opus',
+  'webm',
+  'wave',
+  'aiff',
+  'aif',
+  'dsd',
+  'dff',
+  'dsf',
+]
+/** 无损编码白名单（大小写不敏感） */
+export const LOSSLESS_CODECS = ['flac', 'wav', 'wave', 'alac', 'ape', 'aiff', 'aif', 'dsd', 'dff', 'dsf']
+
+export const AudioCodecs = ['MPEG 1 Layer 3', 'MPEG-4/AAC', 'FLAC', 'PCM']
 
 export const DefaultVolume = 50
 
@@ -31,13 +67,13 @@ export enum PlayMode {
   // SEQUENCE = 'sequence',
 }
 
-export enum PanelType {
+export enum PanelEnum {
   PlaylistAction = 'playlistAction',
   SongAction = 'songAction',
   SortMode = 'sortMode',
 }
 
-export enum ModalType {
+export enum ModalEnum {
   AddToPlaylist = 'addToPlaylist',
   SongInfo = 'songInfo',
 }

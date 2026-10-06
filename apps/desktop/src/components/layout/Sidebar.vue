@@ -1,7 +1,7 @@
 <script setup lang="ts">
   import { ref, computed } from 'vue'
-  import { clsx, DefaultKey, IconEnum, MainMenuItems, PanelType, SortTypeItems } from '@metatune/common'
-  import type { IMainMenuItem, IPlaylistItem } from '@metatune/common'
+  import { clsx, DefaultKey, IconEnum, MainMenuItems, PanelEnum, SortTypeItems } from '@metatune/common/utils'
+  import type { IMainMenuItem, IPlaylistItem } from '@metatune/common/types'
   import IconBase from '../base/IconBase.vue'
   import { Modal } from '@/utils/modal'
   import { getStoreManager } from '@/utils/storeManager'
@@ -74,7 +74,7 @@
         left: `${rect.left + (rect.width * 2) / 3}px`,
       }
     }
-    playerStore.panel = { type: PanelType.PlaylistAction, data: { id, style } }
+    playerStore.panel = { type: PanelEnum.PlaylistAction, data: { id, style } }
   }
 </script>
 

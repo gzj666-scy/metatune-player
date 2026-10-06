@@ -1,4 +1,4 @@
-// export enum PanelType {
+// export enum PanelEnum {
 //   /** 下载App */
 //   Download = 'download',
 //   /** 播放视频 */

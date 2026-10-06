@@ -3,7 +3,6 @@
   "compilerOptions": {
     "paths": {
       "@/*": ["./src/*"],
-      "@metatune/common": ["../../packages/common/src"],
       "@metatune/common/*": ["../../packages/common/src/*"]
     }
   },

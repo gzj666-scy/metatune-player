@@ -1,6 +1,7 @@
 import { toRaw } from 'vue'
 import { usePlayerStore } from '@/store'
-import { PlayMode, type ISong } from '@metatune/common'
+import { PlayMode } from '@metatune/common/utils'
+import type { ISong } from '@metatune/common/types'
 import { HowlerPlayer } from './howlerPlayer'
 import { getStoreManager } from '@/utils/storeManager'
 import { loudnessService } from '@/utils/loudnessService'

@@ -1,7 +1,7 @@
 import { statSync, readdirSync } from 'fs'
 import { join } from 'path'
 import { extname } from 'path'
-import { AudioFormat } from './parseMetadata'
+import { SupportedAudioFormat } from '@metatune/common/utils'
 import type { IKnownSong, IScanResult } from '@metatune/common/types'
 
 /**
@@ -35,7 +35,7 @@ export function scanDirs(dirs: string[], known: IKnownSong[]): IScanResult {
         continue
       }
       if (!stats.isFile()) continue
-      if (!AudioFormat.includes(extname(name).slice(1).toLowerCase())) continue
+      if (!SupportedAudioFormat.includes(extname(name).slice(1).toLowerCase())) continue
 
       seenPaths.add(fullPath)
       const prev = knownMap.get(fullPath)

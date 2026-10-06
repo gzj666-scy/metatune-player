@@ -1,6 +1,6 @@
 <script setup lang="ts">
   import { ref } from 'vue'
-  import { IconEnum, formatTime } from '@metatune/common'
+  import { IconEnum, formatTime } from '@metatune/common/utils'
   import IconBase from '@/components/base/IconBase.vue'
   import VolumeControl from '@/components/business/VolumeControl.vue'
   import { getPlayManager } from '@/utils/playManager'

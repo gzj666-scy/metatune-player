@@ -2,7 +2,7 @@ import { createServer, type IncomingMessage, type ServerResponse } from 'http'
 import { createReadStream, statSync } from 'fs'
 import { randomUUID } from 'crypto'
 import { extname, isAbsolute } from 'path'
-import { AudioFormat } from './parseMetadata'
+import { SupportedAudioFormat } from '@metatune/common/utils'
 import { getMimeType } from './utils'
 
 /**
@@ -81,7 +81,7 @@ export class AudioStreamServer {
         return
       }
       const filePath = decodeURIComponent(url.searchParams.get('p') || '')
-      if (!isAbsolute(filePath) || !AudioFormat.includes(extname(filePath).slice(1).toLowerCase())) {
+      if (!isAbsolute(filePath) || !SupportedAudioFormat.includes(extname(filePath).slice(1).toLowerCase())) {
         res.writeHead(400).end('Bad Request')
         return
       }

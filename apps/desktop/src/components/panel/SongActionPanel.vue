@@ -1,6 +1,6 @@
 <script setup lang="ts">
-  import { IconEnum, ModalType } from '@metatune/common'
-  import type { IPanelProps, ISong } from '@metatune/common'
+  import { IconEnum, ModalEnum } from '@metatune/common/utils'
+  import type { IPanelProps, ISong } from '@metatune/common/types'
   import { computed, StyleValue } from 'vue'
   import IconBase from '@/components/base/IconBase.vue'
   import { getStoreManager } from '@/utils/storeManager'
@@ -23,14 +23,14 @@
   function handleAddToPlayList() {
     if (props.data?.song) {
       handleClose()
-      playerStore.modal = { type: ModalType.AddToPlaylist, data: { songIds: [props.data.song.uid] } }
+      playerStore.modal = { type: ModalEnum.AddToPlaylist, data: { songIds: [props.data.song.uid] } }
     }
   }
 
   function handleLookSongInfo() {
     if (props.data?.song) {
       handleClose()
-      playerStore.modal = { type: ModalType.SongInfo, data: { songId: props.data.song.uid } }
+      playerStore.modal = { type: ModalEnum.SongInfo, data: { songId: props.data.song.uid } }
     }
   }
 

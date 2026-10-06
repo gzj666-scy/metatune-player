@@ -1,6 +1,6 @@
 <script setup lang="ts">
   import { computed } from 'vue'
-  import { DefaultKey, IconEnum } from '@metatune/common'
+  import { DefaultKey, IconEnum } from '@metatune/common/utils'
   import { getStoreManager } from '@/utils/storeManager'
   import IconBase from '@/components/base/IconBase.vue'
   import { useRouter } from 'vue-router'

@@ -1,6 +1,6 @@
 <script setup lang="ts">
-  import { IconEnum } from '@metatune/common'
-  import type { IPanelProps } from '@metatune/common'
+  import { IconEnum } from '@metatune/common/utils'
+  import type { IPanelProps } from '@metatune/common/types'
   import { computed, StyleValue } from 'vue'
   import IconBase from '@/components/base/IconBase.vue'
   import { getStoreManager } from '@/utils/storeManager'

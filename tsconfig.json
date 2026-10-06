@@ -18,10 +18,6 @@
     "forceConsistentCasingInFileNames": true,
     "jsx": "preserve",
     "jsxImportSource": "vue",
-    "paths": {
-      "@metatune/common": ["./packages/common/src"],
-      "@metatune/common/*": ["./packages/common/src/*"]
-    },
     "types": ["node"]
   },
   // 基底配置：只给子 tsconfig extends 用。真正的检查走 `pnpm -r type-check`

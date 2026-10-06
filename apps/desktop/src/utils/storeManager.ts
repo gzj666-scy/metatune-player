@@ -1,6 +1,6 @@
-import { SortTypeItems, mergeSong, DefaultKey } from '@metatune/common'
+import { SortTypeItems, mergeSong, DefaultKey } from '@metatune/common/utils'
 import { defaultState, defaultSettings, usePlayerStore } from '@/store'
-import type { ISong, IPlaylist, IAppSettings, IPlaylistItem, IPlaybackState } from '@metatune/common'
+import type { ISong, IPlaylist, IAppSettings, IPlaylistItem, IPlaybackState } from '@metatune/common/types'
 import { toRaw } from 'vue'
 
 export class StoreManager {

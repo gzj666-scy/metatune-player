@@ -1,5 +1,5 @@
 <script setup lang="ts">
-  import { clsx } from '@metatune/common'
+  import { clsx } from '@metatune/common/utils'
   import { watch, ref, StyleValue, watchEffect } from 'vue'
 
   export interface SwitchProps {

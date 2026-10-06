@@ -1,5 +1,5 @@
 <script setup lang="ts">
-  import { IconEnum } from '@metatune/common'
+  import { IconEnum } from '@metatune/common/utils'
   import { onMounted, nextTick, watch, onUnmounted } from 'vue'
   import IconBase from './IconBase.vue'
 

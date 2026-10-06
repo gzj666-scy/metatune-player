@@ -1,6 +1,6 @@
 <script setup lang="ts">
   import { getStoreManager } from '@/utils/storeManager'
-  import { PanelType } from '@metatune/common'
+  import { PanelEnum } from '@metatune/common/utils'
   import { computed, markRaw } from 'vue'
   import PlaylistActionPanel from './PlaylistActionPanel.vue'
   import SongActionPanel from './SongActionPanel.vue'
@@ -12,11 +12,11 @@
   const panel = computed(() => playerStore.panel)
   const currentPanelComponent = computed(() => {
     const components = {
-      [PanelType.PlaylistAction]: markRaw(PlaylistActionPanel),
-      [PanelType.SongAction]: markRaw(SongActionPanel),
-      [PanelType.SortMode]: markRaw(SortModePanel),
+      [PanelEnum.PlaylistAction]: markRaw(PlaylistActionPanel),
+      [PanelEnum.SongAction]: markRaw(SongActionPanel),
+      [PanelEnum.SortMode]: markRaw(SortModePanel),
     }
-    return components[panel.value.type as PanelType] || null
+    return components[panel.value.type as PanelEnum] || null
   })
 </script>
 

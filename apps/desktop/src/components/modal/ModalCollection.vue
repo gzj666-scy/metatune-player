@@ -1,6 +1,6 @@
 <script setup lang="ts">
   import { getStoreManager } from '@/utils/storeManager'
-  import { ModalType } from '@metatune/common'
+  import { ModalEnum } from '@metatune/common/utils'
   import { computed, markRaw } from 'vue'
   import AddToPlaylistModal from './AddToPlaylistModal.vue'
   import SongInfoModal from './SongInfoModal.vue'
@@ -11,10 +11,10 @@
   const modal = computed(() => playerStore.modal)
   const currentModalComponent = computed(() => {
     const components = {
-      [ModalType.AddToPlaylist]: markRaw(AddToPlaylistModal),
-      [ModalType.SongInfo]: markRaw(SongInfoModal),
+      [ModalEnum.AddToPlaylist]: markRaw(AddToPlaylistModal),
+      [ModalEnum.SongInfo]: markRaw(SongInfoModal),
     }
-    return components[modal.value.type as ModalType] || null
+    return components[modal.value.type as ModalEnum] || null
   })
 </script>
 

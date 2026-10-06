@@ -1,6 +1,6 @@
 <script setup lang="ts">
-  import { IconEnum, SortTypeItems } from '@metatune/common'
-  import type { IPanelProps, SortTypeItemsIds } from '@metatune/common'
+  import { IconEnum, SortTypeItems, SortTypeItemsIds } from '@metatune/common/utils'
+  import type { IPanelProps } from '@metatune/common/types'
   import { computed, StyleValue } from 'vue'
   import IconBase from '@/components/base/IconBase.vue'
   import { getStoreManager } from '@/utils/storeManager'

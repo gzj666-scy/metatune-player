@@ -2,7 +2,7 @@
   import { getStoreManager } from '@/utils/storeManager'
   import { computed, ref } from 'vue'
   import ModalBase from '../base/ModalBase.vue'
-  import { IModalProps } from '@metatune/common'
+  import { IModalProps } from '@metatune/common/types'
 
   const props = withDefaults(defineProps<IModalProps<{ songIds: string[]; cover?: boolean }>>(), {
     type: '',

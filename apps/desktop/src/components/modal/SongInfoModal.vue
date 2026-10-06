@@ -1,6 +1,6 @@
 <script setup lang="ts">
-  import { formatFileSize } from '@metatune/common'
-  import type { IModalProps } from '@metatune/common'
+  import { formatFileSize } from '@metatune/common/utils'
+  import type { IModalProps } from '@metatune/common/types'
   import { computed } from 'vue'
   import ModalBase from '../base/ModalBase.vue'
   import { getStoreManager } from '@/utils/storeManager'

@@ -1,7 +1,7 @@
 <script setup lang="ts">
   import { ref, onMounted, onUnmounted } from 'vue'
   import IconBase from '../base/IconBase.vue'
-  import { IconEnum } from '@metatune/common'
+  import { IconEnum } from '@metatune/common/utils'
   import { Modal } from '@/utils/modal'
 
   const appInfoRef = ref<{ name: string; version: string; platform: string; isPortable?: boolean }>()

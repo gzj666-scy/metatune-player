@@ -1,5 +1,5 @@
 import { computed, ref, type Ref } from 'vue'
-import { DefaultKey, DefaultVolume, IconEnum, PlayMode } from '@metatune/common'
+import { DefaultKey, DefaultVolume, IconEnum, PlayMode } from '@metatune/common/utils'
 import { getPlayManager } from '@/utils/playManager'
 import { getStoreManager } from '@/utils/storeManager'
 import { useSliderDrag } from './useSliderDrag'

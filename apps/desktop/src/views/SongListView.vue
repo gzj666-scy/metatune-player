@@ -1,7 +1,8 @@
 <script setup lang="ts">
   import { ref, computed, toRaw, onUnmounted } from 'vue'
-  import { getFirstLetter, IconEnum, ModalType, SortTypeItems, useRefs } from '@metatune/common'
-  import type { ISong } from '@metatune/common'
+  import { getFirstLetter, IconEnum, ModalEnum, SortTypeItems } from '@metatune/common/utils'
+  import { useRefs } from '@metatune/common/hooks'
+  import type { ISong } from '@metatune/common/types'
   import SongItem from '@/components/business/SongItem.vue'
   import { getStoreManager } from '@/utils/storeManager'
   import ListToolBar from '@/components/business/ListToolBar.vue'
@@ -112,7 +113,7 @@
   function onAddToPlayList() {
     if (selectedSongsRef.value && selectedSongsRef.value.length > 0) {
       playerStore.modal = {
-        type: ModalType.AddToPlaylist,
+        type: ModalEnum.AddToPlaylist,
         data: { songIds: selectedSongsRef.value, cover: isLookPlaylistRef.value },
         closeCallBack: () => {
           showBatchActionsRef.value = false
